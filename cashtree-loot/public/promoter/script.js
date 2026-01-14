@@ -94,26 +94,65 @@ async function attemptSignup() {
         btn.disabled = false;
     }
 }
-async function checkSystemStatus() {
-    // 👑 GOD-MODE BYPASS: Don't lock the login/signup page
-    const isAuthPage = window.location.pathname.includes('index.html') || window.location.pathname === '/';
-    
-    // If we are on the front door, don't show the maintenance screen
-    if (isAuthPage) return; 
-
-    const { data } = await supabase
+async function applyGodModeLaws() {
+    // 1. Fetch the Global Laws
+    const { data: config, error } = await supabase
         .from('system_config')
-        .select('value')
-        .eq('key', 'site_status')
-        .single();
+        .select('*');
 
-    if (data && data.value === 'MAINTENANCE') {
-        document.getElementById('maintenanceScreen').classList.remove('hidden');
+    if (error || !config) return;
+
+    const laws = {};
+    config.forEach(c => laws[c.key] = c.value);
+
+    // 2. Identify where the user is right now
+    // This checks if the current URL contains "dashboard"
+    const isDashboard = window.location.pathname.includes('dashboard') || document.querySelector('.dashboard');
+    const maintenanceOverlay = document.getElementById('maintenanceScreen');
+    const loginCard = document.querySelector('.login-card'); // Your Sign-up card
+    const mainDashboard = document.querySelector('.dashboard');
+
+    // 3. ENFORCE MAINTENANCE
+    if (laws.site_status === 'MAINTENANCE') {
+        // If it's a dashboard, lock it 100%
+        if (isDashboard) {
+            if (maintenanceOverlay) maintenanceOverlay.classList.remove('hidden');
+            if (mainDashboard) mainDashboard.style.display = 'none';
+        } 
+        // If it's the Sign-up page, we keep it open so you keep getting users!
+        // (Unless you want to lock that too, then remove the 'if' above)
+    } else {
+        // SYSTEM IS LIVE - Unlock everything
+        if (maintenanceOverlay) maintenanceOverlay.classList.add('hidden');
+        if (mainDashboard) mainDashboard.style.display = 'block';
+        if (loginCard) loginCard.style.display = 'block';
+    }
+
+    // 4. ENFORCE WITHDRAWAL LAW (Only if on Dashboard)
+    if (isDashboard && document.getElementById('withdrawBtn')) {
+        const minRequired = parseInt(laws.min_payout || 500);
+        const displayMin = document.getElementById('display_min_payout');
+        if(displayMin) displayMin.innerText = `₹${minRequired}`;
+
+        const balanceElem = document.getElementById('balanceDisplay');
+        if (balanceElem) {
+            const currentBalance = parseFloat(balanceElem.innerText.replace('₹', '')) || 0;
+            const btn = document.getElementById('withdrawBtn');
+            
+            if (currentBalance >= minRequired) {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.innerText = "WITHDRAW NOW";
+                btn.style.background = "#22c55e";
+            } else {
+                btn.disabled = true;
+                btn.innerText = `NEED ₹${minRequired - currentBalance} MORE`;
+                btn.style.opacity = "0.5";
+            }
+        }
     }
 }
 
-// Run this as soon as the page opens
-checkSystemStatus();
-
-// GOD MODE: Check every 30 seconds so it unlocks automatically when you're done
-setInterval(checkSystemStatus, 30000);
+// Check every 10 seconds
+applyGodModeLaws();
+setInterval(applyGodModeLaws, 10000);
