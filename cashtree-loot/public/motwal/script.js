@@ -1,65 +1,66 @@
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-// Using the long Key for maximum permissions
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-const OFFER_LINK = "https://YOUR_OFFICIAL_MOTWAL_LINK"; // Put your link here
+const OFFER_LINK = "https://trkkcoin.com/IT3779ZXP1/JAM0MN?ln=English";
 
 document.getElementById("submitBtn").addEventListener("click", async function() {
     const btn = document.getElementById("submitBtn");
     const phone = document.getElementById("phone").value.trim();
     const upi = document.getElementById("upi").value.trim();
-
     const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref') || "DIRECT"; 
+    const refCode = urlParams.get('ref'); 
 
     if (phone.length < 10 || !upi.includes("@")) {
-      alert("Please enter valid details");
+      alert("Please enter a valid phone and UPI ID");
       return;
     }
 
-    btn.innerText = "Saving...";
+    btn.innerText = "Processing...";
     btn.disabled = true;
 
-   try {
-        // 1. Find the Campaign UUID (Matches "Motwal" or "Angel One")
+    try {
+        // 1. Get Campaign UUID
         const { data: campaignData } = await supabaseClient
             .from('campaigns')
             .select('id')
-            .eq('title', 'Motwal') // Change to 'Angel One' for that script
+            .eq('title', 'Motwal') 
             .single();
 
-        // 2. Find the Promoter UUID (Matches the ref code "JANNAH123")
-        const { data: promoterData } = await supabaseClient
-            .from('promoters')
-            .select('id')
-            .eq('username', refCode)
-            .single();
+        // 2. Get Promoter UUID (Foreign Key lookup)
+        let promoterUuid = null;
+        if (refCode && refCode !== "DIRECT") {
+            const { data: promoterData } = await supabaseClient
+                .from('promoters')
+                .select('id')
+                .eq('username', refCode)
+                .single();
+            if (promoterData) promoterUuid = promoterData.id;
+        }
 
-        // 3. Insert into 'leads' using the actual UUIDs
-        const { error } = await supabaseClient
-          .from('leads')
-          .insert([{
-              phone: phone,
-              upi_id: upi,
-              // If promoter not found, we use null so the database doesn't crash
-              user_id: promoterData ? promoterData.id : null, 
-              campaign_id: campaignData ? campaignData.id : null,
-              status: 'pending'
-          }]);
+        // 3. Build the Data Object
+        const leadData = {
+            phone: phone,
+            upi_id: upi,
+            campaign_id: campaignData ? campaignData.id : null,
+            status: 'pending'
+        };
 
+        // Only add user_id if it's a valid Foreign Key match
+        if (promoterUuid) {
+            leadData.user_id = promoterUuid;
+        }
+
+        // 4. Insert
+        const { error } = await supabaseClient.from('leads').insert([leadData]);
         if (error) throw error;
 
-        // Success UI
         document.getElementById("statusMsg").style.display = "block";
         btn.style.display = "none";
         setTimeout(() => { window.location.href = OFFER_LINK; }, 1500);
 
     } catch (err) {
-        console.error("Supabase Error:", err);
-        // If the error is still about UUIDs, we alert the admin
-        alert("Error saving lead: " + err.message);
-        btn.disabled = false;
-        btn.innerText = "Submit & Download App";
+        console.error("Error:", err.message);
+        window.location.href = OFFER_LINK; // Redirect anyway to keep user flow
     }
 });
