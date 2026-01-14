@@ -47,7 +47,12 @@
             <a onclick="openBroadcastModal()" id="nav-broadcast" class="nav-item group flex items-center p-3 rounded-lg hover:bg-slate-800 cursor-pointer text-slate-300 hover:text-white transition">
                 <i class="fas fa-bell w-8 text-center group-hover:text-yellow-400 transition animate-pulse"></i> <span class="font-medium">Broadcast Hub</span>
             </a>
+            <a onclick="showSection('settings')" id="nav-settings" class="nav-item group flex items-center p-3 rounded-lg hover:bg-slate-800 cursor-pointer text-slate-300 transition">
+                <i class="fas fa-sliders-h w-8 text-center group-hover:text-purple-400 transition"></i> 
+                <span class="font-medium">God Config</span>
+            </a>
         </nav>
+
         
         <div class="p-6 border-t border-slate-800 bg-slate-900/50">
             <div class="flex items-center">
@@ -136,6 +141,45 @@
                 </table>
             </div>
         </div>
+
+        <div id="settings" class="section hidden">
+            <h1 class="text-4xl font-bold mb-2 text-white">System Sovereignty</h1>
+            <p class="text-slate-400 mb-8">Change the laws of your empire in real-time.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="glass-panel p-8 rounded-2xl border border-purple-500/20">
+            <h3 class="text-xl font-bold mb-6 text-purple-400 flex items-center">
+                <i class="fas fa-cog mr-2"></i> Global Rules
+            </h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Minimum Withdrawal (₹)</label>
+                    <input type="number" id="cfg_min_payout" class="input-dark w-full" placeholder="500">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Support Contact (WhatsApp)</label>
+                    <input type="text" id="cfg_support" class="input-dark w-full" placeholder="+91...">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">System Status</label>
+                    <select id="cfg_status" class="input-dark w-full">
+                        <option value="LIVE">LIVE (System Active)</option>
+                        <option value="MAINTENANCE">MAINTENANCE (Block Users)</option>
+                    </select>
+                </div>
+            </div>
+
+                    <button onclick="saveSystemConfig()" class="unlock-btn w-full mt-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500">
+                      <i class="fas fa-save mr-2"></i> APPLY CHANGES GLOBALLY
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
     </main>
 

@@ -163,3 +163,52 @@ function logout() {
     localStorage.removeItem("p_code");
     window.location.href = "login.html";
 }
+
+// Add these to your initialization inside script.js
+async function applyGodModeLaws() {
+    // 1. Fetch Laws from system_config
+    const { data: config } = await supabase
+        .from('system_config')
+        .select('*');
+
+    if (!config) return;
+
+    // Convert array to a handy object
+    const laws = {};
+    config.forEach(c => laws[c.key] = c.value);
+
+    // 2. CHECK MAINTENANCE STATUS
+    if (laws.site_status === 'MAINTENANCE') {
+        document.getElementById('maintenanceScreen').classList.remove('hidden');
+        document.querySelector('.dashboard').style.display = 'none';
+        return; // Stop here
+    } else {
+        document.getElementById('maintenanceScreen').classList.add('hidden');
+        document.querySelector('.dashboard').style.display = 'block';
+    }
+
+    // 3. ENFORCE WITHDRAWAL LAW
+    const minRequired = parseInt(laws.min_payout || 500);
+    document.getElementById('display_min_payout').innerText = `₹${minRequired}`;
+
+    // Fetch user balance (assuming you have user data)
+    // const userBalance = parseFloat(userData.wallet_balance); 
+    const balanceText = document.getElementById('balanceDisplay').innerText.replace('₹', '');
+    const currentBalance = parseFloat(balanceText);
+    const btn = document.getElementById('withdrawBtn');
+
+    if (currentBalance >= minRequired) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+        btn.style.background = "#22c55e";
+        btn.style.color = "white";
+        btn.innerText = "WITHDRAW NOW";
+    } else {
+        btn.innerText = `NEED ₹${minRequired - currentBalance} MORE`;
+    }
+}
+
+// RUN LAWS EVERY 30 SECONDS FOR REAL-TIME CONTROL
+applyGodModeLaws();
+setInterval(applyGodModeLaws, 30000);

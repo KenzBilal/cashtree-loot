@@ -94,3 +94,26 @@ async function attemptSignup() {
         btn.disabled = false;
     }
 }
+async function checkSystemStatus() {
+    // 👑 GOD-MODE BYPASS: Don't lock the login/signup page
+    const isAuthPage = window.location.pathname.includes('index.html') || window.location.pathname === '/';
+    
+    // If we are on the front door, don't show the maintenance screen
+    if (isAuthPage) return; 
+
+    const { data } = await supabase
+        .from('system_config')
+        .select('value')
+        .eq('key', 'site_status')
+        .single();
+
+    if (data && data.value === 'MAINTENANCE') {
+        document.getElementById('maintenanceScreen').classList.remove('hidden');
+    }
+}
+
+// Run this as soon as the page opens
+checkSystemStatus();
+
+// GOD MODE: Check every 30 seconds so it unlocks automatically when you're done
+setInterval(checkSystemStatus, 30000);

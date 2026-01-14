@@ -44,7 +44,7 @@ function initDashboard() {
     loadCampaigns();
     loadLeads();
     loadPayouts();
-    // Auto-refresh stats and leads every 30 seconds
+    loadSystemConfig(); // ADD THIS LINE TO LOAD YOUR GLOBAL RULES
     setInterval(() => { loadStats(); loadLeads(); }, 30000);
 }
 
@@ -59,6 +59,8 @@ async function loadCampaigns() {
     camps.forEach(c => {
         const card = document.createElement("div");
         card.className = `glass-panel p-6 rounded-2xl border ${c.is_active ? 'border-green-500/30' : 'border-slate-700'}`;
+        
+        // I updated the button below to include: onclick="editCampaign(...)"
         card.innerHTML = `
             <div class="flex justify-between items-start mb-4">
                 <img src="${c.image_url || 'https://via.placeholder.com/50'}" class="w-14 h-14 rounded-lg bg-slate-800 object-cover">
@@ -71,11 +73,39 @@ async function loadCampaigns() {
             <div class="text-xs text-slate-400 truncate mb-4">${c.url}</div>
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-700">
                 <span class="text-green-400 font-bold bg-green-400/10 px-3 py-1 rounded">₹${c.payout || 0}</span>
-                <button class="text-slate-400 hover:text-white text-sm"><i class="fas fa-cog"></i> Edit</button>
+                <button onclick="editCampaign('${c.id}', '${c.title}', ${c.payout || 0})" class="text-slate-400 hover:text-white text-sm transition">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                </button>
             </div>
         `;
         grid.appendChild(card);
     });
+}
+
+async function editCampaign(id, currentTitle, currentPayout) {
+    // Step 1: Ask for new info
+    const newTitle = prompt("Edit Campaign Title:", currentTitle);
+    if (newTitle === null) return; // User clicked cancel
+
+    const newPayout = prompt("Edit Payout Amount (₹):", currentPayout);
+    if (newPayout === null) return; // User clicked cancel
+
+    // Step 2: Update the Database
+    const { error } = await db
+        .from('campaigns')
+        .update({ 
+            title: newTitle, 
+            payout: parseInt(newPayout) 
+        })
+        .eq('id', id);
+
+    // Step 3: Result Handling
+    if (!error) {
+        alert("✅ Success: Campaign Updated!");
+        loadCampaigns(); // Refresh the grid to show new data
+    } else {
+        alert("❌ Error: " + error.message);
+    }
 }
 
 async function toggleCampaign(id, isActive) {
@@ -260,4 +290,38 @@ async function sendBroadcast() {
     }
     btn.disabled = false;
     btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> BLAST MESSAGE`;
+}
+// Load current config when admin opens settings
+async function loadSystemConfig() {
+    const { data } = await db.from('system_config').select('*');
+    if (data) {
+        data.forEach(item => {
+            if (item.key === 'min_payout') document.getElementById('cfg_min_payout').value = item.value;
+            if (item.key === 'support_number') document.getElementById('cfg_support').value = item.value;
+            if (item.key === 'site_status') document.getElementById('cfg_status').value = item.value;
+        });
+    }
+}
+
+// Save and Broadcast changes
+async function saveSystemConfig() {
+    const minPayout = document.getElementById('cfg_min_payout').value;
+    const supportNum = document.getElementById('cfg_support').value;
+    const status = document.getElementById('cfg_status').value;
+
+    const updates = [
+        { key: 'min_payout', value: minPayout },
+        { key: 'support_number', value: supportNum },
+        { key: 'site_status', value: status }
+    ];
+
+    const { error } = await db.from('system_config').upsert(updates);
+
+    if (!error) {
+        alert("🌍 GOD MODE: System laws updated and synced!");
+        // Optional: Send a broadcast automatically to tell people things changed
+        if (status === 'MAINTENANCE') {
+            alert("⚠️ WARNING: You have set the site to Maintenance Mode!");
+        }
+    }
 }
