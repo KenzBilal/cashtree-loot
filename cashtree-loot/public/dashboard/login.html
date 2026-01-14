@@ -2,23 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Partner Access | CashTree</title>
+  <title>Partner Access | CashTree Security</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="login-mode">
 
   <div class="login-box">
+    <div style="font-size: 10px; color: var(--green); letter-spacing: 2px; font-weight: 800; margin-bottom: 15px; text-transform: uppercase;">
+      <i class="fas fa-shield-halved"></i> Encrypted Connection
+    </div>
+
     <div class="login-brand">Cash<span>Tree</span></div>
     <p class="login-desc">Secure access for verified partners.</p>
 
     <div class="input-field">
-      <label for="code">Partner Code</label>
-      <input type="text" id="code" placeholder="Enter your ID (e.g. CT-8821)" autocomplete="off">
+      <label for="code">Partner Code (Username)</label>
+      <input type="text" id="code" placeholder="Enter your username" autocomplete="off">
     </div>
 
     <div class="input-field">
@@ -26,13 +30,38 @@
       <input type="password" id="pass" placeholder="••••••••">
     </div>
 
-    <button id="loginBtn" class="login-submit-btn">
-      Unlock Dashboard
+    <button id="loginBtn" class="login-submit-btn" onclick="login()">
+      UNLOCK DASHBOARD
     </button>
+
+    <div style="margin-top: 15px;">
+        <a href="javascript:void(0)" onclick="openResetModal()" 
+           style="color: #64748b; font-size: 0.8rem; text-decoration: none; font-weight: 600; transition: 0.2s;">
+           Forgot Access Key?
+        </a>
+    </div>
 
     <div class="login-footer">
       New here? <a href="../promoter/index.html">Apply for Access →</a>
     </div>
+  </div>
+
+  <div id="resetModal" class="hidden" style="position: fixed; inset: 0; z-index: 100; background: rgba(2, 5, 10, 0.9); display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px);">
+      <div class="login-box" style="border: 1px solid var(--green); max-width: 380px;">
+          <h3 style="color: white; font-weight: 800; margin-bottom: 10px;">Account Recovery</h3>
+          <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 25px;">Enter your username to verify your identity via WhatsApp Support.</p>
+          
+          <div class="input-field" style="text-align: left;">
+              <label>Partner Code</label>
+              <input type="text" id="resetUsername" placeholder="e.g. CT-8821" style="background: rgba(0,0,0,0.5);">
+          </div>
+          
+          <button onclick="handlePasswordReset()" class="login-submit-btn" style="padding: 14px;">VERIFY IDENTITY</button>
+          
+          <button onclick="closeResetModal()" style="background: transparent; color: #ef4444; border: none; margin-top: 15px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+            CANCEL
+          </button>
+      </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

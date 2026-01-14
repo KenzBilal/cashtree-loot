@@ -39,14 +39,60 @@ function showSection(id) {
 }
 
 // --- INITIALIZATION ---
-function initDashboard() {
-    loadStats();
-    loadCampaigns();
-    loadLeads();
-    loadPayouts();
-    loadSystemConfig(); // ADD THIS LINE TO LOAD YOUR GLOBAL RULES
-    setInterval(() => { loadStats(); loadLeads(); }, 30000);
+/* =========================================
+   CORE COMMAND CENTER INITIALIZATION
+   ========================================= */
+
+async function initDashboard() {
+    console.log("🚀 Command Center Online. Synchronizing with Cloud...");
+
+    // 1. Instant Data Pull (Load everything the moment the vault opens)
+    await Promise.all([
+        loadStats(),          // Dashboard Stat Cards
+        loadCampaigns(),      // Campaign Lab Grid
+        loadLeads(),          // Approvals Table
+        loadPayouts(),        // Settlements Table
+        loadSystemConfig(),   // God Config (Min Payout, Maintenance, etc.)
+        updatePendingBadge()  // Sidebar Notification Dot
+    ]);
+
+    // 2. The Heartbeat Pulse (Set to 30s for real-time awareness)
+    // We use a single interval to keep the system perfectly synced.
+    setInterval(() => {
+        console.log("💓 Heartbeat: Refreshing live data...");
+        loadStats();
+        loadLeads();
+        updatePendingBadge();
+    }, 30000); 
 }
+
+/* =========================================
+   SIDEBAR NOTIFICATION LOGIC
+   ========================================= */
+
+async function updatePendingBadge() {
+    // Counts leads waiting for your approval
+    const { count, error } = await db
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+    if (error) return;
+
+    const badge = document.getElementById('navPendingBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.innerText = count;
+            badge.classList.remove('hidden');
+            // Adding a small scale animation to grab your attention
+            badge.classList.add('animate-bounce'); 
+        } else {
+            badge.classList.add('hidden');
+            badge.classList.remove('animate-bounce');
+        }
+    }
+}
+
 
 // --- CAMPAIGNS (The Lab) ---
 async function loadCampaigns() {
@@ -184,20 +230,55 @@ async function loadLeads() {
 async function approveLead(leadId, promoterId, amount) {
     if(!confirm(`Approve and credit ₹${amount}?`)) return;
     
-    // 1. Update lead status
+    // 1. Update lead status to approved
     await db.from('leads').update({ status: 'approved' }).eq('id', leadId);
     
-    // 2. Fetch current wallet and add money
-    const { data: p } = await db.from('promoters').select('wallet_balance').eq('id', promoterId).single();
-    const newBal = (p.wallet_balance || 0) + Number(amount);
+    // 2. Fetch the Promoter AND their Referrer
+    const { data: promoter } = await db
+        .from('promoters')
+        .select('wallet_balance, referred_by')
+        .eq('id', promoterId)
+        .single();
     
-    await db.from('promoters').update({ wallet_balance: newBal }).eq('id', promoterId);
+    if (!promoter) return alert("Error: Promoter not found");
+
+    // 3. Credit the Main Promoter (The worker)
+    const mainNewBal = (promoter.wallet_balance || 0) + Number(amount);
+    await db.from('promoters').update({ wallet_balance: mainNewBal }).eq('id', promoterId);
     
+    // 4. CHECK FOR REFERRER (The Passive Income Power)
+    if (promoter.referred_by) {
+        const bonusAmount = Number(amount) * 0.10; 
+        
+        // Fetch Referrer's current stats
+        const { data: boss } = await db
+            .from('promoters')
+            .select('wallet_balance, referral_earnings')
+            .eq('id', promoter.referred_by)
+            .single();
+        
+        if (boss) {
+            const bossNewBal = (boss.wallet_balance || 0) + bonusAmount;
+            // Add to their total wallet AND their specific referral_earnings stat
+            const newReferralTotal = (boss.referral_earnings || 0) + bonusAmount;
+
+            await db.from('promoters')
+                .update({ 
+                    wallet_balance: bossNewBal,
+                    referral_earnings: newReferralTotal 
+                })
+                .eq('id', promoter.referred_by);
+            
+            console.log(`✅ Referral Bonus: ₹${bonusAmount} added to Referrer's Army earnings.`);
+        }
+    }
+    
+    // Refresh Admin UI
     loadLeads();
     loadStats();
     loadPayouts();
+    alert("Lead Approved! Main balance and Passive Bonus updated.");
 }
-
 async function rejectLead(leadId) {
     if(!confirm("Reject this lead?")) return;
     await db.from('leads').update({ status: 'rejected' }).eq('id', leadId);
@@ -246,14 +327,27 @@ async function markPaid(userId, amount) {
 
 // --- ANALYTICS (Stats) ---
 async function loadStats() {
+    // 1. Fetch Counts (Leads & Promoters)
     const { count: approvedCount } = await db.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'approved');
     const { count: totalPromoters } = await db.from('promoters').select('*', { count: 'exact', head: true });
     
+    // 2. Calculate Payout Liability (Sum of all promoter balances)
+    const { data: balances } = await db.from('promoters').select('wallet_balance');
+    const totalLiability = balances ? balances.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0) : 0;
+
+    // 3. Update the Glass UI
     const leadsEl = document.getElementById("statLeads");
     const promotersEl = document.getElementById("statPromoters");
-    
-    if(leadsEl) leadsEl.innerText = approvedCount || 0;
-    if(promotersEl) promotersEl.innerText = totalPromoters || 0;
+    const liabilityEl = document.getElementById("statLiability");
+
+    if (leadsEl) leadsEl.innerText = approvedCount || 0;
+    if (promotersEl) promotersEl.innerText = totalPromoters || 0;
+    if (liabilityEl) {
+        // Formats number with commas (e.g., 10,000) for a professional look
+        liabilityEl.innerText = totalLiability.toLocaleString('en-IN');
+    }
+
+    console.log("📊 Stats Synced: Liability is ₹" + totalLiability);
 }
 
 // --- BROADCAST HUB ---

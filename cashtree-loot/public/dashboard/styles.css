@@ -1,41 +1,44 @@
 /* =========================================
-   0. UNIVERSAL RESET
+   0. UNIVERSAL RESET & THEME
    ========================================= */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* =========================================
-   1. VARIABLES
-   ========================================= */
 :root {
   --bg: #02050a;
-  --card: #0b121a;
-  --border: rgba(255,255,255,0.08);
+  --card-glass: rgba(11, 18, 26, 0.7); /* Upgraded to Glass */
+  --border: rgba(255, 255, 255, 0.08);
   --text: #eaf2f8;
   --green: #22c55e;
   --green-dark: #15803d;
   --muted: #94a3b8;
+  --emerald-glow: rgba(34, 197, 94, 0.2);
 }
 
-/* =========================================
-   2. GLOBAL
-   ========================================= */
 body {
   margin: 0;
   background: var(--bg);
+  background-image: radial-gradient(circle at 50% 0%, #0b121a 0%, #02050a 100%);
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 /* =========================================
-   3. DASHBOARD
+   3. DASHBOARD (GLASS UPGRADE)
    ========================================= */
 .dashboard {
   max-width: 500px;
   margin: 0 auto;
   padding: 20px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Header */
@@ -44,11 +47,9 @@ header.top {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28px;
+  padding: 10px 0;
 }
 
-/* =========================================
-   USER HEADER (MATCHES YOUR HTML)
-   ========================================= */
 .user-info {
   display: flex;
   align-items: center;
@@ -64,142 +65,112 @@ header.top {
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  box-shadow: 0 0 15px rgba(34,197,94,0.35);
-}
-
-.greeting {
-  font-size: 0.75rem;
-  color: var(--muted);
+  box-shadow: 0 0 20px var(--emerald-glow);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .username {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 
 .logout-btn {
-  padding: 8px 14px;
-  background: rgba(255,255,255,0.06);
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(5px);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   color: #fff;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logout-btn:hover {
   background: var(--green);
-  color: #022c22;
-  box-shadow: 0 4px 15px rgba(34,197,94,0.35);
+  color: #02050a;
+  box-shadow: 0 0 20px var(--green);
+  transform: translateY(-2px);
 }
 
 /* =========================================
-   STATS
+   STATS (ENHANCED GLASS)
    ========================================= */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 30px;
+  gap: 14px;
+  margin-bottom: 25px;
 }
 
 .stat-box {
-  background: var(--card);
+  background: var(--card-glass);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 20px;
+  padding: 20px;
   text-align: center;
+  transition: all 0.3s ease;
 }
 
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin-bottom: 6px;
+.stat-box:hover {
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+  transform: translateY(-4px);
 }
 
 .stat-value {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 900;
   color: var(--green);
+  text-shadow: 0 0 15px var(--emerald-glow);
 }
 
 /* =========================================
-   OFFERS
+   OFFERS & CAMPAIGNS (CLEAN LIST)
    ========================================= */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 25px 0 15px;
-}
-
 .section-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.badge {
-  background: var(--green);
-  color: #000;
-  font-size: 0.7rem;
-  padding: 3px 8px;
-  border-radius: 5px;
   font-weight: 800;
-}
-
-.offers-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  letter-spacing: -0.02em;
 }
 
 .offer-card {
-  background: rgba(255,255,255,0.03);
+  background: var(--card-glass);
+  backdrop-filter: blur(8px);
   border: 1px solid var(--border);
-  padding: 16px;
-  border-radius: 14px;
+  padding: 18px;
+  border-radius: 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: 0.2s;
+  transition: all 0.3s ease;
 }
 
 .offer-card:hover {
   border-color: var(--green);
-  transform: translateX(6px);
+  background: rgba(34, 197, 94, 0.03);
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .offer-info h4 {
-  margin: 0 0 4px;
-  font-size: 1rem;
-}
-
-.payout-tag {
-  color: var(--green);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.copy-btn {
-  background: #fff;
-  color: #000;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
   font-weight: 700;
-  cursor: pointer;
+  color: #fff;
 }
 
-.copy-btn:hover {
-  background: var(--green);
-  box-shadow: 0 0 15px rgba(34,197,94,0.4);
+/* Withdrawal Button Locked State */
+.withdraw-trigger:disabled {
+  background: rgba(30, 41, 59, 0.5) !important;
+  color: #64748b !important;
+  border: 1px dashed #334155 !important;
 }
 
 /* =========================================
-   LOGIN PAGE (UNCHANGED, PREMIUM)
+   LOGIN PAGE (PREMIUM & UNCHANGED)
    ========================================= */
 body.login-mode {
   display: flex;
@@ -258,6 +229,11 @@ body.login-mode {
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(0,0,0,0.35);
   color: #fff;
+  outline: none;
+}
+
+.input-field input:focus {
+  border-color: var(--green);
 }
 
 .login-submit-btn {
@@ -266,19 +242,28 @@ body.login-mode {
   background: linear-gradient(180deg, var(--green), var(--green-dark));
   border-radius: 14px;
   font-weight: 800;
+  color: #fff;
   border: none;
   cursor: pointer;
   margin-top: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.login-footer {
-  margin-top: 28px;
-  font-size: 0.9rem;
-  color: #64748b;
+.login-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
 }
 
-.login-footer a {
-  color: #22d3ee;
-  text-decoration: none;
-  font-weight: 600;
+/* =========================================
+   UTILITIES
+   ========================================= */
+.hidden { display: none !important; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
