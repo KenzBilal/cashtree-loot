@@ -84,28 +84,34 @@ async function loadOffers(partnerCode) {
     const container = document.getElementById("offersContainer");
     if (!container) return;
 
-    // Fetch active campaigns from SQL
+    // 1. Fetch from 'campaigns' table
     const { data: offers, error } = await supabaseClient
         .from('campaigns')
         .select('*')
-        .eq('is_active', true)
-        .order('id', { ascending: true });
+        .eq('is_active', true);
+
+    if (error) {
+        console.error("Supabase Error:", error);
+        container.innerHTML = "<p style='color:red;'>Error loading campaigns.</p>";
+        return;
+    }
 
     if (!offers || offers.length === 0) {
         container.innerHTML = "<p style='color:#666;text-align:center'>No active offers right now.</p>";
         return;
     }
 
-    // Render Cards
+    // 2. Render Cards using YOUR column names: title and payout_amount
     container.innerHTML = offers.map(offer => {
-        // Create a tracking link (e.g., cashtree.com/navi?ref=CT-TEST)
-        const link = `${window.location.origin}/offers/${offer.app_name.toLowerCase().replace(/\s+/g, '-')}/?ref=${partnerCode}`;
+        // Safe slug creation for the link
+        const appSlug = (offer.title || "offer").toLowerCase().replace(/\s+/g, '-');
+        const link = `${window.location.origin}/offers/${appSlug}/?ref=${partnerCode}`;
         
         return `
         <div class="offer-card">
             <div class="offer-info">
-                <h4>${offer.app_name}</h4>
-                <span class="payout-tag">Earn ₹${offer.promoter_payout}</span>
+                <h4>${offer.title}</h4>
+                <span class="payout-tag">Earn ₹${offer.payout_amount}</span>
             </div>
             <button class="copy-btn" onclick="copyLink('${link}')">
                 Copy Link 🔗
