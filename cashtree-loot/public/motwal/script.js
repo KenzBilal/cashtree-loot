@@ -1,42 +1,50 @@
+// --- 1. DEFINITIONS (This fixes the 'not defined' errors) ---
+const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
+
+// Make sure the library is loaded before creating the client
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Update this to your real Motwal link
+const OFFER_LINK = "https://trkkcoin.com/IT3779ZXP1/JAM0MN?ln=English"; 
+
+// --- 2. THE MAIN LOGIC ---
 document.getElementById("submitBtn").addEventListener("click", async function() {
     const btn = document.getElementById("submitBtn");
     const phone = document.getElementById("phone").value.trim();
     const upi = document.getElementById("upi").value.trim();
+    
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref'); 
 
-    if (phone.length < 10) { alert("Invalid Phone"); return; }
+    if (phone.length < 10) { alert("Please enter a valid phone number"); return; }
 
-    btn.innerText = "Processing...";
+    btn.innerText = "Connecting...";
     btn.disabled = true;
 
     try {
-        // 1. Get Campaign UUID
-        const { data: campaignData } = await supabaseClient
+        // Find Campaign ID
+        const { data: campaignData, error: campErr } = await supabaseClient
             .from('campaigns')
             .select('id')
             .eq('title', 'Motwal') 
-            .single();
+            .maybeSingle();
+        
+        if (campErr) throw campErr;
 
-        // 2. The Promoter UUID Lookup
+        // Find Promoter ID
         let promoterUuid = null;
         if (refCode) {
-            // Search the 'username' column for the refCode from the URL
-            const { data: pData, error: pErr } = await supabaseClient
+            const { data: pData } = await supabaseClient
                 .from('promoters')
                 .select('id')
                 .eq('username', refCode)
                 .maybeSingle();
             
-            if (pData) {
-                promoterUuid = pData.id; 
-                console.log("✅ Promoter Match Found. UUID:", promoterUuid);
-            } else {
-                console.warn("❌ No promoter found with username:", refCode);
-            }
+            if (pData) promoterUuid = pData.id; 
         }
 
-        // 3. Prepare the Lead Object
+        // Prepare Data
         const leadData = {
             phone: phone,
             upi_id: upi,
@@ -44,30 +52,30 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
             status: 'pending'
         };
 
-        // ONLY attach user_id if we have a valid UUID to satisfy the Foreign Key
         if (promoterUuid) {
             leadData.user_id = promoterUuid;
         }
 
-        // 4. Insert into 'leads'
+        // Insert into Supabase
         const { error: insertError } = await supabaseClient
             .from('leads')
             .insert([leadData]);
 
-        if (insertError) {
-            console.error("🔥 Database Insert Error:", insertError.message);
-            alert("Save Failed: " + insertError.message);
-            throw insertError;
-        }
+        if (insertError) throw insertError;
 
-        // 5. Success Flow
+        // Success Flow
         document.getElementById("statusMsg").style.display = "block";
-        btn.style.display = "none";
-        setTimeout(() => { window.location.href = OFFER_LINK; }, 1500);
+        btn.innerText = "Redirecting...";
+        
+        setTimeout(() => { 
+            window.location.href = OFFER_LINK; 
+        }, 1500);
 
     } catch (err) {
         console.error("Catch Block Error:", err);
-        // We still redirect so you don't lose the user
-        setTimeout(() => { window.location.href = OFFER_LINK; }, 3000);
+        // Fallback: If it fails, still send user to the offer
+        setTimeout(() => { 
+            window.location.href = OFFER_LINK; 
+        }, 2000);
     }
 });
