@@ -369,16 +369,16 @@ async function sendBroadcast() {
     btn.disabled = true;
     btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> BLASTING...`;
 
-    // 🔥 FIXED: Update system_config instead of inserting into announcements
+    // 🚀 Update the broadcast_message column in your config row
     const { error } = await db
         .from('system_config')
-        .update({ broadcast_message: msg })
-        .eq('id', 1); // This ensures you are updating the primary config row
+        .update({ broadcast_message: msg }) 
+        .eq('key', 'site_status'); // Target the main config row
 
     if(!error) {
         alert("🚀 BROADCAST LIVE: All promoters notified!");
         msgInput.value = "";
-        if(typeof closeBroadcastModal === 'function') closeBroadcastModal();
+        closeBroadcastModal();
     } else {
         alert("Error: " + error.message);
     }
@@ -387,15 +387,17 @@ async function sendBroadcast() {
     btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> BLAST MESSAGE`;
 }
 
-
 async function clearBroadcast() {
+    // 🛑 CHANGE: Removed .eq('id', 1) because the column 'id' does not exist
     const { error } = await db
         .from('system_config')
         .update({ broadcast_message: 'OFF' })
-        .eq('id', 1);
+        .eq('key', 'site_status'); // Target the same row used in sendBroadcast
 
     if(!error) {
         alert("🧹 Broadcast Cleared: All dashboards are now clean.");
+    } else {
+        alert("Error clearing broadcast: " + error.message);
     }
 }
 
