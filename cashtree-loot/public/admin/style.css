@@ -59,3 +59,4 @@ body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-ser
 .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: #22c55e; }
 input:checked + .slider:before { transform: translateX(22px); }
+#nav-broadcast i { filter: drop-shadow(0 0 5px rgba(234, 179, 8, 0.4)); }

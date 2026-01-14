@@ -43,6 +43,9 @@
             <a onclick="showSection('payouts')" id="nav-payouts" class="nav-item">
                 <i class="fas fa-wallet w-8 text-center"></i> <span class="font-medium">Settlements</span>
             </a>
+            <a onclick="openBroadcastModal()" id="nav-broadcast" class="nav-item group flex items-center p-3 rounded-lg hover:bg-slate-800 cursor-pointer text-slate-300 hover:text-white transition">
+                <i class="fas fa-bell w-8 text-center group-hover:text-yellow-400 transition animate-pulse"></i> <span class="font-medium">Broadcast Hub</span>
+            </a>
         </nav>
         
         <div class="p-6 border-t border-slate-800 bg-slate-900/50">
@@ -134,6 +137,26 @@
         </div>
 
     </main>
+
+    <div id="broadcastModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-90 hidden p-4">
+    <div class="glass-panel p-8 rounded-2xl w-full max-w-lg border border-yellow-500/30">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-white flex items-center"><i class="fas fa-bullhorn mr-3 text-yellow-500"></i> Global Broadcast</h2>
+            <button onclick="closeBroadcastModal()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Message Content</label>
+        <textarea id="broadcastMsg" rows="4" class="input-dark w-full mb-4" placeholder="Type your message to all promoters..."></textarea>
+        
+        <div class="bg-yellow-500/10 p-4 rounded-lg mb-6 border border-yellow-500/20">
+            <p class="text-xs text-yellow-200">This message will appear instantly on every promoter's dashboard.</p>
+        </div>
+        
+        <button onclick="sendBroadcast()" id="sendBtn" class="unlock-btn flex items-center justify-center">
+            <i class="fas fa-paper-plane mr-2"></i> BLAST MESSAGE
+        </button>
+    </div>
+    </div>
 
     <script src="admin.js"></script>
 </body>

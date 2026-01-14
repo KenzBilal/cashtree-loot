@@ -185,3 +185,45 @@ async function loadStats() {
     document.getElementById("statLeads").innerText = leadCount || 0;
     document.getElementById("statPromoters").innerText = promoterCount || 0;
 }
+
+// --- BROADCAST HUB LOGIC ---
+function openBroadcastModal() {
+    document.getElementById("broadcastModal").classList.remove("hidden");
+}
+
+function closeBroadcastModal() {
+    document.getElementById("broadcastModal").classList.add("hidden");
+}
+
+async function sendBroadcast() {
+    const msg = document.getElementById("broadcastMsg").value.trim();
+    const btn = document.getElementById("sendBtn");
+
+    if(!msg) {
+        alert("Please type a message before blasting!");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> BLASTING...`;
+
+    try {
+        const { error } = await supabase.from('announcements').insert([{
+            content: msg,
+            created_by: 'Admin',
+            type: 'global'
+        }]);
+
+        if(error) throw error;
+
+        alert("🚀 SUCCESS: Message broadcasted to all promoters!");
+        document.getElementById("broadcastMsg").value = "";
+        closeBroadcastModal();
+    } catch (err) {
+        console.error(err);
+        alert("Broadcast Error: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> BLAST MESSAGE`;
+    }
+}
