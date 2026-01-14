@@ -1,9 +1,3 @@
-const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-const OFFER_LINK = "https://trkkcoin.com/IT3779ZXP1/JAM0MN?ln=English";
-
 document.getElementById("submitBtn").addEventListener("click", async function() {
     const btn = document.getElementById("submitBtn");
     const phone = document.getElementById("phone").value.trim();
@@ -11,10 +5,7 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref'); 
 
-    if (phone.length < 10 || !upi.includes("@")) {
-      alert("Please enter a valid phone and UPI ID");
-      return;
-    }
+    if (phone.length < 10) { alert("Invalid Phone"); return; }
 
     btn.innerText = "Processing...";
     btn.disabled = true;
@@ -27,18 +18,25 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
             .eq('title', 'Motwal') 
             .single();
 
-        // 2. Get Promoter UUID (Foreign Key lookup)
+        // 2. The Promoter UUID Lookup
         let promoterUuid = null;
-        if (refCode && refCode !== "DIRECT") {
-            const { data: promoterData } = await supabaseClient
+        if (refCode) {
+            // Search the 'username' column for the refCode from the URL
+            const { data: pData, error: pErr } = await supabaseClient
                 .from('promoters')
                 .select('id')
                 .eq('username', refCode)
-                .single();
-            if (promoterData) promoterUuid = promoterData.id;
+                .maybeSingle();
+            
+            if (pData) {
+                promoterUuid = pData.id; 
+                console.log("✅ Promoter Match Found. UUID:", promoterUuid);
+            } else {
+                console.warn("❌ No promoter found with username:", refCode);
+            }
         }
 
-        // 3. Build the Data Object
+        // 3. Prepare the Lead Object
         const leadData = {
             phone: phone,
             upi_id: upi,
@@ -46,21 +44,30 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
             status: 'pending'
         };
 
-        // Only add user_id if it's a valid Foreign Key match
+        // ONLY attach user_id if we have a valid UUID to satisfy the Foreign Key
         if (promoterUuid) {
             leadData.user_id = promoterUuid;
         }
 
-        // 4. Insert
-        const { error } = await supabaseClient.from('leads').insert([leadData]);
-        if (error) throw error;
+        // 4. Insert into 'leads'
+        const { error: insertError } = await supabaseClient
+            .from('leads')
+            .insert([leadData]);
 
+        if (insertError) {
+            console.error("🔥 Database Insert Error:", insertError.message);
+            alert("Save Failed: " + insertError.message);
+            throw insertError;
+        }
+
+        // 5. Success Flow
         document.getElementById("statusMsg").style.display = "block";
         btn.style.display = "none";
         setTimeout(() => { window.location.href = OFFER_LINK; }, 1500);
 
     } catch (err) {
-        console.error("Error:", err.message);
-        window.location.href = OFFER_LINK; // Redirect anyway to keep user flow
+        console.error("Catch Block Error:", err);
+        // We still redirect so you don't lose the user
+        setTimeout(() => { window.location.href = OFFER_LINK; }, 3000);
     }
 });
