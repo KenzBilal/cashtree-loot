@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         // --- DASHBOARD PAGE LOGIC ---
         if (!partnerId) {
-            window.location.href = "../login.html"; // Guard: No ID = No Access
+            window.location.href = "login.html"; 
             return;
         }
         
@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Start the God-Mode Heartbeat (Every 10 seconds)
         applyGodModeLaws();
         setInterval(applyGodModeLaws, 10000);
+        // Refresh Broadcast every 60s
+        setInterval(checkBroadcast, 60000);
     }
 });
 
@@ -46,11 +48,17 @@ async function applyGodModeLaws() {
 
     // 🛑 MAINTENANCE ENFORCEMENT
     if (laws.site_status === 'MAINTENANCE') {
-        if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
+        if (maintenanceOverlay) {
+            maintenanceOverlay.style.display = 'flex';
+            maintenanceOverlay.classList.remove('hidden');
+        }
         if (mainDashboard) mainDashboard.style.display = 'none';
         return; 
     } else {
-        if (maintenanceOverlay) maintenanceOverlay.style.display = 'none';
+        if (maintenanceOverlay) {
+            maintenanceOverlay.style.display = 'none';
+            maintenanceOverlay.classList.add('hidden');
+        }
         if (mainDashboard) mainDashboard.style.display = 'block';
     }
 
@@ -67,7 +75,7 @@ async function applyGodModeLaws() {
         if (currentBalance >= minRequired) {
             btn.disabled = false;
             btn.style.opacity = "1";
-            btn.style.background = "#22c55e";
+            btn.style.background = "linear-gradient(180deg, #22c55e, #16a34a)";
             btn.style.cursor = "pointer";
             btn.innerText = "WITHDRAW NOW";
         } else {
@@ -113,7 +121,6 @@ async function loadPowerIntelligence(myId, myUsername) {
     const intelEl = document.getElementById('teamIntelligence');
     if (!intelEl) return;
 
-    // Fetch Army (Sub-Promoters) and Workers (Leads)
     const [subPromotersRes, leadsRes] = await Promise.all([
         db.from('promoters').select('username, created_at').eq('referred_by', myId).order('created_at', { ascending: false }),
         db.from('leads').select('phone, status, campaign_id').eq('user_id', myUsername).order('created_at', { ascending: false })
@@ -127,25 +134,23 @@ async function loadPowerIntelligence(myId, myUsername) {
 
     let html = "";
 
-    // Render Sub-Promoters
     if (subPromoters.length > 0) {
         html += `<div style="background: rgba(59, 130, 246, 0.1); padding: 8px 15px; font-size: 11px; font-weight: bold; color: #60a5fa;">👑 REFERRED PROMOTERS</div>`;
         subPromoters.forEach(p => {
-            html += `<div style="padding: 10px 15px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between;">
+            html += `<div style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
                 <span style="color: white; font-weight: bold;">${p.username}</span>
                 <span style="color: #22c55e; font-size: 10px; font-weight: 800;">ACTIVE</span>
             </div>`;
         });
     }
 
-    // Render Task Workers
     if (leads.length > 0) {
         html += `<div style="background: rgba(234, 179, 8, 0.1); padding: 8px 15px; font-size: 11px; font-weight: bold; color: #fbbf24; margin-top: 5px;">🎯 USER TASK TRACKER</div>`;
         leads.forEach(l => {
             const isDone = l.status === 'approved';
             const maskedPhone = l.phone ? `User (***${l.phone.slice(-4)})` : 'Normal User';
             html += `
-            <div style="padding: 12px 15px; border-bottom: 1px solid #1e293b;">
+            <div style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: white; font-size: 13px;">📱 ${maskedPhone}</span>
                     <span style="color: ${isDone ? '#22c55e' : '#f87171'}; font-size: 9px; font-weight: 900;">${l.status.toUpperCase()}</span>
@@ -161,7 +166,7 @@ async function loadPowerIntelligence(myId, myUsername) {
 }
 
 /* =========================================
-   5. AUTH & SECURITY
+   5. AUTH & BROADCAST HUB
    ========================================= */
 async function handleLogin() {
     const codeInput = document.getElementById("code").value.trim().toUpperCase();
@@ -187,6 +192,24 @@ async function handleLogin() {
     }
 }
 
+async function checkBroadcast() {
+    const { data } = await db.from('system_config').select('broadcast_message').eq('key', 'site_status').single();
+    const container = document.getElementById('broadcastContainer');
+    const textEl = document.getElementById('broadcastText');
+
+    if (container && textEl && data && data.broadcast_message && data.broadcast_message.toUpperCase() !== "OFF") {
+        textEl.innerText = data.broadcast_message;
+        container.classList.remove('hidden');
+        container.style.display = 'block';
+    } else if (container) {
+        container.classList.add('hidden');
+        container.style.display = 'none';
+    }
+}
+
+/* =========================================
+   6. UTILS & HELPERS
+   ========================================= */
 async function updatePassword() {
     const newPass = document.getElementById("newPass").value.trim();
     const promoterId = localStorage.getItem("p_id");
@@ -211,39 +234,6 @@ async function handlePasswordReset() {
     window.location.href = `https://wa.me/${adminWhatsApp}?text=${encodeURIComponent(message)}`;
 }
 
-/* =========================================
-   6. GLOBAL BROADCAST & MARKETING
-   ========================================= */
-async function checkBroadcast() {
-    // 1. Fetch from Supabase
-    const { data, error } = await db
-        .from('system_config')
-        .select('broadcast_message')
-        .eq('key', 'site_status') 
-        .single();
-
-    const container = document.getElementById('broadcastContainer');
-    const textEl = document.getElementById('broadcastText');
-
-    if (error || !data || !container || !textEl) return;
-
-    const msg = data.broadcast_message ? data.broadcast_message.trim() : "";
-
-    // 2. The Logic Switch
-    if (msg !== "" && msg.toUpperCase() !== "OFF") {
-        // --- THE FORCE REVEAL ---
-        textEl.innerText = msg;
-        container.classList.remove('hidden'); // Kill the hidden class
-        container.style.display = 'block';    // Force display to block
-        
-        console.log("📢 Broadcast Received: " + msg);
-    } else {
-        // --- THE FORCE HIDE ---
-        container.classList.add('hidden');
-        container.style.display = 'none';
-    }
-}
-
 function copyShareMessage() {
     const partnerName = document.getElementById("partnerName").innerText;
     const referLink = document.getElementById("referralLinkInput").value;
@@ -251,9 +241,6 @@ function copyShareMessage() {
     navigator.clipboard.writeText(viralMessage).then(() => alert("✅ Viral Ad Copied!"));
 }
 
-/* =========================================
-   7. UTILS
-   ========================================= */
 async function loadOffers(partnerCode) {
     const container = document.getElementById("offersContainer");
     if (!container) return;
@@ -271,7 +258,7 @@ async function loadOffers(partnerCode) {
 
 function copyLink(text) { navigator.clipboard.writeText(text).then(() => showToast("Copied!")); }
 function showToast(msg) { let t = document.getElementById("toast"); if(!t){ t=document.createElement("div"); t.id="toast"; document.body.appendChild(t);} t.innerText=msg; t.className="show"; setTimeout(()=>t.className="",3000); }
-function logout() { localStorage.clear(); window.location.href = "../login.html"; }
+function logout() { localStorage.clear(); window.location.href = "login.html"; }
 function copyReferralLink() { const el = document.getElementById('referralLinkInput'); navigator.clipboard.writeText(el.value).then(() => showToast("Invite Link Copied!")); }
 function openResetModal() { document.getElementById('resetModal').style.display = 'flex'; }
 function closeResetModal() { document.getElementById('resetModal').style.display = 'none'; }
