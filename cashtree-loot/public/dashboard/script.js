@@ -2,7 +2,8 @@
    1. SQL CONNECTION
    ========================================= */
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-const supabaseKey = 'sb_publishable_AB7iUKxOU50vnoqllSfAnQ_Wdji8gEc';
+// REPLACE THE KEY BELOW WITH YOUR LONG ANON KEY STARTING WITH 'eyJ'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -14,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- B. LOGIN PAGE LOGIC ---
     if (loginBtn) {
         loginBtn.addEventListener("click", async () => {
-            const codeInput = document.getElementById("code").value.trim();
+            const codeInput = document.getElementById("code").value.trim().toUpperCase();
             const passInput = document.getElementById("pass").value.trim();
 
             if (!codeInput || !passInput) {
@@ -25,10 +26,11 @@ document.addEventListener("DOMContentLoaded", () => {
             loginBtn.innerHTML = "Verifying...";
             loginBtn.disabled = true;
 
+            // Query the 'promoters' table using 'username'
             const { data, error } = await supabaseClient
-                .from('partners')
+                .from('promoters')
                 .select('*')
-                .eq('code', codeInput)
+                .eq('username', codeInput)
                 .eq('password', passInput)
                 .single();
 
@@ -37,8 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 loginBtn.innerHTML = "Unlock Dashboard";
                 loginBtn.disabled = false;
             } else {
+                // Save session info
                 localStorage.setItem("p_id", data.id);
-                localStorage.setItem("p_code", data.code);
+                localStorage.setItem("p_code", data.username);
                 
                 loginBtn.innerHTML = "✅ Success!";
                 setTimeout(() => window.location.href = "index.html", 1000);
@@ -48,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // --- C. DASHBOARD PAGE LOGIC ---
     else {
+        // If on index.html and not logged in, redirect to login
         if (!partnerId) {
             window.location.href = "login.html";
             return;
@@ -60,23 +64,27 @@ document.addEventListener("DOMContentLoaded", () => {
    DASHBOARD FUNCTIONS
    ========================================= */
 async function initDashboard(id) {
-    // 1. Fetch Partner Data
+    // 1. Fetch Promoter Data from the correct table
     const { data: user, error } = await supabaseClient
-        .from('partners')
+        .from('promoters')
         .select('*')
         .eq('id', id)
         .single();
 
     if (user) {
-        // Update UI
+        // Update UI Elements
         const balEl = document.getElementById("balanceDisplay");
         const nameEl = document.getElementById("partnerName");
         
-        if (balEl) balEl.innerText = "₹" + (user.balance || 0);
-        if (nameEl) nameEl.innerText = user.code;
+        // Match your database column names
+        if (balEl) balEl.innerText = "₹" + (user.wallet_balance || 0);
+        if (nameEl) nameEl.innerText = user.username;
 
-        // 2. Load the Money Making Offers
-        loadOffers(user.code);
+        // 2. Load the Offers
+        loadOffers(user.username);
+    } else {
+        // If user ID is invalid, logout
+        logout();
     }
 }
 
@@ -101,10 +109,10 @@ async function loadOffers(partnerCode) {
         return;
     }
 
-    // 2. Render Cards using YOUR column names: title and payout_amount
+    // 2. Render Cards
     container.innerHTML = offers.map(offer => {
-        // Safe slug creation for the link
         const appSlug = (offer.title || "offer").toLowerCase().replace(/\s+/g, '-');
+        // This generates your tracking link
         const link = `${window.location.origin}/offers/${appSlug}/?ref=${partnerCode}`;
         
         return `
@@ -128,7 +136,6 @@ function copyLink(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast("Link Copied! 🔗");
     }).catch(err => {
-        // Fallback for older browsers
         const textarea = document.createElement("textarea");
         textarea.value = text;
         document.body.appendChild(textarea);
