@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CashTree Loot</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="top">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div>
+                    <div class="greeting">Welcome back,</div>
+                    <div class="username" id="partnerName">Loading...</div>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout ➔</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Wallet Balance</div>
+                <div class="stat-value" id="balanceDisplay">₹0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Clicks</div>
+                <div class="stat-value">0</div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h3>🔥 Active Campaigns</h3>
+            <span class="badge">LIVE</span>
+        </div>
+
+        <div id="offersContainer" class="offers-list">
+            <div style="text-align:center; color:#666;">Loading...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>
