@@ -25,7 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Start the Empire
         initDashboard(partnerId);
         
-        // Start the God-Mode Heartbeat (Checks every 10 seconds)
+        // Start the God-Mode Heartbeat (Every 10 seconds)
+        // This ensures maintenance and laws sync instantly
         applyGodModeLaws();
         setInterval(applyGodModeLaws, 10000);
     }
@@ -35,10 +36,17 @@ document.addEventListener("DOMContentLoaded", () => {
    3. THE GOD-MODE PULSE (REAL-TIME CONTROL)
    ========================================= */
 async function applyGodModeLaws() {
+    // Fetch Laws using the unified 'db' client
     const { data: config, error } = await db.from('system_config').select('*');
-    if (error || !config) return;
+    
+    if (error) {
+        console.error("Sync Error:", error.message);
+        return;
+    }
 
-    // Map database rows to a law object
+    if (!config) return;
+
+    // Map database rows to a laws object
     const laws = {};
     config.forEach(c => laws[c.key] = c.value);
 
@@ -52,8 +60,10 @@ async function applyGodModeLaws() {
     if (laws.site_status === 'MAINTENANCE') {
         if(maintenanceOverlay) maintenanceOverlay.classList.remove('hidden');
         if(mainDashboard) mainDashboard.style.display = 'none';
-        return; // Pause other laws during lockdown
+        // We pause here so users can't interact while you work
+        return; 
     } else {
+        // System is LIVE - Restore visibility
         if(maintenanceOverlay) maintenanceOverlay.classList.add('hidden');
         if(mainDashboard) mainDashboard.style.display = 'block';
     }
@@ -63,19 +73,22 @@ async function applyGodModeLaws() {
         const minRequired = parseInt(laws.min_payout || 500);
         displayMin.innerText = `₹${minRequired}`;
 
+        // Get current balance from text safely
         const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
 
         if (currentBalance >= minRequired) {
+            // UNLOCKED
             btn.disabled = false;
             btn.style.opacity = "1";
             btn.style.cursor = "pointer";
             btn.style.background = "#22c55e"; // Success Green
             btn.innerText = "WITHDRAW NOW";
         } else {
+            // LOCKED
             btn.disabled = true;
             btn.style.opacity = "0.5";
             btn.style.cursor = "not-allowed";
-            btn.style.background = "#1e293b"; // Slate
+            btn.style.background = "#1e293b"; // Slate Dark
             btn.innerText = `NEED ₹${Math.max(0, minRequired - currentBalance)} MORE`;
         }
     }
@@ -172,7 +185,6 @@ function copyLink(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast("Link Copied! 🔗");
     }).catch(() => {
-        // Fallback for older browsers
         const textarea = document.createElement("textarea");
         textarea.value = text;
         document.body.appendChild(textarea);
