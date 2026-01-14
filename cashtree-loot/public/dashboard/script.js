@@ -46,21 +46,22 @@ async function applyGodModeLaws() {
     const mainDashboard = document.querySelector('.dashboard');
 
     // --- THE FIX LOGIC ---
+    // --- UPDATED MAINTENANCE TOGGLE ---
     if (laws.site_status === 'MAINTENANCE') {
-        // 1. Show Maintenance: Remove hidden class and set display to flex
         if (maintenanceOverlay) {
             maintenanceOverlay.classList.remove('hidden');
-            maintenanceOverlay.style.display = 'flex'; 
+            maintenanceOverlay.style.display = 'flex'; // Use flex for centering
         }
         if (mainDashboard) mainDashboard.style.display = 'none';
         return; 
     } else {
-        // 2. Hide Maintenance: Add hidden class and set display to none
         if (maintenanceOverlay) {
             maintenanceOverlay.classList.add('hidden');
-            maintenanceOverlay.style.display = 'none';
+            maintenanceOverlay.style.display = 'none'; // Completely kill it
         }
-        if (mainDashboard) mainDashboard.style.display = 'block';
+        if (mainDashboard) {
+            mainDashboard.style.display = 'block'; // Bring back the dashboard
+        }
     }
     
 
