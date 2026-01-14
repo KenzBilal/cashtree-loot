@@ -297,16 +297,24 @@ function copyReferralLink() {
 }
 async function loadPowerIntelligence(myId, myUsername) {
     const intelEl = document.getElementById('teamIntelligence');
-    
-    // 1. Fetch SUB-PROMOTERS (People who created an account)
-    const { data: subPromoters } = await db.from('promoters')
-        .select('username, created_at, wallet_balance')
-        .eq('referred_by', myId);
+    if (!intelEl) return;
 
-    // 2. Fetch LEADS (People who are doing tasks via the promoter's link)
-    const { data: leads } = await db.from('leads')
-        .select('full_name, status, campaign_title, created_at')
-        .eq('promoter_id', myUsername);
+    // 1. Fetch SUB-PROMOTERS (People who created an account)
+    const { data: subPromoters, error: pError } = await db.from('promoters')
+        .select('username, created_at')
+        .eq('referred_by', myId)
+        .order('created_at', { ascending: false });
+
+    // 2. Fetch LEADS (People doing tasks)
+    // Map: user_id = your promoter username, campaign_id = the task
+    const { data: leads, error: lError } = await db.from('leads')
+        .select('phone, status, campaign_id, created_at')
+        .eq('user_id', myUsername)
+        .order('created_at', { ascending: false });
+
+    if (pError || lError) {
+        console.error("Intelligence Sync Error:", pError || lError);
+    }
 
     let html = "";
 
@@ -334,17 +342,21 @@ async function loadPowerIntelligence(myId, myUsername) {
         leads.forEach(l => {
             const isDone = l.status === 'approved';
             const statusColor = isDone ? '#22c55e' : '#f87171';
+            
+            // Mask phone for privacy: 9876543210 -> User (***3210)
+            const maskedPhone = l.phone ? `User (***${l.phone.slice(-4)})` : 'Normal User';
+            
             const alertText = isDone ? 
                 `<span style="color: #22c55e;">✅ Goal Reached!</span>` : 
-                `<span style="color: #f87171; animation: pulse 2s infinite;">⚠️ Half-way: Tell user to finish task!</span>`;
+                `<span style="color: #f87171; animation: pulse 2s infinite;"><i class="fas fa-exclamation-triangle"></i> Half-way: Tell user to finish task!</span>`;
 
             html += `
             <div style="padding: 12px 15px; border-bottom: 1px solid #1e293b;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="color: white; font-size: 13px; font-weight: 600;">👤 ${l.full_name || 'Normal User'}</span>
+                    <span style="color: white; font-size: 13px; font-weight: 600;">📱 ${maskedPhone}</span>
                     <span style="background: ${statusColor}22; color: ${statusColor}; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${l.status.toUpperCase()}</span>
                 </div>
-                <div style="font-size: 11px; color: #64748b;">Offer: ${l.campaign_title}</div>
+                <div style="font-size: 11px; color: #64748b;">Campaign ID: ${l.campaign_id}</div>
                 <div style="font-size: 11px; font-weight: bold; margin-top: 5px;">${alertText}</div>
             </div>`;
         });
@@ -356,6 +368,8 @@ async function loadPowerIntelligence(myId, myUsername) {
 
     intelEl.innerHTML = html;
 }
+
+
 function openResetModal() {
     document.getElementById('resetModal').style.display = 'flex';
 }
