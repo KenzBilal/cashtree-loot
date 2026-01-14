@@ -21,28 +21,30 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
     btn.innerText = "Saving...";
     btn.disabled = true;
 
-    try {
-        // 1. Get the real ID for "Motwal" from the campaigns table
+   try {
+        // 1. Find the Campaign UUID (Matches "Motwal" or "Angel One")
         const { data: campaignData } = await supabaseClient
             .from('campaigns')
             .select('id')
-            .eq('title', 'Motwal')
+            .eq('title', 'Motwal') // Change to 'Angel One' for that script
             .single();
 
-        if (!campaignData) {
-            console.error("Campaign 'Motwal' not found in database.");
-            alert("Configuration error. Please contact admin.");
-            return;
-        }
+        // 2. Find the Promoter UUID (Matches the ref code "JANNAH123")
+        const { data: promoterData } = await supabaseClient
+            .from('promoters')
+            .select('id')
+            .eq('username', refCode)
+            .single();
 
-        // 2. Insert into 'leads' using the real campaign ID
+        // 3. Insert into 'leads' using the actual UUIDs
         const { error } = await supabaseClient
           .from('leads')
           .insert([{
               phone: phone,
               upi_id: upi,
-              user_id: refCode,
-              campaign_id: campaignData.id, // This is the UUID it wants!
+              // If promoter not found, we use null so the database doesn't crash
+              user_id: promoterData ? promoterData.id : null, 
+              campaign_id: campaignData ? campaignData.id : null,
               status: 'pending'
           }]);
 
@@ -55,6 +57,7 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
 
     } catch (err) {
         console.error("Supabase Error:", err);
+        // If the error is still about UUIDs, we alert the admin
         alert("Error saving lead: " + err.message);
         btn.disabled = false;
         btn.innerText = "Submit & Download App";

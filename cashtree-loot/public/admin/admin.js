@@ -27,32 +27,45 @@ window.switchTab = function(type) {
 
 // 3. DATA LOADING
 async function loadData() {
-    // A. Fetch Campaigns first to map UUIDs to Names
+    // 1. Fetch Campaigns to map UUID -> Title
     const { data: campaignList } = await supabaseClient.from('campaigns').select('id, title');
     const campaignMap = {};
     if (campaignList) {
         campaignList.forEach(c => campaignMap[c.id] = c.title);
     }
 
-    // B. Fetch Pending Leads
+    // 2. Fetch Promoters to map UUID -> Username
+    const { data: promoterList } = await supabaseClient.from('promoters').select('id, username');
+    const promoterMap = {};
+    if (promoterList) {
+        promoterList.forEach(p => promoterMap[p.id] = p.username);
+    }
+
+    // 3. Fetch Pending Leads
     const { data: leads, error: e1 } = await supabaseClient
         .from('leads')
         .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
+    if (e1) {
+        console.error("Error fetching leads:", e1);
+        return;
+    }
+
     document.getElementById("leadsList").innerHTML = (leads || []).map(l => {
+        // Use our maps to get the readable names
         const appName = campaignMap[l.campaign_id] || "Unknown Offer";
+        const promoterUsername = promoterMap[l.user_id] || "DIRECT/UNKNOWN";
         const upi = l.upi_id;
         const phone = l.phone;
-        const promoter = l.user_id;
 
         return `
             <div class="card" style="border-left: 5px solid #00ff88; margin-bottom: 12px; padding: 15px; background: #1a1a1a; color: white; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <strong style="font-size: 1.1em; color: #00ff88;">${appName}</strong><br>
-                        <small style="color: #aaa;">Promoter: ${promoter}</small><br>
+                        <small style="color: #aaa;">Promoter: <b>@${promoterUsername}</b></small><br>
                         <span style="display: block; margin-top: 5px;">📞 ${phone}</span>
                         <code style="display: inline-block; background: #333; padding: 3px 8px; border-radius: 4px; margin-top: 8px; font-size: 0.9em;">${upi || 'No UPI'}</code>
                     </div>
@@ -65,7 +78,7 @@ async function loadData() {
         `;
     }).join('') || "<p style='text-align:center; color:#888;'>No pending leads found.</p>";
 
-    // C. Fetch Promoters with Balance
+    // 4. Fetch Promoters with Balance
     const { data: promoters } = await supabaseClient
         .from('promoters')
         .select('*')
