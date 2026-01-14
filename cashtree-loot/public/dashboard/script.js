@@ -36,59 +36,52 @@ document.addEventListener("DOMContentLoaded", () => {
    3. THE GOD-MODE PULSE (REAL-TIME CONTROL)
    ========================================= */
 async function applyGodModeLaws() {
-    // Fetch Laws using the unified 'db' client
     const { data: config, error } = await db.from('system_config').select('*');
-    
-    if (error) {
-        console.error("Sync Error:", error.message);
-        return;
-    }
+    if (error || !config) return;
 
-    if (!config) return;
-
-    // Map database rows to a laws object
     const laws = {};
     config.forEach(c => laws[c.key] = c.value);
 
     const maintenanceOverlay = document.getElementById('maintenanceScreen');
     const mainDashboard = document.querySelector('.dashboard');
+
+    // --- THE FIX LOGIC ---
+    if (laws.site_status === 'MAINTENANCE') {
+        // 1. Show Maintenance: Remove hidden class and set display to flex
+        if (maintenanceOverlay) {
+            maintenanceOverlay.classList.remove('hidden');
+            maintenanceOverlay.style.display = 'flex'; 
+        }
+        if (mainDashboard) mainDashboard.style.display = 'none';
+        return; 
+    } else {
+        // 2. Hide Maintenance: Add hidden class and set display to none
+        if (maintenanceOverlay) {
+            maintenanceOverlay.classList.add('hidden');
+            maintenanceOverlay.style.display = 'none';
+        }
+        if (mainDashboard) mainDashboard.style.display = 'block';
+    }
+    
+
+    // (The rest of your withdrawal enforcement code follows here...)
     const displayMin = document.getElementById('display_min_payout');
     const btn = document.getElementById('withdrawBtn');
     const balEl = document.getElementById("balanceDisplay");
 
-    // A. ENFORCE MAINTENANCE LOCKDOWN
-    if (laws.site_status === 'MAINTENANCE') {
-        if(maintenanceOverlay) maintenanceOverlay.classList.remove('hidden');
-        if(mainDashboard) mainDashboard.style.display = 'none';
-        // We pause here so users can't interact while you work
-        return; 
-    } else {
-        // System is LIVE - Restore visibility
-        if(maintenanceOverlay) maintenanceOverlay.classList.add('hidden');
-        if(mainDashboard) mainDashboard.style.display = 'block';
-    }
-
-    // B. ENFORCE WITHDRAWAL LAW
     if (displayMin && btn && balEl) {
         const minRequired = parseInt(laws.min_payout || 500);
         displayMin.innerText = `₹${minRequired}`;
-
-        // Get current balance from text safely
         const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
 
         if (currentBalance >= minRequired) {
-            // UNLOCKED
             btn.disabled = false;
             btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
-            btn.style.background = "#22c55e"; // Success Green
+            btn.style.background = "#22c55e";
             btn.innerText = "WITHDRAW NOW";
         } else {
-            // LOCKED
             btn.disabled = true;
             btn.style.opacity = "0.5";
-            btn.style.cursor = "not-allowed";
-            btn.style.background = "#1e293b"; // Slate Dark
             btn.innerText = `NEED ₹${Math.max(0, minRequired - currentBalance)} MORE`;
         }
     }
