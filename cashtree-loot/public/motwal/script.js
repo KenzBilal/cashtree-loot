@@ -1,68 +1,64 @@
 // ==========================================
-// 🚀 PROMOTER SIGNUP LOGIC
+// 🚀 MOTWAL LEAD LOGIC
 // ==========================================
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-const supabaseKey = 'sb_publishable_AB7iUKxOU50vnoqllSfAnQ_Wdji8gEc';
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-document.addEventListener("DOMContentLoaded", () => {
-    const signupBtn = document.getElementById("signupBtn");
-    if (signupBtn) {
-        signupBtn.addEventListener("click", attemptSignup);
-    }
-});
+// Update this with your actual Motwal affiliate/tracking link
+const OFFER_LINK = "https://YOUR_MOTWAL_AFFILIATE_LINK_HERE";
 
-async function attemptSignup() {
-    const name = document.getElementById("newName").value.trim();
-    const code = document.getElementById("newCode").value.trim().toUpperCase();
-    const upi = document.getElementById("newUpi").value.trim();
-    const pass = document.getElementById("newPass").value.trim();
-    const referCode = document.getElementById("referCode").value.trim().toUpperCase();
+document.getElementById("submitBtn").addEventListener("click", async function() {
+    const btn = document.getElementById("submitBtn");
+    const msg = document.getElementById("statusMsg");
     
-    const btn = document.getElementById("signupBtn");
+    // 1. GET USER INPUT
+    const phone = document.getElementById("phone").value.trim();
+    const upi = document.getElementById("upi").value.trim();
 
-    // Basic Validation
-    if (!name || !code || !upi || !pass) {
-        alert("Please fill all required fields.");
-        return;
+    // 2. GET PROMOTER CODE FROM URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref') || "DIRECT"; 
+
+    // 3. VALIDATION
+    if (!/^[0-9]{10}$/.test(phone)) {
+      alert("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    if (upi.length < 5 || !upi.includes("@")) {
+      alert("Please enter a valid UPI ID");
+      return;
     }
 
-    btn.innerText = "Creating Account...";
+    // 4. LOCK BUTTON
+    btn.innerText = "Processing...";
     btn.disabled = true;
 
     try {
-        // Prepare the data object
-        const promoterData = {
-            full_name: name,
-            username: code,
-            upi_id: upi,
-            password: pass, // Stored in our new SQL column
-            referred_by: referCode || null,
-            wallet_balance: referCode ? 20 : 0 // Give ₹20 if they joined via someone
-        };
+        // 5. INSERT INTO LEADS TABLE
+        const { error } = await supabaseClient
+          .from('leads')
+          .insert([{
+              phone: phone,         // Ensure 'phone' column (text) exists in leads table
+              upi_id: upi,          // Matches your column
+              user_id: refCode,     // Stores the promoter code
+              campaign_id: 'Motwal', // Stores the app name
+              status: 'pending'
+          }]);
 
-        const { error } = await supabase
-            .from('promoters')
-            .insert([promoterData]);
+        if (error) throw error;
 
-        if (error) {
-            if (error.code === '23505') {
-                alert("This Promoter Code is already taken. Try another!");
-            } else {
-                alert("Error: " + error.message);
-            }
-            return;
-        }
-
-        // Success - Redirect to Login
-        alert("Registration Successful! Now login with your code and password.");
-        window.location.href = "../dashboard/login.html";
+        // 6. SUCCESS: REDIRECT
+        msg.style.display = "block";
+        btn.style.display = "none";
+        
+        setTimeout(() => {
+            window.location.href = OFFER_LINK;
+        }, 1500);
 
     } catch (err) {
-        console.error(err);
-        alert("Something went wrong. Please try again.");
-    } finally {
-        btn.innerText = "Sign Up as Promoter";
-        btn.disabled = false;
+        console.error("Submission Error:", err);
+        // Fail-safe redirect
+        window.location.href = OFFER_LINK;
     }
-}
+});

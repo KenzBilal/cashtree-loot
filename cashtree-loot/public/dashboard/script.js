@@ -92,7 +92,6 @@ async function loadOffers(partnerCode) {
     const container = document.getElementById("offersContainer");
     if (!container) return;
 
-    // 1. Fetch from 'campaigns' table
     const { data: offers, error } = await supabaseClient
         .from('campaigns')
         .select('*')
@@ -109,11 +108,12 @@ async function loadOffers(partnerCode) {
         return;
     }
 
-    // 2. Render Cards
     container.innerHTML = offers.map(offer => {
-        const appSlug = (offer.title || "offer").toLowerCase().replace(/\s+/g, '-');
-        // This generates your tracking link
-        const link = `${window.location.origin}/offers/${appSlug}/?ref=${partnerCode}`;
+        const folderName = (offer.title || "offer").toLowerCase().replace(/\s+/g, '');
+        
+        
+        // Result: https://cashtree.online/motwal/?ref=KENZB
+        const link = `${window.location.origin}/${folderName}/?ref=${partnerCode}`;
         
         return `
         <div class="offer-card">

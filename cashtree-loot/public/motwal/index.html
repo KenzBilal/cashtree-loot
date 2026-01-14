@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <title>Motwal App Reward – CashTree Loot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Install Motwal via CashTree Loot and earn ₹70 after verification.">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
 
@@ -17,19 +16,28 @@
 
     <div class="earn-box">
       <strong>How you earn ₹70:</strong><br>
-      • Install Motwal from the link<br>
+      • Click the button below<br>
       • Register using your Phone Number<br>
-      • Reward credited to your UPI after verification
+      • Complete the basic profile setup<br>
+      • Reward credited to UPI after verification
+    </div>
+
+    <div class="info-box" style="margin-top:15px;">
+        <strong>Requirements:</strong><br>
+        • Aadhaar linked to Mobile<br>
+        • Valid PAN Card<br>
+        • New Users Only<br>
+        • <strong>Reward: ₹70</strong>
     </div>
 
     <div class="section">
-      <label>Phone Number (Must match App login)</label>
+      <label>Phone Number (Used for Motwal)</label>
       <input type="tel" id="phone" placeholder="Enter 10-digit mobile number">
     </div>
 
     <div class="section">
       <label>Your UPI ID (For Payment)</label>
-      <input type="text" id="upi" placeholder="Ex: number@paytm">
+      <input type="text" id="upi" placeholder="Ex: name@upi">
     </div>
 
     <button class="submit-btn" id="submitBtn">
@@ -37,17 +45,12 @@
     </button>
 
     <p id="statusMsg" style="display:none; color: #16a34a; font-weight: bold; text-align: center; margin-top: 15px;">
-      ✅ Details Saved! Redirecting...
+      ✅ Redirecting to Offer...
     </p>
-
-    <div class="submit-desc">
-      After clicking submit, you will be redirected to the official app page.
-      <br><br>
-      <strong>CashTree Loot</strong> pays only for successful leads verified by our system.
-    </div>
 
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
+
 </body>
 </html>
