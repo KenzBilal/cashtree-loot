@@ -1,269 +1,123 @@
 /* =========================================
-   0. UNIVERSAL RESET & THEME
+   1. SOVEREIGN THEME (OG MATCHED)
    ========================================= */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
 :root {
-  --bg: #02050a;
-  --card-glass: rgba(11, 18, 26, 0.7); /* Upgraded to Glass */
+  --bg-1: #04060a;
+  --bg-2: #07101a;
+  --card: rgba(255, 255, 255, 0.04);
   --border: rgba(255, 255, 255, 0.08);
   --text: #eaf2f8;
-  --green: #22c55e;
-  --green-dark: #15803d;
-  --muted: #94a3b8;
-  --emerald-glow: rgba(34, 197, 94, 0.2);
+  --muted: #90a0b0;
+  --accent: #22c55e;
+  --accent-glow: rgba(34, 197, 94, 0.3);
+  --blue: #3b82f6;
 }
 
 body {
-  margin: 0;
-  background: var(--bg);
-  background-image: radial-gradient(circle at 50% 0%, #0b121a 0%, #02050a 100%);
+  font-family: 'Inter', sans-serif;
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background: radial-gradient(1200px 600px at 12% 12%, rgba(36, 54, 60, 0.12), transparent 60%),
+              linear-gradient(180deg, var(--bg-1), var(--bg-2) 65%);
+  margin: 0;
   min-height: 100vh;
-}
-
-/* =========================================
-   3. DASHBOARD (GLASS UPGRADE)
-   ========================================= */
-.dashboard {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Header */
-header.top {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  padding: 10px 0;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--green), #22d3ee);
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  box-shadow: 0 0 20px var(--emerald-glow);
-  border: 1px solid rgba(255,255,255,0.2);
+  padding: 20px 0;
 }
 
-.username {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255,255,255,0.1);
-}
-
-.logout-btn {
-  padding: 8px 16px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(5px);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.logout-btn:hover {
-  background: var(--green);
-  color: #02050a;
-  box-shadow: 0 0 20px var(--green);
-  transform: translateY(-2px);
+.dashboard {
+  width: 100%;
+  max-width: 480px; /* Mobile First Chunky Look */
+  padding: 20px;
 }
 
 /* =========================================
-   STATS (ENHANCED GLASS)
+   2. CARDS & GRID
    ========================================= */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 25px;
-}
-
 .stat-box {
-  background: var(--card-glass);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 20px;
-  text-align: center;
-  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+  margin-bottom: 15px;
 }
 
-.stat-box:hover {
-  border-color: rgba(34, 197, 94, 0.3);
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
-  transform: translateY(-4px);
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 28px;
   font-weight: 900;
-  color: var(--green);
-  text-shadow: 0 0 15px var(--emerald-glow);
+  color: var(--accent);
+  text-shadow: 0 0 15px var(--accent-glow);
 }
 
 /* =========================================
-   OFFERS & CAMPAIGNS (CLEAN LIST)
+   3. HEADER & BUTTONS
    ========================================= */
-.section-header h3 {
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.offer-card {
-  background: var(--card-glass);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border);
-  padding: 18px;
-  border-radius: 18px;
+.top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
-}
-
-.offer-card:hover {
-  border-color: var(--green);
-  background: rgba(34, 197, 94, 0.03);
-  transform: scale(1.02);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-}
-
-.offer-info h4 {
-  font-weight: 700;
-  color: #fff;
-}
-
-/* Withdrawal Button Locked State */
-.withdraw-trigger:disabled {
-  background: rgba(30, 41, 59, 0.5) !important;
-  color: #64748b !important;
-  border: 1px dashed #334155 !important;
-}
-
-/* =========================================
-   LOGIN PAGE (PREMIUM & UNCHANGED)
-   ========================================= */
-body.login-mode {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 15% 50%, rgba(34,197,94,0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(34,211,238,0.08), transparent 25%),
-    #04060a;
-}
-
-.login-box {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(13,18,24,0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 24px;
-  padding: 48px 32px;
-  text-align: center;
-}
-
-.login-brand {
-  font-size: 1.8rem;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
-
-.login-brand span {
-  color: var(--green);
-}
-
-.login-desc {
-  color: var(--muted);
-  font-size: 0.95rem;
   margin-bottom: 30px;
 }
 
-.input-field {
-  margin-bottom: 18px;
-  text-align: left;
-}
+.user-info { display: flex; gap: 12px; align-items: center; }
+.user-avatar { font-size: 24px; background: var(--card); padding: 10px; border-radius: 12px; }
+.username { font-weight: 900; font-size: 18px; }
 
-.input-field label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.input-field input {
-  width: 100%;
-  padding: 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(0,0,0,0.35);
-  color: #fff;
-  outline: none;
-}
-
-.input-field input:focus {
-  border-color: var(--green);
-}
-
-.login-submit-btn {
-  width: 100%;
-  padding: 18px;
-  background: linear-gradient(180deg, var(--green), var(--green-dark));
-  border-radius: 14px;
-  font-weight: 800;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.login-submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: #f87171;
+  padding: 8px 15px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
 }
 
 /* =========================================
-   UTILITIES
+   4. NETWORK INTEL & ANIMATIONS
    ========================================= */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 .hidden { display: none !important; }
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* =========================================
+   5. CAMPAIGNS & BADGES
+   ========================================= */
+.badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 900;
 }
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h3 { font-size: 14px; color: var(--muted); }

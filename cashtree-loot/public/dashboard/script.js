@@ -215,14 +215,31 @@ async function handlePasswordReset() {
    6. GLOBAL BROADCAST & MARKETING
    ========================================= */
 async function checkBroadcast() {
-    const { data: config } = await db.from('system_config').select('broadcast_message').single();
+    // 1. Fetch from Supabase
+    const { data, error } = await db
+        .from('system_config')
+        .select('broadcast_message')
+        .eq('key', 'site_status') 
+        .single();
+
     const container = document.getElementById('broadcastContainer');
     const textEl = document.getElementById('broadcastText');
 
-    if (container && textEl && config?.broadcast_message && config.broadcast_message.toUpperCase() !== "OFF") {
-        textEl.innerText = config.broadcast_message;
-        container.style.display = 'block';
-    } else if (container) {
+    if (error || !data || !container || !textEl) return;
+
+    const msg = data.broadcast_message ? data.broadcast_message.trim() : "";
+
+    // 2. The Logic Switch
+    if (msg !== "" && msg.toUpperCase() !== "OFF") {
+        // --- THE FORCE REVEAL ---
+        textEl.innerText = msg;
+        container.classList.remove('hidden'); // Kill the hidden class
+        container.style.display = 'block';    // Force display to block
+        
+        console.log("📢 Broadcast Received: " + msg);
+    } else {
+        // --- THE FORCE HIDE ---
+        container.classList.add('hidden');
         container.style.display = 'none';
     }
 }

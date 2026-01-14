@@ -419,20 +419,29 @@ async function saveSystemConfig() {
     const minPayout = document.getElementById('cfg_min_payout').value;
     const supportNum = document.getElementById('cfg_support').value;
     const status = document.getElementById('cfg_status').value;
+    const saveBtn = document.querySelector('.unlock-btn'); // Target the God Config button
 
-    const updates = [
-        { key: 'min_payout', value: minPayout },
-        { key: 'support_number', value: supportNum },
-        { key: 'site_status', value: status }
-    ];
+    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> SYNCING LAWS...`;
+    saveBtn.disabled = true;
 
-    const { error } = await db.from('system_config').upsert(updates);
+    // Execute all updates simultaneously for maximum speed
+    const results = await Promise.all([
+        db.from('system_config').update({ value: minPayout }).eq('key', 'min_payout'),
+        db.from('system_config').update({ value: supportNum }).eq('key', 'support_number'),
+        db.from('system_config').update({ value: status }).eq('key', 'site_status')
+    ]);
 
-    if (!error) {
+    const hasError = results.some(res => res.error);
+
+    if (!hasError) {
         alert("🌍 GOD MODE: System laws updated and synced!");
-        // Optional: Send a broadcast automatically to tell people things changed
         if (status === 'MAINTENANCE') {
-            alert("⚠️ WARNING: You have set the site to Maintenance Mode!");
+            alert("⚠️ WARNING: The Empire is now under Lockdown (Maintenance Mode).");
         }
+    } else {
+        alert("❌ Error: One or more laws failed to sync. Check database permissions.");
     }
+
+    saveBtn.innerHTML = `<i class="fas fa-save mr-2"></i> APPLY CHANGES GLOBALLY`;
+    saveBtn.disabled = false;
 }

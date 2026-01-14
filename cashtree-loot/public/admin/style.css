@@ -1,36 +1,35 @@
-/* 👑 CASHTREE COMMAND CENTER: FINAL BOSS CSS
-   Theme: Deep Slate, Emerald Neon, & Liquid Glass
-*/
-
+/* =========================================
+   1. SOVEREIGN THEME & CORE VARIABLES
+   ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
 
 :root {
-    --bg-deep: #0f172a;
-    --bg-card: rgba(30, 41, 59, 0.6);
-    --brand-emerald: #10b981;
+    --bg-deep: #04060a;      /* OG Deep Black */
+    --bg-slate: #07101a;     /* OG Slate Blue */
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --accent: #22c55e;       /* OG Vibrant Green */
+    --accent-glow: rgba(34, 197, 94, 0.3);
     --brand-blue: #3b82f6;
     --brand-red: #ef4444;
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --emerald-glow: rgba(16, 185, 129, 0.2);
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body { 
     background-color: var(--bg-deep); 
-    color: #f1f5f9; 
+    color: #eaf2f8; 
     font-family: 'Inter', sans-serif;
-    /* Subtle radial depth to make glass pop */
-    background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+    /* OG Radial Background */
+    background-image: radial-gradient(1200px 600px at 12% 12%, rgba(36, 54, 60, 0.12), transparent 60%),
+                      linear-gradient(180deg, var(--bg-deep), var(--bg-slate) 65%);
     height: 100vh;
     overflow: hidden;
 }
 
-/* --- THE ULTIMATE GLASS PANEL --- */
+/* =========================================
+   2. THE ULTIMATE GLASS PANEL
+   ========================================= */
 .glass-panel { 
     background: var(--bg-card); 
     backdrop-filter: blur(12px) saturate(180%); 
@@ -39,17 +38,19 @@ body {
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* --- SECTION ANIMATIONS --- */
 .section { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(12px); } 
+    from { opacity: 0; transform: translateY(10px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
 
-/* --- NAVIGATION SIDEBAR --- */
+/* =========================================
+   3. SIDEBAR (COMMAND NAV)
+   ========================================= */
 aside {
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(4, 6, 10, 0.85);
     border-right: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
 }
 
 .nav-label { 
@@ -57,171 +58,140 @@ aside {
     font-weight: 800; 
     color: #475569; 
     text-transform: uppercase; 
-    letter-spacing: 0.1em; 
+    letter-spacing: 0.12em; 
     padding: 0 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .nav-item { 
     display: flex; 
     align-items: center; 
-    padding: 0.85rem 1rem; 
+    padding: 0.85rem 1.25rem; 
     border-radius: 0.75rem; 
     cursor: pointer; 
     color: #94a3b8; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+    margin-bottom: 0.4rem;
 }
 
 .nav-item:hover { 
-    background: rgba(255, 255, 255, 0.03); 
+    background: rgba(255, 255, 255, 0.05); 
     color: #fff; 
-    transform: translateX(4px);
 }
 
 .nav-item.active { 
-    background: rgba(16, 185, 129, 0.1); 
-    color: var(--brand-emerald); 
-    border-left: 4px solid var(--brand-emerald);
-    box-shadow: 10px 0 20px -10px var(--emerald-glow);
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.15), transparent);
+    color: var(--accent); 
+    border-left: 3px solid var(--accent);
+    box-shadow: inset 10px 0 20px -10px var(--accent-glow);
 }
 
-/* --- STAT CARDS --- */
+/* =========================================
+   4. CHUNKY STAT CARDS (OG STYLE)
+   ========================================= */
 .stat-card { 
-    background: var(--bg-card);
+    background: var(--card);
     backdrop-filter: blur(8px);
-    padding: 1.5rem; 
-    border-radius: 1.25rem; 
+    padding: 1.75rem; 
+    border-radius: 20px; 
     border: 1px solid var(--glass-border);
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .stat-card:hover { 
-    transform: translateY(-6px);
-    background: rgba(30, 41, 59, 0.8);
+    transform: translateY(-5px);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
 .stat-card.border-green-500 { 
-    border-top: 4px solid var(--brand-emerald); 
-    box-shadow: 0 10px 20px -10px var(--emerald-glow);
+    border-top: 4px solid var(--accent); 
+    box-shadow: 0 10px 30px -10px var(--accent-glow);
 }
 
-.stat-card.border-red-500 { 
-    border-top: 4px solid var(--brand-red); 
-    box-shadow: 0 10px 20px -10px rgba(239, 68, 68, 0.15);
-}
+.stat-card.border-red-500 { border-top: 4px solid var(--brand-red); }
+.stat-card.border-blue-500 { border-top: 4px solid var(--brand-blue); }
 
-.stat-card.border-blue-500 { 
-    border-top: 4px solid var(--brand-blue); 
-    box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.15);
-}
-
-/* --- SECURITY VAULT INPUT --- */
+/* =========================================
+   5. SECURITY VAULT & INPUTS
+   ========================================= */
 .vault-input { 
     width: 100%; 
-    padding: 1.25rem; 
-    background: rgba(15, 23, 42, 0.9) !important; 
-    border-radius: 0.75rem; 
-    border: 1px solid var(--brand-emerald); 
+    padding: 1.5rem; 
+    background: rgba(0, 0, 0, 0.4) !important; 
+    border-radius: 14px; 
+    border: 1px solid var(--accent); 
     color: white; 
     text-align: center; 
-    font-size: 1.5rem; 
-    letter-spacing: 0.4em; 
+    font-size: 1.8rem; 
+    letter-spacing: 0.5em; 
     margin-bottom: 1.5rem; 
     outline: none;
-    box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.05);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
 }
 
 .unlock-btn { 
     width: 100%; 
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-    color: white; 
-    font-weight: 800; 
-    padding: 1.1rem; 
-    border-radius: 0.75rem; 
+    background: linear-gradient(180deg, var(--accent), #16a34a); 
+    color: #022c22; 
+    font-weight: 900; 
+    padding: 1.2rem; 
+    border-radius: 14px; 
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 10px 40px -10px var(--accent-glow);
 }
 
-.unlock-btn:hover { 
-    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
-    transform: scale(1.02);
-}
+.unlock-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
 
-/* --- INPUTS & FORMS --- */
 .input-dark { 
     width: 100%; 
-    padding: 0.85rem; 
-    background: rgba(15, 23, 42, 0.6); 
-    border-radius: 0.6rem; 
+    padding: 1rem; 
+    background: rgba(0, 0, 0, 0.2); 
+    border-radius: 12px; 
     border: 1px solid var(--glass-border); 
     color: white; 
     outline: none;
     transition: border-color 0.2s;
 }
 
-.input-dark:focus { 
-    border-color: var(--brand-blue);
-    background: rgba(15, 23, 42, 0.9);
-}
+.input-dark:focus { border-color: var(--accent); background: rgba(0, 0, 0, 0.4); }
 
-.btn-primary { 
-    background: var(--brand-blue); 
-    color: white; 
-    padding: 0.75rem 1.75rem; 
-    border-radius: 0.6rem; 
-    font-weight: 700;
-    transition: all 0.2s;
-}
+/* =========================================
+   6. TABLES & LISTS
+   ========================================= */
+table tr { border-bottom: 1px solid var(--glass-border); transition: 0.2s; }
+table tr:hover { background: rgba(255, 255, 255, 0.02); }
+th { font-weight: 800; letter-spacing: 0.05em; }
 
-.btn-success { 
-    background: var(--brand-emerald); 
-    color: white; 
-    padding: 0.85rem; 
-    border-radius: 0.6rem; 
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-/* --- TABLES & LISTS --- */
-table tr {
-    transition: background 0.2s;
-    border-bottom: 1px solid var(--glass-border);
-}
-
-table tr:hover {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-/* --- SCROLLBAR --- */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-/* --- BADGES --- */
-.badge-red { 
-    background: var(--brand-red); 
-    color: white; 
-    font-size: 0.65rem; 
-    font-weight: 900; 
-    padding: 0.2rem 0.6rem; 
-    border-radius: 20px;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-}
-
+/* =========================================
+   7. AVATARS & BADGES
+   ========================================= */
 .admin-avatar { 
-    width: 2.75rem; 
-    height: 2.75rem; 
-    border-radius: 12px; 
-    background: linear-gradient(135deg, #10b981, #3b82f6); 
+    width: 3rem; 
+    height: 3rem; 
+    border-radius: 14px; 
+    background: linear-gradient(135deg, var(--accent), var(--brand-blue)); 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    color: white; 
-    font-weight: 800;
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    color: #022c22; 
+    font-weight: 900;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
 }
+
+.badge-red { 
+    background: var(--brand-red); 
+    color: white; 
+    font-size: 0.7rem; 
+    font-weight: 900; 
+    padding: 2px 8px; 
+    border-radius: 10px;
+}
+
+/* =========================================
+   8. SCROLLBAR
+   ========================================= */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
