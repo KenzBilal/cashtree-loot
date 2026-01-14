@@ -369,22 +369,37 @@ async function sendBroadcast() {
     btn.disabled = true;
     btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> BLASTING...`;
 
-    const { error } = await db.from('announcements').insert([{
-        content: msg,
-        created_by: 'Admin',
-        type: 'global'
-    }]);
+    // 🔥 FIXED: Update system_config instead of inserting into announcements
+    const { error } = await db
+        .from('system_config')
+        .update({ broadcast_message: msg })
+        .eq('id', 1); // This ensures you are updating the primary config row
 
     if(!error) {
         alert("🚀 BROADCAST LIVE: All promoters notified!");
         msgInput.value = "";
-        closeBroadcastModal();
+        if(typeof closeBroadcastModal === 'function') closeBroadcastModal();
     } else {
         alert("Error: " + error.message);
     }
+    
     btn.disabled = false;
     btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> BLAST MESSAGE`;
 }
+
+
+async function clearBroadcast() {
+    const { error } = await db
+        .from('system_config')
+        .update({ broadcast_message: 'OFF' })
+        .eq('id', 1);
+
+    if(!error) {
+        alert("🧹 Broadcast Cleared: All dashboards are now clean.");
+    }
+}
+
+
 // Load current config when admin opens settings
 async function loadSystemConfig() {
     const { data } = await db.from('system_config').select('*');
