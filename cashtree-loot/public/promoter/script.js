@@ -94,72 +94,28 @@ async function attemptSignup() {
     }
 }
 
-/* =========================================
-   3. THE GOD-MODE PULSE (GLOBAL LAWS)
-   ========================================= */
-async function applyGodModeLaws() {
-    // Using the unified 'db' client
-    const { data: config, error } = await db.from('system_config').select('*');
-
-    if (error || !config) return;
-
-    const laws = {};
-    config.forEach(c => laws[c.key] = c.value);
-
-    // Identify UI Elements
-    const isDashboard = window.location.pathname.includes('dashboard') || document.querySelector('.dashboard');
-    const maintenanceOverlay = document.getElementById('maintenanceScreen');
-    const loginCard = document.querySelector('.login-card'); 
-    const mainDashboard = document.querySelector('.dashboard');
-
-    // ENFORCE MAINTENANCE
+// --- 🛑 ENFORCE MAINTENANCE (Login & Signup Gate) ---
     if (laws.site_status === 'MAINTENANCE') {
-        if (isDashboard) {
-            if (maintenanceOverlay) maintenanceOverlay.classList.remove('hidden');
-            if (mainDashboard) mainDashboard.style.display = 'none';
-        } 
-        // Signup page remains open unless you specifically want to lock it
-    } else {
-        if (maintenanceOverlay) maintenanceOverlay.classList.add('hidden');
-        if (mainDashboard) mainDashboard.style.display = 'block';
-        if (loginCard) loginCard.style.display = 'block';
-    }
-
-    // ENFORCE WITHDRAWAL LAW
-    if (isDashboard && document.getElementById('withdrawBtn')) {
-        const minRequired = parseInt(laws.min_payout || 500);
-        const displayMin = document.getElementById('display_min_payout');
-        const balanceElem = document.getElementById('balanceDisplay');
-        const btn = document.getElementById('withdrawBtn');
-
-        if(displayMin) displayMin.innerText = `₹${minRequired}`;
-
-        if (balanceElem && btn) {
-            const currentBalance = parseFloat(balanceElem.innerText.replace('₹', '')) || 0;
-            
-            if (currentBalance >= minRequired) {
-                btn.disabled = false;
-                btn.style.opacity = "1";
-                btn.innerText = "WITHDRAW NOW";
-                btn.style.background = "#22c55e";
-                btn.style.cursor = "pointer";
-            } else {
-                btn.disabled = true;
-                btn.style.opacity = "0.5";
-                btn.innerText = `NEED ₹${Math.max(0, minRequired - currentBalance)} MORE`;
-                btn.style.background = "#1e293b";
-                btn.style.cursor = "not-allowed";
-            }
+        // 1. Show the Maintenance Blanket
+        if (maintenanceOverlay) {
+            maintenanceOverlay.classList.remove('hidden');
+            maintenanceOverlay.style.display = 'flex'; // Centering logic
         }
+        
+        // 2. Hide the Login/Signup Card (The Front Door)
+        if (loginCard) loginCard.style.display = 'none';
+        
+        // 3. Hide Dashboard (if user is already inside)
+        if (mainDashboard) mainDashboard.style.display = 'none';
+        
+        return; // Stop execution while locked
+    } else {
+        // --- ✅ SYSTEM IS LIVE ---
+        if (maintenanceOverlay) {
+            maintenanceOverlay.classList.add('hidden');
+            maintenanceOverlay.style.display = 'none';
+        }
+        // Restore visibility to whichever page the user is on
+        if (loginCard) loginCard.style.display = 'block';
+        if (mainDashboard) mainDashboard.style.display = 'block';
     }
-}
-
-/* =========================================
-   4. INITIALIZATION
-   ========================================= */
-// Start the Heartbeat Pulse immediately
-applyGodModeLaws();
-setInterval(applyGodModeLaws, 10000); 
-
-// Make functions globally available for HTML onclick events
-window.attemptSignup = attemptSignup;
