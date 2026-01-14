@@ -37,12 +37,17 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
 
         // --- STEP 3: INSERT ---
         const leadData = {
-            phone: phone,
-            upi_id: upi,
+            phone: String(phone), // Ensure it's a string
+            upi_id: String(upi),
             campaign_id: camp.id,
-            status: 'pending',
-            user_id: promoterId // This will be null if no promoter found
+            status: 'pending'
         };
+
+        // Only attach user_id if we have a valid UUID
+        // If promoterId is null, we don't send the key at all
+        if (promoterId) {
+            leadData.user_id = promoterId;
+        }
 
         const { error: e3 } = await supabaseClient.from('leads').insert([leadData]);
 
