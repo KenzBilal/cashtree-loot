@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Join CashTree | Become a Partner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="center-body">
+
+  <div class="card login-card">
+    <div class="brand">🌱 CashTree <span>Partner</span></div>
+    
+    <h1>Join the Team</h1>
+    <p class="sub-text">Start earning per successful refer today.</p>
+
+    <div class="info-box" style="text-align: left; margin-bottom: 20px; font-size: 13px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+      <strong style="color:var(--green)">Member Perks:</strong><br>
+      • Choose your own unique Promoter Code<br>
+      • ₹20 Welcome Bonus (if referred)<br>
+      • Real-time "My Team" tracking<br>
+      • Withdraw starting at ₹100
+    </div>
+
+    <div class="input-group">
+      <label>Full Name</label>
+      <input type="text" id="newName" placeholder="Enter your full name">
+    </div>
+
+    <div class="input-group">
+      <label>Choose Promoter Code (Username)</label>
+      <input type="text" id="newCode" placeholder="Ex: BATMAN77">
+    </div>
+
+    <div class="input-group">
+      <label>UPI ID (For Payouts)</label>
+      <input type="text" id="newUpi" placeholder="example@ybl">
+    </div>
+
+    <div class="input-group">
+      <label>Set Password</label>
+      <input type="password" id="newPass" placeholder="Min 4 characters">
+    </div>
+
+    <div class="input-group" style="border: 1px dashed var(--green); padding: 10px; border-radius: 10px; margin-top: 15px;">
+      <label style="color:var(--green)">Have a Referral Code?</label>
+      <input type="text" id="referCode" placeholder="Enter code for ₹20 bonus">
+    </div>
+
+    <button class="submit-btn" id="signupBtn" onclick="attemptSignup()" style="margin-top: 20px;">
+      Create Partner Account
+    </button>
+
+    <div class="footer-link" style="margin-top: 20px; font-size: 14px;">
+      Already a partner? <a href="../dashboard/login.html" style="color:var(--green); text-decoration: none; font-weight: bold;">Login Here</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>

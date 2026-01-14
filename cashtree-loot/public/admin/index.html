@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CashTree | Ultimate Admin</title>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="authLayer">
+        <h1>🔐 Master Access</h1>
+        <input type="password" id="adminPass" placeholder="Enter Master Key">
+        <button class="btn btn-pay" id="loginBtn">Unlock</button>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+        <div class="tab-container">
+            <div id="tabLeads" class="tab active" onclick="switchTab('leads')">Pending Leads</div>
+            <div id="tabPayouts" class="tab" onclick="switchTab('payouts')">Withdrawal Requests</div>
+        </div>
+
+        <div id="leadsSection">
+            <h2>New Submissions</h2>
+            <div id="leadsList">Loading leads...</div>
+        </div>
+
+        <div id="payoutsSection" style="display: none;">
+            <h2>Promoters to be Paid</h2>
+            <div id="payoutsList">Loading payouts...</div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

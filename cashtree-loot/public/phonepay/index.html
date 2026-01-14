@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirm PhonePe Signup – CashTree Loot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Confirm your PhonePe signup via CashTree Loot. Submit your details to verify referral completion.">
+
+  <link rel="stylesheet" href="confirm.css">
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+
+    <div class="brand">
+      🌱 CashTree <span>Loot</span>
+    </div>
+
+    <h1>Confirm PhonePe Signup</h1>
+    <p class="sub">
+      Fill the details below to confirm your signup.
+      This helps us verify referrals manually.
+    </p>
+
+    <div class="info-box">
+      ⚠️ We do NOT track PhonePe automatically.  
+      Details are used only for confirmation.
+    </div>
+
+   <form id="confirmForm">
+  <input type="text" id="name" placeholder="Your Name" required>
+  <input type="tel" id="phone" placeholder="Phone Number" required>
+
+  <button type="submit" class="submit-btn">
+    Submit & Open PhonePe
+  </button>
+</form>
+
+    <div class="note">
+      Bonus is credited by <strong>PhonePe</strong>.  
+      CashTree Loot does not control payouts.
+    </div>
+
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+function submitForm() {
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+
+  if (name.length < 2 || phone.length < 8) {
+    alert("Please enter valid details");
+    return;
+  }
+
+  fetch("telegram-bot-production-2ea6.up.railway.app/submit", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ name, phone })
+  })
+  .finally(() => {
+    // Redirect ALWAYS happens
+    window.location.href =
+      "https://phon.pe/0b309w6x";
+  });
+}
+</script>
+ 
+  
+</body>
+</html>
