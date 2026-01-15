@@ -1,6 +1,6 @@
 /* =====================================================
-   FINAL BOSS ADMIN THEME – CASH TREE
-   Author: Sovereign Mode
+   FINAL BOSS ADMIN THEME – CASH TREE (V2)
+   Status: 10/10 Sovereign (Scroll Fixed)
    ===================================================== */
 
 /* ================== FONT ================== */
@@ -47,12 +47,22 @@ body {
     radial-gradient(1200px 600px at 15% 15%, rgba(36, 54, 60, 0.12), transparent 60%),
     linear-gradient(180deg, var(--bg-deep), var(--bg-slate));
   color: var(--text-main);
-  overflow: hidden;
-  /* --- THE FIX --- */
+  overflow: hidden; /* Prevents double scrollbars */
   display: flex !important;
   flex-direction: row !important;
   width: 100vw;
   height: 100vh;
+}
+
+/* ================== 🚨 NEW: SCROLL ENGINE ================== */
+/* This is what was MISSING. It lets the content scroll while sidebar stays fixed. */
+main {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;       /* Enables vertical scrolling */
+  overflow-x: hidden;     /* Prevents horizontal scrollbar */
+  position: relative;
+  scroll-behavior: smooth;
 }
 
 /* ================== GLASS PANEL ================== */
@@ -90,6 +100,8 @@ aside {
   width: 288px !important; 
   flex-shrink: 0 !important;
   display: flex !important;
+  flex-direction: column; /* Better alignment */
+  z-index: 50; /* Ensures it stays above content */
 }
 
 .nav-label {
@@ -146,8 +158,7 @@ aside {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background:
-    radial-gradient(circle at center, #0a1520 0%, #04060a 100%);
+  background: radial-gradient(circle at center, #0a1520 0%, #04060a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,8 +187,7 @@ aside {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(
+  background: linear-gradient(
       transparent,
       rgba(34, 197, 94, 0.18),
       transparent
@@ -243,6 +253,12 @@ select:focus {
   filter: brightness(1.1);
 }
 
+.unlock-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ================== STAT CARDS ================== */
 .stat-card {
   padding: 2.2rem;
@@ -292,13 +308,17 @@ th {
   display: none !important;
 }
 
+/* 🚨 NEW: DESKTOP SCROLLBAR (Was missing before) */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* ================== PULSE ================== */
@@ -312,45 +332,52 @@ th {
   100% { filter: drop-shadow(0 0 3px var(--accent)); }
 }
 
+/* ================== MOBILE OPTIMIZATIONS ================== */
 @media (max-width: 768px) {
   /* 1. HIDE SIDEBAR */
   aside { display: none !important; }
 
-  /* 2. THE FIX: REMOVE SOLID BLOCK & FILL BACKGROUND */
+  /* 2. 🚨 NEW: BODY SCROLL LOCK FIX */
   body {
     height: 100vh !important;
-    background-attachment: fixed !important; /* Locks wallpaper to full screen */
+    background-attachment: fixed !important; 
+    flex-direction: column !important; /* Forces layout to stack */
   }
 
-  /* We remove the body::after block you had before to let the wallpaper flow */
-  body::after { display: none !important; }
+  main {
+    padding-bottom: 120px !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    height: 100vh;
+    overflow-y: scroll; /* Forces native scroll on iPhone */
+    -webkit-overflow-scrolling: touch;
+  }
 
   /* 3. FLOATING MOBILE DOCK */
-  /* This targets the container of your mobile buttons */
   .md\:hidden.fixed.bottom-0 {
     background: transparent !important;
-    padding-bottom: env(safe-area-inset-bottom); /* Fixes iPhone gap */
+    padding-bottom: env(safe-area-inset-bottom);
     z-index: 100;
   }
 
-  /* The actual glass strip inside the dock */
   .md\:hidden .glass-panel {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(15px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    margin-bottom: 10px; /* Makes it look like it's floating */
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 24px 24px 0 0 !important;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    margin-bottom: 0 !important;
   }
 
-  /* 4. CONTENT ALIGNMENT FIXES */
-  main {
-    padding-bottom: 120px !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
+  /* 4. TEXT SIZING */
+  .section h1 { font-size: 1.8rem !important; }
+
+  /* 5. 🚨 NEW: INPUT ZOOM FIX (iOS) */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iPhone */
   }
 
-  .section h1 { font-size: 2rem !important; }
-
-  /* Campaign Lab Overlap Fix */
+  /* 6. CAMPAIGN LAB FIX */
   #campaigns .flex.justify-between {
     flex-direction: column;
     align-items: flex-start;
@@ -358,9 +385,9 @@ th {
     margin-bottom: 2rem;
   }
 
-  #campaigns button.unlock-btn { width: auto; }
+  #campaigns button.unlock-btn { width: 100%; }
 
-  /* Settlements Table Scroll Fix */
+  /* 7. TABLE SCROLL */
   .glass-panel.overflow-hidden {
     overflow-x: auto !important;
     display: block;
@@ -374,7 +401,7 @@ th {
     white-space: nowrap;
   }
 
-  /* God Config Dropdown Arrow Fix */
+  /* 8. DROPDOWN ARROW FIX */
   select.input-dark {
     padding-right: 2.5rem !important;
     appearance: none;
@@ -384,4 +411,3 @@ th {
     background-size: 1.2rem;
   }
 }
-
