@@ -242,17 +242,46 @@ async function loadPayouts() {
             <td class="p-6 font-mono text-yellow-500 text-xs">${u.upi_id}</td>
             <td class="p-6 text-right font-black text-green-400">₹${u.wallet_balance}</td>
             <td class="p-6 text-center">
-                <button onclick="markPaid('${u.id}', ${u.wallet_balance})" class="bg-blue-600 text-white font-black px-4 py-2 rounded-lg text-[10px]">MARK PAID</button>
+                <button onclick="markPaid('${u.id}', ${u.wallet_balance}, '${u.upi_id}')"blue-600 text-white font-black px-4 py-2 rounded-lg text-[10px]">MARK PAID</button>
             </td>
         `;
         tbody.appendChild(row);
     });
 }
 
-async function markPaid(userId, amount) {
-    if(!confirm(`Confirm Payment of ₹${amount}?`)) return;
-    await db.from('promoters').update({ wallet_balance: 0 }).eq('id', userId);
-    initDashboard();
+async function markPaid(userId, amount, upiId) {
+    // 1. Mobile "Deep Link" Protocol
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    
+    if (isMobile && upiId) {
+        // Construct standard UPI Intent URL
+        const upiUrl = `upi://pay?pa=${upiId}&pn=CashTreePromoter&am=${amount}&cu=INR`;
+        
+        if (confirm(`💸 Launch Payment App for ₹${amount}?`)) {
+            window.location.href = upiUrl;
+            
+            // Post-payment verification prompt
+            setTimeout(() => {
+                if (confirm("✅ Verification: Did you complete the payment? Click OK to reset their wallet.")) {
+                    completeSettlement(userId);
+                }
+            }, 2500);
+            return;
+        }
+    }
+
+    // 2. Desktop/Manual Fallback
+    if (confirm(`Confirm manual settlement of ₹${amount}?`)) {
+        completeSettlement(userId);
+    }
+}
+
+async function completeSettlement(userId) {
+    const { error } = await db.from('promoters').update({ wallet_balance: 0 }).eq('id', userId);
+    if(!error) {
+        initDashboard();
+        alert("📊 Empire Ledger Updated.");
+    }
 }
 
 // =========================================

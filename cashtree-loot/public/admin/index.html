@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Sovereign | Admin Command Center</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+     <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#04060a">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/622/622848.png">
+<link rel="manifest" href="manifest.json">
 </head>
 
 <body class="h-screen flex overflow-hidden">
@@ -212,6 +220,38 @@
         <button id="sendBtn" onclick="sendBroadcast()" class="unlock-btn w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black">
             BLAST MESSAGE LIVE
         </button>
+    </div>
+</div>
+
+<div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none">
+    <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto border-white/10 shadow-2xl shadow-black">
+        
+        <button onclick="showSection('dashboard')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
+            <i class="fas fa-chart-pie text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">Pulse</span>
+        </button>
+
+        <button onclick="showSection('campaigns')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
+            <i class="fas fa-rocket text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">Lab</span>
+        </button>
+
+        <button onclick="showSection('leads')" class="relative flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
+            <i class="fas fa-check-double text-xl"></i>
+            <span id="mobilePendingBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] font-black px-1 rounded-full hidden">0</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Leads</span>
+        </button>
+
+        <button onclick="showSection('payouts')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
+            <i class="fas fa-wallet text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">Pay</span>
+        </button>
+
+        <button onclick="showSection('settings')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
+            <i class="fas fa-user-shield text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">God</span>
+        </button>
+
     </div>
 </div>
 
