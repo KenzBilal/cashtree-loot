@@ -48,6 +48,11 @@ body {
     linear-gradient(180deg, var(--bg-deep), var(--bg-slate));
   color: var(--text-main);
   overflow: hidden;
+  /* --- THE FIX --- */
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100vw;
+  height: 100vh;
 }
 
 /* ================== GLASS PANEL ================== */
@@ -82,6 +87,9 @@ aside {
   background: rgba(4, 6, 10, 0.92);
   backdrop-filter: blur(14px);
   border-right: 1px solid var(--glass-border);
+  width: 288px !important; 
+  flex-shrink: 0 !important;
+  display: flex !important;
 }
 
 .nav-label {
