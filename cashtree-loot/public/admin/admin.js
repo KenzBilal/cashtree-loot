@@ -99,7 +99,7 @@ async function loadCampaigns() {
                 </button>
             </div>
             <h3 class="font-black text-white text-lg">${c.title}</h3>
-            <div class="text-[10px] text-slate-500 truncate mb-4 font-mono">${c.url}</div>
+            <div class="text-[10px] text-slate-500 truncate mb-4 font-mono">${c.url || 'No Destination Set'}</div>
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
                 <span class="text-green-400 font-black text-xl">₹${c.payout_amount}</span>
                 <button onclick="editCampaign('${c.id}', '${c.title}', ${c.payout})" class="text-slate-400 hover:text-white transition">

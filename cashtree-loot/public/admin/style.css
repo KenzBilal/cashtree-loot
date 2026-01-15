@@ -313,33 +313,75 @@ th {
 }
 
 @media (max-width: 768px) {
-  /* Hide desktop sidebar */
-  aside {
-    display: none !important;
+  /* 1. HIDE SIDEBAR */
+  aside { display: none !important; }
+
+  /* 2. THE FIX: REMOVE SOLID BLOCK & FILL BACKGROUND */
+  body {
+    height: 100vh !important;
+    background-attachment: fixed !important; /* Locks wallpaper to full screen */
   }
 
-  /* Create Bottom Mobile Dock */
-  body::after {
-    content: "";
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 80px;
-    background: rgba(4, 6, 10, 0.8);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
-    z-index: 40;
+  /* We remove the body::after block you had before to let the wallpaper flow */
+  body::after { display: none !important; }
+
+  /* 3. FLOATING MOBILE DOCK */
+  /* This targets the container of your mobile buttons */
+  .md\:hidden.fixed.bottom-0 {
+    background: transparent !important;
+    padding-bottom: env(safe-area-inset-bottom); /* Fixes iPhone gap */
+    z-index: 100;
   }
 
-  /* Adjust main content for bottom bar */
+  /* The actual glass strip inside the dock */
+  .md\:hidden .glass-panel {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(15px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin-bottom: 10px; /* Makes it look like it's floating */
+  }
+
+  /* 4. CONTENT ALIGNMENT FIXES */
   main {
-    padding-bottom: 100px !important;
+    padding-bottom: 120px !important;
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
   }
 
-  /* Transform Nav into Horizontal Icons (Logic requires adding a mobile-nav div in HTML or CSS Grid manipulation) */
-  .section h1 { font-size: 2.5rem; }
-  .stat-card { padding: 1.5rem; }
+  .section h1 { font-size: 2rem !important; }
+
+  /* Campaign Lab Overlap Fix */
+  #campaigns .flex.justify-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  #campaigns button.unlock-btn { width: auto; }
+
+  /* Settlements Table Scroll Fix */
+  .glass-panel.overflow-hidden {
+    overflow-x: auto !important;
+    display: block;
+    width: 100%;
+  }
+
+  table { min-width: 600px; }
+
+  th, td {
+    padding: 1rem 0.5rem !important;
+    white-space: nowrap;
+  }
+
+  /* God Config Dropdown Arrow Fix */
+  select.input-dark {
+    padding-right: 2.5rem !important;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2322c55e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2rem;
+  }
 }
+
