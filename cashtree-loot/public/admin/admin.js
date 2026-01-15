@@ -355,17 +355,37 @@ async function sendBroadcast() {
     closeBroadcastModal();
 }
 
-function hardRefresh() {
-    // 1. Visual Feedback: Find the reload icon and make it spin
-    const icon = document.querySelector('.fa-sync-alt');
-    if(icon) icon.classList.add('fa-spin');
+async function hardRefresh() {
+    // 1. Start the Spin Animation
+    const icon = document.getElementById('refresh-icon');
+    icon.classList.add('fa-spin'); 
     
-    // 2. Short delay so you can actually see the "System Syncing"
-    setTimeout(() => {
-        // Clear session cache to ensure a "Clean Slate"
-        sessionStorage.clear();
+    console.log("🚀 Initializing Hard System Sync...");
+    
+    try {
+        // 2. Clear the Browser's "Cache Storage" (The real cache killer)
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(name => caches.delete(name))
+            );
+        }
+
+        // 3. Unregister Service Workers (Crucial for mobile apps/PWAs)
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        // 4. Force Reload with Cache-Buster
+        // The "?v=" tricks the server into sending fresh files
+        const timestamp = new Date().getTime();
+        window.location.href = window.location.pathname + "?v=" + timestamp;
         
-        // This is the strongest refresh command for PWAs
-        window.location.reload(true);
-    }, 800);
+    } catch (error) {
+        console.error("Refresh Failed:", error);
+        window.location.reload(true); // Fallback
+    }
 }
