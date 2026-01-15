@@ -1,7 +1,7 @@
 /* =========================================
    1. SOVEREIGN THEME & CORE VARIABLES
    ========================================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
 
 :root {
     --bg-deep: #04060a;      /* OG Deep Black */
@@ -12,6 +12,7 @@
     --accent-glow: rgba(34, 197, 94, 0.3);
     --brand-blue: #3b82f6;
     --brand-red: #ef4444;
+    --muted: #64748b;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,11 +21,10 @@ body {
     background-color: var(--bg-deep); 
     color: #eaf2f8; 
     font-family: 'Inter', sans-serif;
-    /* OG Radial Background */
     background-image: radial-gradient(1200px 600px at 12% 12%, rgba(36, 54, 60, 0.12), transparent 60%),
-                      linear-gradient(180deg, var(--bg-deep), var(--bg-slate) 65%);
+                      linear-gradient(180deg, var(--bg-deep), var(--bg-slate) 100%);
     height: 100vh;
-    overflow: hidden;
+    overflow: hidden; /* Recommended for Admin Panels */
 }
 
 /* =========================================
@@ -32,15 +32,15 @@ body {
    ========================================= */
 .glass-panel { 
     background: var(--bg-card); 
-    backdrop-filter: blur(12px) saturate(180%); 
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%); 
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
 }
 
 .section { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(10px); } 
+    from { opacity: 0; transform: translateY(15px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
 
@@ -48,35 +48,36 @@ body {
    3. SIDEBAR (COMMAND NAV)
    ========================================= */
 aside {
-    background: rgba(4, 6, 10, 0.85);
+    background: rgba(4, 6, 10, 0.9);
     border-right: 1px solid var(--glass-border);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(15px);
 }
 
 .nav-label { 
-    font-size: 0.7rem; 
-    font-weight: 800; 
-    color: #475569; 
+    font-size: 0.65rem; 
+    font-weight: 900; 
+    color: var(--muted); 
     text-transform: uppercase; 
-    letter-spacing: 0.12em; 
-    padding: 0 1rem;
+    letter-spacing: 0.2em; 
+    padding: 0 1.5rem;
     margin-bottom: 0.75rem;
 }
 
 .nav-item { 
     display: flex; 
     align-items: center; 
-    padding: 0.85rem 1.25rem; 
+    padding: 0.9rem 1.5rem; 
     border-radius: 0.75rem; 
     cursor: pointer; 
     color: #94a3b8; 
-    transition: all 0.2s ease;
-    margin-bottom: 0.4rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0 1rem 0.4rem;
 }
 
 .nav-item:hover { 
     background: rgba(255, 255, 255, 0.05); 
     color: #fff; 
+    transform: translateX(5px);
 }
 
 .nav-item.active { 
@@ -87,29 +88,26 @@ aside {
 }
 
 /* =========================================
-   4. CHUNKY STAT CARDS (OG STYLE)
+   4. STAT CARDS (NEON DNA)
    ========================================= */
 .stat-card { 
-    background: var(--card);
-    backdrop-filter: blur(8px);
-    padding: 1.75rem; 
-    border-radius: 20px; 
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    padding: 2rem; 
+    border-radius: 24px; 
     border: 1px solid var(--glass-border);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .stat-card:hover { 
-    transform: translateY(-5px);
+    transform: translateY(-8px);
     border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 40px -20px rgba(0,0,0,0.5);
 }
 
-.stat-card.border-green-500 { 
-    border-top: 4px solid var(--accent); 
-    box-shadow: 0 10px 30px -10px var(--accent-glow);
-}
-
-.stat-card.border-red-500 { border-top: 4px solid var(--brand-red); }
-.stat-card.border-blue-500 { border-top: 4px solid var(--brand-blue); }
+.stat-card.border-green-500 { border-top: 5px solid var(--accent); box-shadow: 0 10px 30px -15px var(--accent-glow); }
+.stat-card.border-red-500 { border-top: 5px solid var(--brand-red); }
+.stat-card.border-blue-500 { border-top: 5px solid var(--brand-blue); }
 
 /* =========================================
    5. SECURITY VAULT & INPUTS
@@ -117,16 +115,17 @@ aside {
 .vault-input { 
     width: 100%; 
     padding: 1.5rem; 
-    background: rgba(0, 0, 0, 0.4) !important; 
-    border-radius: 14px; 
-    border: 1px solid var(--accent); 
-    color: white; 
+    background: #000 !important; 
+    border-radius: 16px; 
+    border: 2px solid var(--accent); 
+    color: var(--accent); 
     text-align: center; 
-    font-size: 1.8rem; 
-    letter-spacing: 0.5em; 
+    font-size: 2rem; 
+    font-weight: 900;
+    letter-spacing: 0.4em; 
     margin-bottom: 1.5rem; 
     outline: none;
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+    box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.05);
 }
 
 .unlock-btn { 
@@ -135,63 +134,51 @@ aside {
     color: #022c22; 
     font-weight: 900; 
     padding: 1.2rem; 
-    border-radius: 14px; 
+    border-radius: 16px; 
     text-transform: uppercase;
     letter-spacing: 0.1em;
     transition: all 0.3s;
     box-shadow: 0 10px 40px -10px var(--accent-glow);
 }
 
-.unlock-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
-
 .input-dark { 
     width: 100%; 
-    padding: 1rem; 
-    background: rgba(0, 0, 0, 0.2); 
+    padding: 1.1rem; 
+    background: rgba(0, 0, 0, 0.4); 
     border-radius: 12px; 
     border: 1px solid var(--glass-border); 
     color: white; 
     outline: none;
-    transition: border-color 0.2s;
+    transition: 0.2s;
 }
 
-.input-dark:focus { border-color: var(--accent); background: rgba(0, 0, 0, 0.4); }
+.input-dark:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 
 /* =========================================
-   6. TABLES & LISTS
+   6. TABLES & BUTTONS
    ========================================= */
+.btn-primary { background: var(--brand-blue); color: #fff; padding: 0.8rem 1.5rem; border-radius: 12px; border:none; font-weight: 700; cursor: pointer; }
+.btn-success { background: var(--accent); color: #022c22; padding: 0.8rem 1.5rem; border-radius: 12px; border:none; font-weight: 800; cursor: pointer; }
+
 table tr { border-bottom: 1px solid var(--glass-border); transition: 0.2s; }
-table tr:hover { background: rgba(255, 255, 255, 0.02); }
-th { font-weight: 800; letter-spacing: 0.05em; }
+table tr:hover { background: rgba(255, 255, 255, 0.03); }
+th { color: var(--muted); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; padding: 1rem; }
+td { padding: 1rem; }
 
 /* =========================================
-   7. AVATARS & BADGES
+   7. UTILITIES
    ========================================= */
-.admin-avatar { 
-    width: 3rem; 
-    height: 3rem; 
-    border-radius: 14px; 
-    background: linear-gradient(135deg, var(--accent), var(--brand-blue)); 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    color: #022c22; 
-    font-weight: 900;
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-}
-
-.badge-red { 
-    background: var(--brand-red); 
-    color: white; 
-    font-size: 0.7rem; 
-    font-weight: 900; 
-    padding: 2px 8px; 
-    border-radius: 10px;
-}
-
-/* =========================================
-   8. SCROLLBAR
-   ========================================= */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--bg-deep); }
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+/* 10/10 Live Pulse */
+.animate-pulse-green {
+    animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+    0% { filter: drop-shadow(0 0 2px var(--accent)); }
+    50% { filter: drop-shadow(0 0 8px var(--accent)); }
+    100% { filter: drop-shadow(0 0 2px var(--accent)); }
+}
