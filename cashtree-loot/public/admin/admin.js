@@ -332,11 +332,16 @@ async function sendBroadcast() {
 }
 
 function hardRefresh() {
-    if (confirm("🚀 Force System Update? This will clear temporary cache and reload all laws.")) {
-        // Clear session storage (optional, but keeps things clean)
+    // 1. Visual Feedback: Find the reload icon and make it spin
+    const icon = document.querySelector('.fa-sync-alt');
+    if(icon) icon.classList.add('fa-spin');
+    
+    // 2. Short delay so you can actually see the "System Syncing"
+    setTimeout(() => {
+        // Clear session cache to ensure a "Clean Slate"
         sessionStorage.clear();
         
-        // Force reload from server, ignoring cache
+        // This is the strongest refresh command for PWAs
         window.location.reload(true);
-    }
+    }, 800);
 }
