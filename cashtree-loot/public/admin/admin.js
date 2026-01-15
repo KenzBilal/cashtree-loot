@@ -92,21 +92,22 @@ async function loadCampaigns() {
         const card = document.createElement("div");
         card.className = `glass-panel p-6 rounded-2xl border ${c.is_active ? 'border-green-500/30' : 'border-white/5'}`;
         card.innerHTML = `
-            <div class="flex justify-between items-start mb-4">
-                <img src="${c.image_url || 'https://via.placeholder.com/50'}" class="w-14 h-14 rounded-xl bg-black/40 object-cover border border-white/10">
-                <button onclick="toggleCampaign('${c.id}', ${!c.is_active})" class="${c.is_active ? 'text-green-500' : 'text-slate-600'} text-xl">
-                    <i class="fas fa-power-off"></i>
-                </button>
-            </div>
-            <h3 class="font-black text-white text-lg">${c.title}</h3>
-            <div class="text-[10px] text-slate-500 truncate mb-4 font-mono">${c.url || 'No Destination Set'}</div>
-            <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                <span class="text-green-400 font-black text-xl">₹${c.payout_amount}</span>
-                <button onclick="editCampaign('${c.id}', '${c.title}', ${c.payout})" class="text-slate-400 hover:text-white transition">
-                    <i class="fas fa-edit"></i>
-                </button>
-            </div>
-        `;
+    <div class="flex justify-between items-start mb-4">
+        <img src="${c.image_url || 'https://via.placeholder.com/50'}" class="w-14 h-14 rounded-xl bg-black/40 object-cover border border-white/10">
+        <button onclick="toggleCampaign('${c.id}', ${!c.is_active})" class="${c.is_active ? 'text-green-500' : 'text-slate-600'} text-xl">
+            <i class="fas fa-power-off"></i>
+        </button>
+    </div>
+    <h3 class="font-black text-white text-lg">${c.title}</h3>
+    <div class="text-[10px] text-slate-500 truncate mb-4 font-mono">${c.url || 'No Destination Set'}</div>
+    <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+        <span class="text-green-400 font-black text-xl">₹${c.payout_amount}</span>
+        
+        <button onclick="openEditModal('${c.id}', '${c.title}', ${c.payout_amount})" class="text-slate-400 hover:text-white transition">
+            <i class="fas fa-edit"></i>
+        </button>
+    </div>
+`;
         grid.appendChild(card);
     });
 }
@@ -121,7 +122,14 @@ async function createNewCampaign() {
     const url = document.getElementById("newCampUrl").value;
     const img = document.getElementById("newCampImg").value;
 
-    const { error } = await db.from('campaigns').insert([{ title, payout, url, image_url: img, is_active: true }]);
+    const { error } = await db.from('campaigns').insert([{ 
+    title, 
+    payout_amount: parseInt(payout), // Match your DB column name
+    url, 
+    image_url: img, 
+    is_active: true 
+    }]);
+
     if(!error) { 
         alert("🚀 CAMPAIGN DEPLOYED"); 
         toggleCreateCampaign(); 
@@ -134,32 +142,48 @@ async function toggleCampaign(id, status) {
     loadCampaigns();
 }
 
-async function editCampaign(id, currentTitle, currentPayout) {
-    // 1. Prompt for new values
-    const newTitle = prompt("Update Campaign Title:", currentTitle);
-    if (newTitle === null) return; // Cancel if user hits cancel
+// This opens your custom Glassmorphic box
+function openEditModal(id, currentTitle, currentPayout) {
+    // 1. Show the hidden modal
+    document.getElementById('editModal').classList.remove('hidden');
+    document.getElementById('editModal').style.display = 'flex';
 
-    const newPayout = prompt("Update Payout Amount (₹):", currentPayout);
-    if (newPayout === null) return; // Cancel if user hits cancel
+    // 2. Fill the inputs with current data
+    document.getElementById('editCampTitle').innerText = currentTitle;
+    document.getElementById('editCampPayout').value = currentPayout;
 
-    // 2. Execute Database Update
+    // 3. Store the ID globally so the Save function knows what to update
+    window.currentEditingId = id;
+}
+
+async function saveCampaignUpdate() {
+    const id = window.currentEditingId;
+    const newPayout = document.getElementById('editCampPayout').value;
+
+    // Execute Database Update
     const { error } = await db
         .from('campaigns')
         .update({ 
-            title: newTitle, 
             payout_amount: parseInt(newPayout)
         })
         .eq('id', id);
 
-    // 3. Handle Result
+    // Handle Result
     if (!error) {
-        alert("✅ DEPLOYMENT UPDATED: System laws synchronized.");
-        loadCampaigns(); // Refresh the grid to show new values
+        // Use a clean console log or a custom toast instead of alert for OG feel
+        console.log("✅ System laws synchronized.");
+        closeEditModal(); // Hide the box
+        loadCampaigns(); // Refresh your grid
     } else {
         console.error("❌ Edit Failed:", error);
-        alert("❌ ACCESS DENIED: " + error.message);
     }
 }
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+    document.getElementById('editModal').style.display = 'none';
+}
+
 
 // =========================================
 // 5. APPROVAL PROTOCOL (PASSIVE INCOME LOGIC)
