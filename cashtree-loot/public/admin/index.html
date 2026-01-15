@@ -11,14 +11,18 @@
 <body class="h-screen flex overflow-hidden">
 
     <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
-        <div class="glass-panel p-10 rounded-3xl w-full max-w-md text-center shadow-2xl">
-            <div class="mb-6 text-green-500 text-7xl"><i class="fas fa-fingerprint"></i></div>
-            <h2 class="text-3xl font-black mb-2 text-white uppercase tracking-tighter">Security Vault</h2>
-            <p class="text-slate-400 mb-8 text-sm font-semibold uppercase tracking-widest">Master Key Required</p>
-            <input type="password" id="masterKey" placeholder="••••••••" class="vault-input">
-            <button onclick="checkAuth()" class="unlock-btn">UNLOCK SYSTEM</button>
+    <div class="glass-panel">
+        <div style="color: var(--accent); font-size: 50px; margin-bottom: 20px;">
+            <i class="fas fa-fingerprint"></i>
         </div>
+        <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 8px;">SECURITY VAULT</h2>
+        <p style="color: var(--muted); font-size: 12px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;">Enter Master Key</p>
+        
+        <input type="password" id="masterKey" placeholder="••••" class="vault-input">
+        
+        <button onclick="checkAuth()" class="unlock-btn">UNLOCK SYSTEM</button>
     </div>
+</div>
 
     <aside class="w-72 flex-shrink-0 hidden md:flex flex-col relative z-10">
         <div class="p-8 text-2xl font-black text-white border-b border-white/5 flex items-center">
