@@ -270,7 +270,20 @@ async function loadOffers(partnerCode) {
 }
 
 function copyLink(text) { navigator.clipboard.writeText(text).then(() => showToast("Copied!")); }
-function showToast(msg) { let t = document.getElementById("toast"); if(!t){ t=document.createElement("div"); t.id="toast"; document.body.appendChild(t);} t.innerText=msg; t.className="show"; setTimeout(()=>t.className="",3000); }
+
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    if (!t) return; // Guard clause in case the element isn't found
+
+    t.innerText = msg;
+    t.classList.add("show"); // Uses the CSS animation we built
+
+    // Remove the 'show' class after 3 seconds to slide it back down
+    setTimeout(() => {
+        t.classList.remove("show");
+    }, 3000);
+}
+
 function logout() { localStorage.clear(); window.location.href = "login.html"; }
 function copyReferralLink() { const el = document.getElementById('referralLinkInput'); navigator.clipboard.writeText(el.value).then(() => showToast("Invite Link Copied!")); }
 function openResetModal() { document.getElementById('resetModal').style.display = 'flex'; }

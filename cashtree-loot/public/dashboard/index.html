@@ -19,20 +19,20 @@
     </div>
     
     <div class="dashboard">
-       <header class="top">
-    <div class="user-info">
-        <div class="user-avatar" id="userInitial">K</div> 
         
-        <div class="user-details">
-            <div class="greeting">Verified Partner</div>
-            <div class="username">
-                <span id="partnerName">KENZ7906</span>
-                <i class="fas fa-check-circle"></i> </div>
-        </div>
-    </div>
-    
-    <button class="logout-btn" onclick="logout()">Logout ➔</button>
-</header>
+        <header class="top">
+            <div class="user-info">
+                <div class="user-avatar" id="userInitial">K</div>
+                <div class="user-details">
+                    <div class="greeting">Verified Partner</div>
+                    <div class="username">
+                        <span id="partnerName">KENZ7906</span>
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout ➔</button>
+        </header>
 
         <div id="broadcastContainer" class="hidden" style="margin-bottom: 25px; animation: slideDown 0.5s ease-out;">
             <div style="background: linear-gradient(90deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05)); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 14px; padding: 15px; display: flex; gap: 15px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
@@ -133,6 +133,7 @@
             CashTree Sovereign System v2.0
         </footer>
     </div>
+    <div id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>

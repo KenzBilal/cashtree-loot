@@ -1,34 +1,75 @@
 /* =========================================
    1. SOVEREIGN CORE THEME (OG DNA)
    ========================================= */
+
 :root {
-  --bg-1: #04060a;      /* OG Deep Black */
-  --bg-2: #07101a;      /* OG Dark Slate */
+  --bg-1: #04060a;
+  --bg-2: #07101a;
   --card: rgba(255, 255, 255, 0.04);
   --border: rgba(255, 255, 255, 0.08);
   --text: #eaf2f8;
   --muted: #90a0b0;
-  --accent: #22c55e;    /* OG Vibrant Green */
+  --accent: #22c55e;
   --accent-glow: rgba(34, 197, 94, 0.3);
-  --danger: #ef4444;
 }
 
 body {
   font-family: 'Inter', sans-serif;
   color: var(--text);
   margin: 0;
-  min-height: 100vh;
-  /* OG Radial Background */
   background: radial-gradient(1200px 600px at 12% 12%, rgba(36, 54, 60, 0.15), transparent 60%),
               linear-gradient(180deg, var(--bg-1), var(--bg-2) 85%);
   display: flex;
-  justify-content: center;
+  justify-content: center; /* Horizontally centers the dashboard */
+  align-items: flex-start;
   padding: 20px 10px;
+  overflow-x: hidden; /* 🛑 Prevents the "jumping" when copying */
 }
 
+/* =========================================
+   2. DASHBOARD ANCHOR (Vertical Stack)
+   ========================================= */
 .dashboard {
   width: 100%;
-  max-width: 480px;
+  max-width: 480px; /* Locks the width */
+  display: flex;
+  flex-direction: column; /* Forces items to stay BELOW each other, not side-by-side */
+  gap: 0; 
+  margin: 0 auto;
+}
+
+/* Fix for Campaigns so they don't grow too big */
+.offer-card {
+  width: 100%;
+  box-sizing: border-box; /* 🛑 Prevents padding from breaking width */
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* 🍞 TOAST SYSTEM: Fixed position so it doesn't move the layout */
+#toast {
+    position: fixed;
+    bottom: -100px; /* Start off-screen */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #022c22;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 800;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 10000;
+    transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#toast.show {
+    bottom: 30px; /* Slide up into view */
 }
 
 /* =========================================
@@ -75,17 +116,7 @@ body {
   margin-top: 15px;
 }
 
-/* --- UPDATED 10/10 CAMPAIGN CARDS --- */
-.offer-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 18px; /* Slightly slimmer padding */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s ease;
-}
+
 
 .payout-tag {
   color: var(--accent);
