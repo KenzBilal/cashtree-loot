@@ -85,6 +85,7 @@ async function updatePendingBadge() {
 async function loadCampaigns() {
     const { data: camps } = await db.from('campaigns').select('*').order('id');
     const grid = document.getElementById("campaignGrid");
+    if (!grid) return;
     grid.innerHTML = "";
     
     camps.forEach(c => {
@@ -131,6 +132,33 @@ async function createNewCampaign() {
 async function toggleCampaign(id, status) {
     await db.from('campaigns').update({ is_active: status }).eq('id', id);
     loadCampaigns();
+}
+
+async function editCampaign(id, currentTitle, currentPayout) {
+    // 1. Prompt for new values
+    const newTitle = prompt("Update Campaign Title:", currentTitle);
+    if (newTitle === null) return; // Cancel if user hits cancel
+
+    const newPayout = prompt("Update Payout Amount (₹):", currentPayout);
+    if (newPayout === null) return; // Cancel if user hits cancel
+
+    // 2. Execute Database Update
+    const { error } = await db
+        .from('campaigns')
+        .update({ 
+            title: newTitle, 
+            payout: parseInt(newPayout) 
+        })
+        .eq('id', id);
+
+    // 3. Handle Result
+    if (!error) {
+        alert("✅ DEPLOYMENT UPDATED: System laws synchronized.");
+        loadCampaigns(); // Refresh the grid to show new values
+    } else {
+        console.error("❌ Edit Failed:", error);
+        alert("❌ ACCESS DENIED: " + error.message);
+    }
 }
 
 // =========================================
