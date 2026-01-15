@@ -1,357 +1,275 @@
-/* ======================================================
-   FINAL BOSS ADMIN SCRIPT – CASH TREE
-   Supabase v2 | Hardened | Production Grade
-====================================================== */
-
-/* ================== SUPABASE INIT ================== */
-let db = null;
-
-(function initSupabase() {
-  try {
-    const SUPABASE_URL = "https://qzjvratinjirrcmgzjlx.supabase.co";
-    const SUPABASE_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA";
-
-    if (!window.supabase?.createClient) {
-      throw new Error("Supabase library not loaded");
+// =========================================
+// 1. SUPABASE CONNECTION CORE
+// =========================================
+let db; 
+try {
+    const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA';
+    
+    if (!window.supabaseInstance) {
+        window.supabaseInstance = window.supabase.createClient(supabaseUrl, supabaseKey);
     }
+    db = window.supabaseInstance;
+    console.log("✅ SYSTEM SECURE: Database Handshake Successful");
+} catch (err) {
+    console.error("❌ CRITICAL: Database Link Failure", err);
+}
 
-    if (!window.__ct_supabase__) {
-      window.__ct_supabase__ = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-      );
-    }
-
-    db = window.__ct_supabase__;
-    console.log("✅ Supabase connected");
-  } catch (err) {
-    console.error("❌ Supabase init failed:", err);
-  }
-})();
-
-/* ================== AUTH ================== */
+// =========================================
+// 2. VAULT SECURITY PROTOCOLS
+// =========================================
 function checkAuth() {
-  const input = document.getElementById("masterKey");
-  const modal = document.getElementById("loginModal");
+    const keyInput = document.getElementById("masterKey");
+    const btn = document.querySelector(".unlock-btn");
+    const key = keyInput.value.trim();
 
-  if (!input || !modal) return;
-
-  if (input.value.trim() !== "znek7906") {
-    alert("❌ ACCESS DENIED");
-    input.value = "";
-    return;
-  }
-
-  modal.classList.add("hidden");
-  initDashboard();
+    if(key === "znek7906") {
+        btn.innerHTML = `<i class="fas fa-sync fa-spin mr-2"></i> AUTHORIZING...`;
+        setTimeout(() => {
+            document.getElementById("loginModal").classList.add("hidden");
+            initDashboard();
+        }, 800);
+    } else {
+        alert("❌ ACCESS DENIED: Identity Verification Failed");
+        keyInput.value = "";
+    }
 }
 
-/* ================== NAVIGATION ================== */
 function showSection(id) {
-  document.querySelectorAll(".section").forEach(s =>
-    s.classList.add("hidden")
-  );
-
-  const target = document.getElementById(id);
-  if (!target) {
-    console.error("Missing section:", id);
-    return;
-  }
-  target.classList.remove("hidden");
-
-  document.querySelectorAll(".nav-item").forEach(n =>
-    n.classList.remove("active")
-  );
-  const nav = document.getElementById("nav-" + id);
-  if (nav) nav.classList.add("active");
+    document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const activeNav = document.getElementById('nav-' + id);
+    if(activeNav) activeNav.classList.add('active');
 }
 
-/* ================== INIT ================== */
+// =========================================
+// 3. CORE INITIALIZATION (HEARTBEAT)
+// =========================================
 async function initDashboard() {
-  await Promise.all([
-    loadStats(),
-    loadCampaigns(),
-    loadLeads(),
-    loadPayouts(),
-    loadSystemConfig(),
-    updatePendingBadge()
-  ]);
+    console.log("🛰️ Synchronizing Command Center...");
+    await Promise.all([
+        loadStats(),
+        loadCampaigns(),
+        loadLeads(),
+        loadPayouts(),
+        loadSystemConfig(),
+        updatePendingBadge()
+    ]);
 
-  setInterval(() => {
-    loadStats();
-    loadLeads();
-    updatePendingBadge();
-  }, 30000);
+    // Live Heartbeat every 30 seconds
+    setInterval(() => {
+        loadStats();
+        loadLeads();
+        updatePendingBadge();
+    }, 30000); 
 }
 
-/* ================== BADGE ================== */
 async function updatePendingBadge() {
-  const badge = document.getElementById("navPendingBadge");
-  if (!badge) return;
-
-  const { count } = await db
-    .from("leads")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "pending");
-
-  if (count > 0) {
-    badge.textContent = count;
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
+    const { count } = await db.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    const badge = document.getElementById('navPendingBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.innerText = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
 }
 
-/* ================== CAMPAIGNS ================== */
+// =========================================
+// 4. CAMPAIGN LAB (DEPLOYMENT)
+// =========================================
 async function loadCampaigns() {
-  const grid = document.getElementById("campaignGrid");
-  if (!grid) return;
-
-  const { data } = await db.from("campaigns").select("*").order("id");
-  grid.innerHTML = "";
-
-  data?.forEach(c => {
-    const el = document.createElement("div");
-    el.className = "glass-panel p-6 rounded-2xl";
-    el.innerHTML = `
-      <h3 class="text-xl font-black text-white mb-2">${c.title}</h3>
-      <p class="text-slate-400 text-xs truncate">${c.url || ""}</p>
-      <div class="mt-4 flex justify-between items-center">
-        <span class="text-green-400 font-bold">₹${c.payout || 0}</span>
-        <input type="checkbox" ${
-          c.is_active ? "checked" : ""
-        } onchange="toggleCampaign('${c.id}', this.checked)">
-      </div>
-    `;
-    grid.appendChild(el);
-  });
-}
-
-async function toggleCampaign(id, isActive) {
-  await db.from("campaigns").update({ is_active: isActive }).eq("id", id);
+    const { data: camps } = await db.from('campaigns').select('*').order('id');
+    const grid = document.getElementById("campaignGrid");
+    grid.innerHTML = "";
+    
+    camps.forEach(c => {
+        const card = document.createElement("div");
+        card.className = `glass-panel p-6 rounded-2xl border ${c.is_active ? 'border-green-500/30' : 'border-white/5'}`;
+        card.innerHTML = `
+            <div class="flex justify-between items-start mb-4">
+                <img src="${c.image_url || 'https://via.placeholder.com/50'}" class="w-14 h-14 rounded-xl bg-black/40 object-cover border border-white/10">
+                <button onclick="toggleCampaign('${c.id}', ${!c.is_active})" class="${c.is_active ? 'text-green-500' : 'text-slate-600'} text-xl">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </div>
+            <h3 class="font-black text-white text-lg">${c.title}</h3>
+            <div class="text-[10px] text-slate-500 truncate mb-4 font-mono">${c.url}</div>
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                <span class="text-green-400 font-black text-xl">₹${c.payout}</span>
+                <button onclick="editCampaign('${c.id}', '${c.title}', ${c.payout})" class="text-slate-400 hover:text-white transition">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
 function toggleCreateCampaign() {
-  const f = document.getElementById("createCampaignForm");
-  f?.classList.toggle("hidden");
+    document.getElementById("createCampaignForm").classList.toggle("hidden");
 }
 
 async function createNewCampaign() {
-  const title = document.getElementById("newCampTitle").value.trim();
-  const payout = Number(document.getElementById("newCampPayout").value);
-  const url = document.getElementById("newCampUrl").value.trim();
-  const img = document.getElementById("newCampImg").value.trim();
+    const title = document.getElementById("newCampTitle").value;
+    const payout = document.getElementById("newCampPayout").value;
+    const url = document.getElementById("newCampUrl").value;
+    const img = document.getElementById("newCampImg").value;
 
-  if (!title || !payout) {
-    alert("Missing fields");
-    return;
-  }
-
-  await db.from("campaigns").insert([
-    {
-      title,
-      payout,
-      url,
-      image_url: img,
-      is_active: true
+    const { error } = await db.from('campaigns').insert([{ title, payout, url, image_url: img, is_active: true }]);
+    if(!error) { 
+        alert("🚀 CAMPAIGN DEPLOYED"); 
+        toggleCreateCampaign(); 
+        loadCampaigns(); 
     }
-  ]);
-
-  toggleCreateCampaign();
-  loadCampaigns();
 }
 
-/* ================== LEADS ================== */
+async function toggleCampaign(id, status) {
+    await db.from('campaigns').update({ is_active: status }).eq('id', id);
+    loadCampaigns();
+}
+
+// =========================================
+// 5. APPROVAL PROTOCOL (PASSIVE INCOME LOGIC)
+// =========================================
 async function loadLeads() {
-  const body = document.getElementById("leadsTableBody");
-  const empty = document.getElementById("noLeadsMsg");
-  if (!body) return;
+    const { data: leads } = await db.from('leads').select(`*, promoters(full_name, username), campaigns(title, payout)`).eq('status', 'pending');
+    const tbody = document.getElementById("leadsTableBody");
+    tbody.innerHTML = "";
+    
+    if(!leads || leads.length === 0) {
+        document.getElementById("noLeadsMsg").classList.remove("hidden");
+        return;
+    }
+    document.getElementById("noLeadsMsg").classList.add("hidden");
 
-  const { data } = await db
-    .from("leads")
-    .select(
-      `*, campaigns(title,payout), promoters(username,full_name)`
-    )
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-
-  body.innerHTML = "";
-
-  if (!data || data.length === 0) {
-    empty?.classList.remove("hidden");
-    return;
-  }
-  empty?.classList.add("hidden");
-
-  data.forEach(l => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${new Date(l.created_at).toLocaleDateString()}</td>
-      <td>${l.campaigns?.title || ""}</td>
-      <td>${l.promoters?.username || ""}</td>
-      <td>${l.phone} <br><small>${l.upi_id}</small></td>
-      <td>
-        <button onclick="approveLead('${l.id}','${l.user_id}',${l.campaigns?.payout || 0})">PAY</button>
-        <button onclick="rejectLead('${l.id}')">REJECT</button>
-      </td>
-    `;
-    body.appendChild(tr);
-  });
+    leads.forEach(lead => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-white/5 hover:bg-white/[0.02]";
+        row.innerHTML = `
+            <td class="p-6 text-slate-400 text-xs">${new Date(lead.created_at).toLocaleDateString()}</td>
+            <td class="p-6 font-bold text-white">${lead.campaigns?.title || '??'}</td>
+            <td class="p-6">
+                <div class="font-black text-white text-sm">${lead.promoters?.username}</div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase">${lead.promoters?.full_name}</div>
+            </td>
+            <td class="p-6">
+                <div class="text-green-400 font-mono text-xs">${lead.phone}</div>
+                <div class="text-[10px] text-slate-500 font-bold">UPI: ${lead.upi_id}</div>
+            </td>
+            <td class="p-6 text-center">
+                <button onclick="approveLead('${lead.id}', '${lead.user_id}', ${lead.campaigns?.payout || 0})" class="bg-green-600 text-black font-black px-4 py-2 rounded-lg text-[10px] mr-2">PAY</button>
+                <button onclick="rejectLead('${lead.id}')" class="bg-white/5 text-slate-400 px-4 py-2 rounded-lg text-[10px]">REJECT</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
-async function approveLead(leadId, userId, amount) {
-  if (!confirm(`Approve ₹${amount}?`)) return;
+async function approveLead(leadId, promoterId, amount) {
+    if(!confirm(`Authorize ₹${amount} Settlement?`)) return;
 
-  await db.from("leads").update({ status: "approved" }).eq("id", leadId);
+    // 1. Mark Lead Approved
+    await db.from('leads').update({ status: 'approved' }).eq('id', leadId);
 
-  const { data: promoter } = await db
-    .from("promoters")
-    .select("wallet_balance,referred_by")
-    .eq("id", userId)
-    .single();
+    // 2. Fetch User & Referrer
+    const { data: user } = await db.from('promoters').select('wallet_balance, referred_by').eq('id', promoterId).single();
+    
+    // 3. Credit Main User
+    const newBal = (user.wallet_balance || 0) + Number(amount);
+    await db.from('promoters').update({ wallet_balance: newBal }).eq('id', promoterId);
 
-  const newBal = (promoter.wallet_balance || 0) + amount;
-  await db.from("promoters").update({ wallet_balance: newBal }).eq("id", userId);
-
-  if (promoter.referred_by) {
-    const bonus = amount * 0.1;
-    const { data: boss } = await db
-      .from("promoters")
-      .select("wallet_balance,referral_earnings")
-      .eq("id", promoter.referred_by)
-      .single();
-
-    await db
-      .from("promoters")
-      .update({
-        wallet_balance: (boss.wallet_balance || 0) + bonus,
-        referral_earnings: (boss.referral_earnings || 0) + bonus
-      })
-      .eq("id", promoter.referred_by);
-  }
-
-  loadLeads();
-  loadStats();
-  loadPayouts();
+    // 4. Handle 10% Army Passive Commission
+    if (user.referred_by) {
+        const bonus = Number(amount) * 0.10;
+        const { data: boss } = await db.from('promoters').select('wallet_balance, referral_earnings').eq('id', user.referred_by).single();
+        if (boss) {
+            await db.from('promoters').update({ 
+                wallet_balance: (boss.wallet_balance || 0) + bonus,
+                referral_earnings: (boss.referral_earnings || 0) + bonus 
+            }).eq('id', user.referred_by);
+        }
+    }
+    initDashboard();
+    alert("✅ PROTOCOL EXECUTED: Settlement Dispersed");
 }
 
-async function rejectLead(id) {
-  if (!confirm("Reject lead?")) return;
-  await db.from("leads").update({ status: "rejected" }).eq("id", id);
-  loadLeads();
-}
-
-/* ================== PAYOUTS ================== */
+// =========================================
+// 6. SETTLEMENTS (PAYOUTS)
+// =========================================
 async function loadPayouts() {
-  const body = document.getElementById("payoutTableBody");
-  if (!body) return;
+    const { data: users } = await db.from('promoters').select('*').gt('wallet_balance', 0).order('wallet_balance', { ascending: false });
+    const tbody = document.getElementById("payoutTableBody");
+    tbody.innerHTML = "";
 
-  const { data } = await db
-    .from("promoters")
-    .select("*")
-    .gt("wallet_balance", 0)
-    .order("wallet_balance", { ascending: false });
-
-  body.innerHTML = "";
-  data?.forEach(u => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${u.username}</td>
-      <td>${u.upi_id}</td>
-      <td>₹${u.wallet_balance}</td>
-      <td><button onclick="markPaid('${u.id}',${u.wallet_balance})">MARK PAID</button></td>
-    `;
-    body.appendChild(tr);
-  });
+    users.forEach(u => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-white/5";
+        row.innerHTML = `
+            <td class="p-6 font-bold text-white">${u.username}</td>
+            <td class="p-6 font-mono text-yellow-500 text-xs">${u.upi_id}</td>
+            <td class="p-6 text-right font-black text-green-400">₹${u.wallet_balance}</td>
+            <td class="p-6 text-center">
+                <button onclick="markPaid('${u.id}', ${u.wallet_balance})" class="bg-blue-600 text-white font-black px-4 py-2 rounded-lg text-[10px]">MARK PAID</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
-async function markPaid(id, amt) {
-  if (!confirm(`Confirm ₹${amt}?`)) return;
-
-  const { error } = await db.rpc("reset_wallet", {
-    target_user_id: id
-  });
-
-  if (error) {
-    await db
-      .from("promoters")
-      .update({ wallet_balance: 0, referral_earnings: 0 })
-      .eq("id", id);
-  }
-
-  loadPayouts();
-  loadStats();
+async function markPaid(userId, amount) {
+    if(!confirm(`Confirm Payment of ₹${amount}?`)) return;
+    await db.from('promoters').update({ wallet_balance: 0 }).eq('id', userId);
+    initDashboard();
 }
 
-/* ================== STATS ================== */
+// =========================================
+// 7. GOD CONFIG & ANALYTICS
+// =========================================
 async function loadStats() {
-  const { count: leads } = await db
-    .from("leads")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "approved");
+    const { count: leads } = await db.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'approved');
+    const { count: army } = await db.from('promoters').select('*', { count: 'exact', head: true });
+    const { data: balData } = await db.from('promoters').select('wallet_balance');
+    const liability = balData.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0);
 
-  const { count: users } = await db
-    .from("promoters")
-    .select("*", { count: "exact", head: true });
-
-  const { data: bal } = await db.from("promoters").select("wallet_balance");
-  const total = bal?.reduce((s, p) => s + Number(p.wallet_balance || 0), 0);
-
-  document.getElementById("statLeads").textContent = leads || 0;
-  document.getElementById("statPromoters").textContent = users || 0;
-  document.getElementById("statLiability").textContent =
-    total?.toLocaleString("en-IN") || 0;
+    document.getElementById("statLeads").innerText = leads || 0;
+    document.getElementById("statPromoters").innerText = army || 0;
+    document.getElementById("statLiability").innerText = liability.toLocaleString('en-IN');
 }
 
-/* ================== BROADCAST ================== */
-function openBroadcastModal() {
-  document.getElementById("broadcastModal")?.classList.remove("hidden");
-}
-function closeBroadcastModal() {
-  document.getElementById("broadcastModal")?.classList.add("hidden");
-}
-
-async function sendBroadcast() {
-  const msg = document.getElementById("broadcastMsg").value.trim();
-  if (!msg) return alert("Empty message");
-
-  await db
-    .from("system_config")
-    .update({ broadcast_message: msg })
-    .eq("key", "site_status");
-
-  closeBroadcastModal();
-}
-
-/* ================== SYSTEM CONFIG ================== */
 async function loadSystemConfig() {
-  const { data } = await db.from("system_config").select("*");
-  data?.forEach(c => {
-    if (c.key === "min_payout")
-      document.getElementById("cfg_min_payout").value = c.value;
-    if (c.key === "support_number")
-      document.getElementById("cfg_support").value = c.value;
-    if (c.key === "site_status")
-      document.getElementById("cfg_status").value = c.value;
-  });
+    const { data } = await db.from('system_config').select('*');
+    data.forEach(item => {
+        if (item.key === 'min_payout') document.getElementById('cfg_min_payout').value = item.value;
+        if (item.key === 'support_number') document.getElementById('cfg_support').value = item.value;
+        if (item.key === 'site_status') document.getElementById('cfg_status').value = item.value;
+    });
 }
 
 async function saveSystemConfig() {
-  await Promise.all([
-    db
-      .from("system_config")
-      .update({ value: document.getElementById("cfg_min_payout").value })
-      .eq("key", "min_payout"),
-    db
-      .from("system_config")
-      .update({ value: document.getElementById("cfg_support").value })
-      .eq("key", "support_number"),
-    db
-      .from("system_config")
-      .update({ value: document.getElementById("cfg_status").value })
-      .eq("key", "site_status")
-  ]);
+    const vals = {
+        min_payout: document.getElementById('cfg_min_payout').value,
+        support_number: document.getElementById('cfg_support').value,
+        site_status: document.getElementById('cfg_status').value
+    };
+    await Promise.all([
+        db.from('system_config').update({ value: vals.min_payout }).eq('key', 'min_payout'),
+        db.from('system_config').update({ value: vals.support_number }).eq('key', 'support_number'),
+        db.from('system_config').update({ value: vals.site_status }).eq('key', 'site_status')
+    ]);
+    alert("🌍 SYSTEM LAWS UPDATED");
+}
 
-  alert("System updated");
+// Broadcast Hub
+function openBroadcastModal() { document.getElementById("broadcastModal").classList.remove("hidden"); }
+function closeBroadcastModal() { document.getElementById("broadcastModal").classList.add("hidden"); }
+async function sendBroadcast() {
+    const msg = document.getElementById("broadcastMsg").value;
+    await db.from('system_config').update({ broadcast_message: msg }).eq('key', 'site_status');
+    alert("📢 BROADCAST LIVE");
+    closeBroadcastModal();
 }

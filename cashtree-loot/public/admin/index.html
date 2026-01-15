@@ -1,203 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sovereign | Admin Command Center</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sovereign | Admin Command Center</title>
 
-  <!-- SUPABASE -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- TAILWIND -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- ICONS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- CUSTOM CSS -->
-  <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="h-screen flex overflow-hidden">
 
-<!-- ================= LOGIN MODAL ================= -->
 <div id="loginModal">
-  <div class="glass-panel login-card-fixed">
-    <div class="animate-pulse-green text-5xl mb-5">
-      <i class="fas fa-fingerprint"></i>
+    <div class="glass-panel login-card-fixed">
+        <div class="animate-pulse-green text-6xl mb-6">
+            <i class="fas fa-fingerprint"></i>
+        </div>
+
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">SECURITY VAULT</h2>
+        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-10">
+            Master Key Required for System Access
+        </p>
+
+        <input id="masterKey" type="password" class="vault-input" placeholder="••••">
+
+        <button class="unlock-btn" onclick="checkAuth()">AUTHORIZE SYSTEM ACCESS</button>
     </div>
-
-    <h2 class="text-2xl font-black text-white mb-2">SECURITY VAULT</h2>
-    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">
-      Master Key Required
-    </p>
-
-    <input id="masterKey" type="password" class="vault-input" placeholder="••••">
-
-    <button class="unlock-btn" onclick="checkAuth()">UNLOCK SYSTEM</button>
-  </div>
 </div>
 
-<!-- ================= SIDEBAR ================= -->
 <aside class="w-72 hidden md:flex flex-col z-20">
-  <div class="p-8 text-2xl font-black text-white border-b border-white/5">
-    <i class="fas fa-tree text-green-500 mr-3"></i> CashTree
-  </div>
-
-  <nav class="flex-1 p-6 space-y-2">
-    <div class="nav-label">Empire Health</div>
-
-    <a id="nav-dashboard" onclick="showSection('dashboard')" class="nav-item active">
-      <i class="fas fa-chart-line w-8"></i> Daily Pulse
-    </a>
-
-    <a id="nav-campaigns" onclick="showSection('campaigns')" class="nav-item">
-      <i class="fas fa-rocket w-8"></i> Campaign Lab
-    </a>
-
-    <div class="nav-label mt-8">Operations</div>
-
-    <a id="nav-leads" onclick="showSection('leads')" class="nav-item">
-      <i class="fas fa-check-double w-8"></i> Approvals
-      <span id="navPendingBadge" class="badge-red hidden ml-auto">0</span>
-    </a>
-
-    <a id="nav-payouts" onclick="showSection('payouts')" class="nav-item">
-      <i class="fas fa-wallet w-8"></i> Settlements
-    </a>
-
-    <div class="nav-label mt-8">System Control</div>
-
-    <a onclick="openBroadcastModal()" class="nav-item">
-      <i class="fas fa-bell w-8 text-yellow-500 animate-pulse"></i> Broadcast Hub
-    </a>
-
-    <a id="nav-settings" onclick="showSection('settings')" class="nav-item">
-      <i class="fas fa-sliders-h w-8"></i> God Config
-    </a>
-  </nav>
-
-  <div class="p-6 border-t border-white/5">
-    <div class="flex items-center">
-      <div class="admin-avatar">A</div>
-      <div class="ml-3">
-        <div class="text-sm font-black text-white">Admin Kenz</div>
-        <div class="text-[10px] font-bold text-green-400 uppercase tracking-widest">
-          ● Encrypted
-        </div>
-      </div>
+    <div class="p-8 text-2xl font-black text-white border-b border-white/5 flex items-center">
+        <i class="fas fa-tree text-green-500 mr-3"></i> CashTree
     </div>
-  </div>
+
+    <nav class="flex-1 p-6 space-y-2">
+        <div class="nav-label">Empire Health</div>
+
+        <a id="nav-dashboard" onclick="showSection('dashboard')" class="nav-item active">
+            <i class="fas fa-chart-line w-8"></i> <span>Daily Pulse</span>
+        </a>
+
+        <a id="nav-campaigns" onclick="showSection('campaigns')" class="nav-item">
+            <i class="fas fa-rocket w-8"></i> <span>Campaign Lab</span>
+        </a>
+
+        <div class="nav-label mt-8">Operations</div>
+
+        <a id="nav-leads" onclick="showSection('leads')" class="nav-item">
+            <i class="fas fa-check-double w-8"></i> <span>Approvals</span>
+            <span id="navPendingBadge" class="badge-red hidden ml-auto">0</span>
+        </a>
+
+        <a id="nav-payouts" onclick="showSection('payouts')" class="nav-item">
+            <i class="fas fa-wallet w-8"></i> <span>Settlements</span>
+        </a>
+
+        <div class="nav-label mt-8">System Control</div>
+
+        <a id="nav-broadcast" onclick="openBroadcastModal()" class="nav-item">
+            <i class="fas fa-bell w-8 text-yellow-500 animate-pulse"></i> <span>Broadcast Hub</span>
+        </a>
+
+        <a id="nav-settings" onclick="showSection('settings')" class="nav-item">
+            <i class="fas fa-sliders-h w-8"></i> <span>God Config</span>
+        </a>
+    </nav>
+
+    <div class="p-6 border-t border-white/5 bg-black/20">
+        <div class="flex items-center">
+            <div class="admin-avatar">A</div>
+            <div class="ml-3">
+                <div class="text-sm font-black text-white">Admin Kenz</div>
+                <div class="text-[10px] font-bold text-green-400 uppercase tracking-widest">● Online Secured</div>
+            </div>
+        </div>
+    </div>
 </aside>
 
-<!-- ================= MAIN CONTENT ================= -->
-<main class="flex-1 overflow-y-auto p-6 md:p-12">
+<main class="flex-1 overflow-y-auto p-6 md:p-12 relative">
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="section">
-  <h1 class="text-5xl font-black text-white mb-2">Command Center</h1>
-  <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-10">
-    Live Empire Analytics
-  </p>
+    <div id="dashboard" class="section">
+        <h1 class="text-5xl font-black text-white mb-2 tracking-tighter">Command Center</h1>
+        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-10">Live Analytics Engine</p>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div class="stat-card border-green-500">
-      <div class="text-xs font-black uppercase text-slate-400">Approved Leads</div>
-      <div id="statLeads" class="text-5xl font-black text-white mt-4">--</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="stat-card border-green-500">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Approved Leads</div>
+                <div id="statLeads" class="text-5xl font-black text-white mt-4 tracking-tighter">--</div>
+            </div>
+
+            <div class="stat-card border-red-500">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Payout Liability</div>
+                <div class="text-5xl font-black text-white mt-4 tracking-tighter">
+                    ₹<span id="statLiability">--</span>
+                </div>
+            </div>
+
+            <div class="stat-card border-blue-500">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Army</div>
+                <div id="statPromoters" class="text-5xl font-black text-white mt-4 tracking-tighter">--</div>
+            </div>
+        </div>
     </div>
 
-    <div class="stat-card border-red-500">
-      <div class="text-xs font-black uppercase text-slate-400">Payout Liability</div>
-      <div class="text-5xl font-black text-white mt-4">
-        ₹<span id="statLiability">--</span>
-      </div>
+    <div id="campaigns" class="section hidden">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-4xl font-black uppercase text-white tracking-tighter">Campaign Lab</h1>
+            <button class="unlock-btn px-10 text-xs py-3" onclick="toggleCreateCampaign()">New Deployment</button>
+        </div>
+
+        <div id="createCampaignForm" class="glass-panel p-10 rounded-3xl hidden mb-12 border-green-500/20">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <input id="newCampTitle" class="input-dark" placeholder="Campaign Title">
+                <input id="newCampPayout" type="number" class="input-dark" placeholder="Payout (₹)">
+                <input id="newCampUrl" class="input-dark md:col-span-2" placeholder="Offer Destination Link">
+                <input id="newCampImg" class="input-dark md:col-span-2" placeholder="Brand Logo URL">
+            </div>
+            <button onclick="createNewCampaign()" class="unlock-btn w-full mt-8">LAUNCH LIVE CAMPAIGN</button>
+        </div>
+
+        <div id="campaignGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </div>
 
-    <div class="stat-card border-blue-500">
-      <div class="text-xs font-black uppercase text-slate-400">Total Army</div>
-      <div id="statPromoters" class="text-5xl font-black text-white mt-4">--</div>
+    <div id="leads" class="section hidden">
+        <h1 class="text-4xl font-black text-white mb-10 uppercase tracking-tighter">Approvals Queue</h1>
+
+        <div id="noLeadsMsg" class="hidden p-10 glass-panel rounded-3xl text-center text-slate-500 font-bold uppercase tracking-widest text-xs">
+            System Synced: No Pending Leads
+        </div>
+
+        <div class="glass-panel rounded-3xl overflow-hidden border-white/5">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5">
+                        <th class="p-6 text-left">Timestamp</th>
+                        <th class="p-6 text-left">Campaign</th>
+                        <th class="p-6 text-left">Promoter</th>
+                        <th class="p-6 text-left">Identity</th>
+                        <th class="p-6 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody" class="text-sm"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- CAMPAIGNS -->
-<div id="campaigns" class="section hidden">
-  <div class="flex justify-between mb-10">
-    <h1 class="text-4xl font-black uppercase text-white">Campaign Lab</h1>
-    <button class="unlock-btn px-10 text-xs" onclick="toggleCreateCampaign()">New Campaign</button>
-  </div>
+    <div id="payouts" class="section hidden">
+        <h1 class="text-4xl font-black text-white mb-10 uppercase tracking-tighter">Settlements</h1>
 
-  <div id="createCampaignForm" class="glass-panel p-10 rounded-3xl hidden mb-12">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <input id="newCampTitle" class="input-dark" placeholder="Campaign Title">
-      <input id="newCampPayout" type="number" class="input-dark" placeholder="Payout (₹)">
-      <input id="newCampUrl" class="input-dark md:col-span-2" placeholder="Offer Link">
-      <input id="newCampImg" class="input-dark md:col-span-2" placeholder="Image URL">
+        <div class="glass-panel rounded-3xl overflow-hidden border-white/5">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5">
+                        <th class="p-6 text-left">Promoter</th>
+                        <th class="p-6 text-left">Payment Identity (UPI)</th>
+                        <th class="p-6 text-right">Balance Due</th>
+                        <th class="p-6 text-center">Protocol</th>
+                    </tr>
+                </thead>
+                <tbody id="payoutTableBody"></tbody>
+            </table>
+        </div>
     </div>
-    <button onclick="createNewCampaign()" class="unlock-btn w-full mt-8">
-      INITIATE DEPLOYMENT
-    </button>
-  </div>
 
-  <div id="campaignGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-</div>
+    <div id="settings" class="section hidden">
+        <h1 class="text-5xl font-black text-white mb-2 tracking-tighter">God Config</h1>
+        <p class="text-xs uppercase tracking-widest text-slate-500 mb-10">Global System Sovereignty</p>
 
-<!-- LEADS -->
-<div id="leads" class="section hidden">
-  <h1 class="text-4xl font-black text-white mb-10 uppercase">Approvals Queue</h1>
-
-  <div id="noLeadsMsg" class="hidden text-center text-slate-500 font-bold mb-6">
-    No pending leads 🎉
-  </div>
-
-  <div class="glass-panel rounded-3xl overflow-hidden">
-    <table class="w-full">
-      <tbody id="leadsTableBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- PAYOUTS -->
-<div id="payouts" class="section hidden">
-  <h1 class="text-4xl font-black text-white mb-10 uppercase">Settlements</h1>
-
-  <div class="glass-panel rounded-3xl overflow-hidden">
-    <table class="w-full">
-      <tbody id="payoutTableBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- SETTINGS -->
-<div id="settings" class="section hidden">
-  <h1 class="text-5xl font-black text-white mb-2">God Config</h1>
-  <p class="text-xs uppercase tracking-widest text-slate-500 mb-10">
-    System Sovereign Control
-  </p>
-
-  <div class="glass-panel p-10 rounded-3xl max-w-2xl">
-    <input id="cfg_min_payout" class="input-dark mb-6" placeholder="Min Payout">
-    <input id="cfg_support" class="input-dark mb-6" placeholder="Support Number">
-    <select id="cfg_status" class="input-dark mb-10">
-      <option value="LIVE">🟢 SYSTEM ONLINE</option>
-      <option value="MAINTENANCE">🔴 MAINTENANCE</option>
-    </select>
-    <button class="unlock-btn w-full" onclick="saveSystemConfig()">APPLY CHANGES</button>
-  </div>
-</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div class="glass-panel p-10 rounded-3xl border-white/5">
+                <h3 class="text-xl font-bold mb-8 text-green-500 uppercase tracking-tighter flex items-center">
+                    <i class="fas fa-shield-alt mr-3"></i> Core Directives
+                </h3>
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Minimum Withdrawal Limit</label>
+                        <input id="cfg_min_payout" class="input-dark" placeholder="₹500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">WhatsApp Support Bridge</label>
+                        <input id="cfg_support" class="input-dark" placeholder="+91...">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Empire Operations Status</label>
+                        <select id="cfg_status" class="input-dark">
+                            <option value="LIVE">🟢 SYSTEM ONLINE</option>
+                            <option value="MAINTENANCE">🔴 SYSTEM LOCKDOWN</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="unlock-btn w-full mt-10" onclick="saveSystemConfig()">SYNC SYSTEM LAWS</button>
+            </div>
+        </div>
+    </div>
 </main>
 
-<!-- ================= BROADCAST MODAL ================= -->
-<div id="broadcastModal" class="fixed inset-0 z-50 hidden bg-black/90 flex items-center justify-center">
-  <div class="glass-panel p-10 rounded-3xl w-full max-w-lg">
-    <textarea id="broadcastMsg" rows="5" class="input-dark mb-6"></textarea>
-    <button id="sendBtn" onclick="sendBroadcast()" class="unlock-btn w-full">
-      SEND BROADCAST
-    </button>
-  </div>
+<div id="broadcastModal" class="fixed inset-0 z-[60] hidden bg-black/95 flex items-center justify-center p-4">
+    <div class="glass-panel p-10 rounded-3xl w-full max-w-lg border-yellow-500/20">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black text-white uppercase tracking-tighter flex items-center">
+                <i class="fas fa-bullhorn mr-4 text-yellow-500"></i> Broadcast
+            </h2>
+            <button onclick="closeBroadcastModal()" class="text-slate-500 hover:text-white transition"><i class="fas fa-times text-2xl"></i></button>
+        </div>
+        
+        <label class="text-[10px] font-black uppercase text-slate-500 block mb-3">Target: All Promoter Dashboards</label>
+        <textarea id="broadcastMsg" rows="5" class="input-dark mb-6 font-bold" placeholder="Enter directive..."></textarea>
+        
+        <button id="sendBtn" onclick="sendBroadcast()" class="unlock-btn w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black">
+            BLAST MESSAGE LIVE
+        </button>
+    </div>
 </div>
 
-<!-- JS -->
 <script src="admin.js"></script>
 </body>
 </html>
