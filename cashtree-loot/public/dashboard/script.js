@@ -258,7 +258,11 @@ async function loadOffers(partnerCode) {
         <div class="offer-card">
             <div class="offer-info">
                 <h4>${offer.title}</h4>
-                <div class="payout-tag">EARN ₹${offer.payout}</div>
+                <div class="payout-tag">
+                     EARN ₹${offer.payout_amount ?? 0}
+                </div>
+
+
             </div>
             <button class="copy-btn" onclick="copyLink('${link}')">
                 <i class="fas fa-link mr-1"></i> COPY
