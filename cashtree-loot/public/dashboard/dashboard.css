@@ -52,6 +52,11 @@ body {
   margin-bottom: 12px;
 }
 
+.offer-info {
+    overflow: hidden; /* Prevents long text from breaking the card */
+    text-align: left;
+}
+
 /* 🍞 TOAST SYSTEM: Fixed position so it doesn't move the layout */
 #toast {
     position: fixed;
