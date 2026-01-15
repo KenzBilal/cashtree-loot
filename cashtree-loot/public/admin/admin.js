@@ -1,459 +1,357 @@
-// admin.js - The 1000/10 Command Center Brain
+/* ======================================================
+   FINAL BOSS ADMIN SCRIPT – CASH TREE
+   Supabase v2 | Hardened | Production Grade
+====================================================== */
 
-// 1. Conflict-Free Connection
-let db; 
-try {
-    const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA';
-    
-    if (!window.supabaseInstance) {
-        window.supabaseInstance = window.supabase.createClient(supabaseUrl, supabaseKey);
+/* ================== SUPABASE INIT ================== */
+let db = null;
+
+(function initSupabase() {
+  try {
+    const SUPABASE_URL = "https://qzjvratinjirrcmgzjlx.supabase.co";
+    const SUPABASE_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA";
+
+    if (!window.supabase?.createClient) {
+      throw new Error("Supabase library not loaded");
     }
-    db = window.supabaseInstance; // Using 'db' to avoid 'already declared' errors
-    console.log("✅ Final Boss: Database Online");
-} catch (err) {
-    console.error("❌ Connection Error:", err);
-}
 
-// 2. Security Vault
+    if (!window.__ct_supabase__) {
+      window.__ct_supabase__ = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+    }
+
+    db = window.__ct_supabase__;
+    console.log("✅ Supabase connected");
+  } catch (err) {
+    console.error("❌ Supabase init failed:", err);
+  }
+})();
+
+/* ================== AUTH ================== */
 function checkAuth() {
-    const keyInput = document.getElementById("masterKey");
-    const btn = document.querySelector(".unlock-btn");
-    const key = keyInput.value.trim();
+  const input = document.getElementById("masterKey");
+  const modal = document.getElementById("loginModal");
 
-    if(key === "znek7906") {
-        // High-end UI feedback
-        btn.innerHTML = `<i class="fas fa-sync fa-spin mr-2"></i> AUTHORIZING...`;
-        btn.style.filter = "hue-rotate(90deg)"; // Turns it slightly different green
-        
-        setTimeout(() => {
-            document.getElementById("loginModal").classList.add("hidden");
-            initDashboard();
-        }, 800); // 800ms delay for "Security Scanning" feel
-    } else {
-        // Visual shake error
-        const card = document.querySelector(".login-card-fixed");
-        card.style.animation = "none";
-        card.offsetHeight; // trigger reflow
-        card.style.border = "1px solid var(--brand-red)";
-        alert("❌ ACCESS DENIED: Invalid Master Key");
-        keyInput.value = "";
-    }
+  if (!input || !modal) return;
+
+  if (input.value.trim() !== "znek7906") {
+    alert("❌ ACCESS DENIED");
+    input.value = "";
+    return;
+  }
+
+  modal.classList.add("hidden");
+  initDashboard();
 }
 
+/* ================== NAVIGATION ================== */
 function showSection(id) {
-    document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-    
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    const activeNav = document.getElementById('nav-' + id);
-    if(activeNav) activeNav.classList.add('active');
+  document.querySelectorAll(".section").forEach(s =>
+    s.classList.add("hidden")
+  );
+
+  const target = document.getElementById(id);
+  if (!target) {
+    console.error("Missing section:", id);
+    return;
+  }
+  target.classList.remove("hidden");
+
+  document.querySelectorAll(".nav-item").forEach(n =>
+    n.classList.remove("active")
+  );
+  const nav = document.getElementById("nav-" + id);
+  if (nav) nav.classList.add("active");
 }
 
-// --- INITIALIZATION ---
-/* =========================================
-   CORE COMMAND CENTER INITIALIZATION
-   ========================================= */
-
+/* ================== INIT ================== */
 async function initDashboard() {
-    console.log("🚀 Command Center Online. Synchronizing with Cloud...");
+  await Promise.all([
+    loadStats(),
+    loadCampaigns(),
+    loadLeads(),
+    loadPayouts(),
+    loadSystemConfig(),
+    updatePendingBadge()
+  ]);
 
-    // 1. Instant Data Pull (Load everything the moment the vault opens)
-    await Promise.all([
-        loadStats(),          // Dashboard Stat Cards
-        loadCampaigns(),      // Campaign Lab Grid
-        loadLeads(),          // Approvals Table
-        loadPayouts(),        // Settlements Table
-        loadSystemConfig(),   // God Config (Min Payout, Maintenance, etc.)
-        updatePendingBadge()  // Sidebar Notification Dot
-    ]);
-
-    // 2. The Heartbeat Pulse (Set to 30s for real-time awareness)
-    // We use a single interval to keep the system perfectly synced.
-    setInterval(() => {
-        console.log("💓 Heartbeat: Refreshing live data...");
-        loadStats();
-        loadLeads();
-        updatePendingBadge();
-    }, 30000); 
+  setInterval(() => {
+    loadStats();
+    loadLeads();
+    updatePendingBadge();
+  }, 30000);
 }
 
-/* =========================================
-   SIDEBAR NOTIFICATION LOGIC
-   ========================================= */
-
+/* ================== BADGE ================== */
 async function updatePendingBadge() {
-    // Counts leads waiting for your approval
-    const { count, error } = await db
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+  const badge = document.getElementById("navPendingBadge");
+  if (!badge) return;
 
-    if (error) return;
+  const { count } = await db
+    .from("leads")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pending");
 
-    const badge = document.getElementById('navPendingBadge');
-    if (badge) {
-        if (count > 0) {
-            badge.innerText = count;
-            badge.classList.remove('hidden');
-            // Adding a small scale animation to grab your attention
-            badge.classList.add('animate-bounce'); 
-        } else {
-            badge.classList.add('hidden');
-            badge.classList.remove('animate-bounce');
-        }
-    }
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
 }
 
-
-// --- CAMPAIGNS (The Lab) ---
+/* ================== CAMPAIGNS ================== */
 async function loadCampaigns() {
-    const { data: camps, error } = await db.from('campaigns').select('*').order('id');
-    if(error) return console.error(error);
+  const grid = document.getElementById("campaignGrid");
+  if (!grid) return;
 
-    const grid = document.getElementById("campaignGrid");
-    grid.innerHTML = "";
-    
-    camps.forEach(c => {
-        const card = document.createElement("div");
-        card.className = `glass-panel p-6 rounded-2xl border ${c.is_active ? 'border-green-500/30' : 'border-slate-700'}`;
-        
-        // I updated the button below to include: onclick="editCampaign(...)"
-        card.innerHTML = `
-            <div class="flex justify-between items-start mb-4">
-                <img src="${c.image_url || 'https://via.placeholder.com/50'}" class="w-14 h-14 rounded-lg bg-slate-800 object-cover">
-                <label class="switch">
-                    <input type="checkbox" ${c.is_active ? 'checked' : ''} onchange="toggleCampaign('${c.id}', this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <h3 class="font-bold text-xl text-white">${c.title}</h3>
-            <div class="text-xs text-slate-400 truncate mb-4">${c.url}</div>
-            <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-700">
-                <span class="text-green-400 font-bold bg-green-400/10 px-3 py-1 rounded">₹${c.payout || 0}</span>
-                <button onclick="editCampaign('${c.id}', '${c.title}', ${c.payout || 0})" class="text-slate-400 hover:text-white text-sm transition">
-                    <i class="fas fa-edit mr-1"></i> Edit
-                </button>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-}
+  const { data } = await db.from("campaigns").select("*").order("id");
+  grid.innerHTML = "";
 
-async function editCampaign(id, currentTitle, currentPayout) {
-    // Step 1: Ask for new info
-    const newTitle = prompt("Edit Campaign Title:", currentTitle);
-    if (newTitle === null) return; // User clicked cancel
-
-    const newPayout = prompt("Edit Payout Amount (₹):", currentPayout);
-    if (newPayout === null) return; // User clicked cancel
-
-    // Step 2: Update the Database
-    const { error } = await db
-        .from('campaigns')
-        .update({ 
-            title: newTitle, 
-            payout: parseInt(newPayout) 
-        })
-        .eq('id', id);
-
-    // Step 3: Result Handling
-    if (!error) {
-        alert("✅ Success: Campaign Updated!");
-        loadCampaigns(); // Refresh the grid to show new data
-    } else {
-        alert("❌ Error: " + error.message);
-    }
+  data?.forEach(c => {
+    const el = document.createElement("div");
+    el.className = "glass-panel p-6 rounded-2xl";
+    el.innerHTML = `
+      <h3 class="text-xl font-black text-white mb-2">${c.title}</h3>
+      <p class="text-slate-400 text-xs truncate">${c.url || ""}</p>
+      <div class="mt-4 flex justify-between items-center">
+        <span class="text-green-400 font-bold">₹${c.payout || 0}</span>
+        <input type="checkbox" ${
+          c.is_active ? "checked" : ""
+        } onchange="toggleCampaign('${c.id}', this.checked)">
+      </div>
+    `;
+    grid.appendChild(el);
+  });
 }
 
 async function toggleCampaign(id, isActive) {
-    await db.from('campaigns').update({ is_active: isActive }).eq('id', id);
+  await db.from("campaigns").update({ is_active: isActive }).eq("id", id);
 }
 
 function toggleCreateCampaign() {
-    document.getElementById("createCampaignForm").classList.toggle("hidden");
+  const f = document.getElementById("createCampaignForm");
+  f?.classList.toggle("hidden");
 }
 
 async function createNewCampaign() {
-    const title = document.getElementById("newCampTitle").value;
-    const payout = document.getElementById("newCampPayout").value;
-    const url = document.getElementById("newCampUrl").value;
-    const img = document.getElementById("newCampImg").value;
+  const title = document.getElementById("newCampTitle").value.trim();
+  const payout = Number(document.getElementById("newCampPayout").value);
+  const url = document.getElementById("newCampUrl").value.trim();
+  const img = document.getElementById("newCampImg").value.trim();
 
-    const { error } = await db.from('campaigns').insert([{
-        title: title, payout: payout, url: url, image_url: img, is_active: true
-    }]);
+  if (!title || !payout) {
+    alert("Missing fields");
+    return;
+  }
 
-    if(!error) {
-        alert("✅ Campaign Launched!");
-        toggleCreateCampaign();
-        loadCampaigns();
+  await db.from("campaigns").insert([
+    {
+      title,
+      payout,
+      url,
+      image_url: img,
+      is_active: true
     }
+  ]);
+
+  toggleCreateCampaign();
+  loadCampaigns();
 }
 
-// --- MISSION CONTROL (Leads) ---
+/* ================== LEADS ================== */
 async function loadLeads() {
-    const { data: leads, error } = await db
-        .from('leads')
-        .select(`*, promoters(full_name, username), campaigns(title, payout)`)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+  const body = document.getElementById("leadsTableBody");
+  const empty = document.getElementById("noLeadsMsg");
+  if (!body) return;
 
-    if(error) return console.error(error);
+  const { data } = await db
+    .from("leads")
+    .select(
+      `*, campaigns(title,payout), promoters(username,full_name)`
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
-    const tbody = document.getElementById("leadsTableBody");
-    const badge = document.getElementById("navPendingBadge");
-    tbody.innerHTML = "";
-    
-    if(leads && leads.length > 0) {
-        document.getElementById("noLeadsMsg").classList.add("hidden");
-        if(badge) {
-            badge.innerText = leads.length;
-            badge.classList.remove("hidden");
-        }
-        
-        leads.forEach(lead => {
-            const row = document.createElement("tr");
-            row.className = "hover:bg-slate-800/50";
-            row.innerHTML = `
-                <td class="p-5 text-slate-400">${new Date(lead.created_at).toLocaleDateString()}</td>
-                <td class="p-5 font-bold text-white">${lead.campaigns?.title || 'Unknown'}</td>
-                <td class="p-5">
-                    <div class="font-bold text-white">${lead.promoters?.username || 'User'}</div>
-                    <div class="text-xs text-slate-500">${lead.promoters?.full_name || ''}</div>
-                </td>
-                <td class="p-5">
-                    <div class="text-blue-300 font-mono">${lead.phone}</div>
-                    <div class="text-xs text-slate-500">UPI: ${lead.upi_id}</div>
-                </td>
-                <td class="p-5 text-center flex gap-2 justify-center">
-                    <button onclick="approveLead('${lead.id}', '${lead.user_id}', ${lead.campaigns?.payout || 100})" class="bg-green-600 px-3 py-1 rounded text-white text-xs font-bold hover:bg-green-500 transition">PAY</button>
-                    <button onclick="rejectLead('${lead.id}')" class="bg-slate-700 px-3 py-1 rounded text-white text-xs font-bold hover:bg-red-600 transition">REJECT</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    } else {
-        document.getElementById("noLeadsMsg").classList.remove("hidden");
-        if(badge) badge.classList.add("hidden");
-    }
+  body.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    empty?.classList.remove("hidden");
+    return;
+  }
+  empty?.classList.add("hidden");
+
+  data.forEach(l => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${new Date(l.created_at).toLocaleDateString()}</td>
+      <td>${l.campaigns?.title || ""}</td>
+      <td>${l.promoters?.username || ""}</td>
+      <td>${l.phone} <br><small>${l.upi_id}</small></td>
+      <td>
+        <button onclick="approveLead('${l.id}','${l.user_id}',${l.campaigns?.payout || 0})">PAY</button>
+        <button onclick="rejectLead('${l.id}')">REJECT</button>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
 }
 
-async function approveLead(leadId, promoterId, amount) {
-    if(!confirm(`Approve and credit ₹${amount}?`)) return;
-    
-    // 1. Update lead status to approved
-    await db.from('leads').update({ status: 'approved' }).eq('id', leadId);
-    
-    // 2. Fetch the Promoter AND their Referrer
-    const { data: promoter } = await db
-        .from('promoters')
-        .select('wallet_balance, referred_by')
-        .eq('id', promoterId)
-        .single();
-    
-    if (!promoter) return alert("Error: Promoter not found");
+async function approveLead(leadId, userId, amount) {
+  if (!confirm(`Approve ₹${amount}?`)) return;
 
-    // 3. Credit the Main Promoter (The worker)
-    const mainNewBal = (promoter.wallet_balance || 0) + Number(amount);
-    await db.from('promoters').update({ wallet_balance: mainNewBal }).eq('id', promoterId);
-    
-    // 4. CHECK FOR REFERRER (The Passive Income Power)
-    if (promoter.referred_by) {
-        const bonusAmount = Number(amount) * 0.10; 
-        
-        // Fetch Referrer's current stats
-        const { data: boss } = await db
-            .from('promoters')
-            .select('wallet_balance, referral_earnings')
-            .eq('id', promoter.referred_by)
-            .single();
-        
-        if (boss) {
-            const bossNewBal = (boss.wallet_balance || 0) + bonusAmount;
-            // Add to their total wallet AND their specific referral_earnings stat
-            const newReferralTotal = (boss.referral_earnings || 0) + bonusAmount;
+  await db.from("leads").update({ status: "approved" }).eq("id", leadId);
 
-            await db.from('promoters')
-                .update({ 
-                    wallet_balance: bossNewBal,
-                    referral_earnings: newReferralTotal 
-                })
-                .eq('id', promoter.referred_by);
-            
-            console.log(`✅ Referral Bonus: ₹${bonusAmount} added to Referrer's Army earnings.`);
-        }
-    }
-    
-    // Refresh Admin UI
-    loadLeads();
-    loadStats();
-    loadPayouts();
-    alert("Lead Approved! Main balance and Passive Bonus updated.");
-}
-async function rejectLead(leadId) {
-    if(!confirm("Reject this lead?")) return;
-    await db.from('leads').update({ status: 'rejected' }).eq('id', leadId);
-    loadLeads();
+  const { data: promoter } = await db
+    .from("promoters")
+    .select("wallet_balance,referred_by")
+    .eq("id", userId)
+    .single();
+
+  const newBal = (promoter.wallet_balance || 0) + amount;
+  await db.from("promoters").update({ wallet_balance: newBal }).eq("id", userId);
+
+  if (promoter.referred_by) {
+    const bonus = amount * 0.1;
+    const { data: boss } = await db
+      .from("promoters")
+      .select("wallet_balance,referral_earnings")
+      .eq("id", promoter.referred_by)
+      .single();
+
+    await db
+      .from("promoters")
+      .update({
+        wallet_balance: (boss.wallet_balance || 0) + bonus,
+        referral_earnings: (boss.referral_earnings || 0) + bonus
+      })
+      .eq("id", promoter.referred_by);
+  }
+
+  loadLeads();
+  loadStats();
+  loadPayouts();
 }
 
-// --- SETTLEMENTS (Payouts) ---
+async function rejectLead(id) {
+  if (!confirm("Reject lead?")) return;
+  await db.from("leads").update({ status: "rejected" }).eq("id", id);
+  loadLeads();
+}
+
+/* ================== PAYOUTS ================== */
 async function loadPayouts() {
-    const { data: users, error } = await db.from('promoters').select('*').gt('wallet_balance', 0).order('wallet_balance', { ascending: false });
-    if(error) return;
+  const body = document.getElementById("payoutTableBody");
+  if (!body) return;
 
-    const tbody = document.getElementById("payoutTableBody");
-    tbody.innerHTML = "";
-    let totalLiability = 0;
+  const { data } = await db
+    .from("promoters")
+    .select("*")
+    .gt("wallet_balance", 0)
+    .order("wallet_balance", { ascending: false });
 
-    users.forEach(u => {
-        totalLiability += u.wallet_balance;
-        const row = document.createElement("tr");
-        row.className = "hover:bg-slate-800/50";
-        row.innerHTML = `
-            <td class="p-5"><div class="font-bold text-white">${u.full_name}</div><div class="text-xs text-slate-500">@${u.username}</div></td>
-            <td class="p-5 font-mono text-yellow-400 select-all cursor-pointer">${u.upi_id}</td>
-            <td class="p-5 text-right font-bold text-green-400 text-xl">₹${u.wallet_balance}</td>
-            <td class="p-5 text-center"><button onclick="markPaid('${u.id}', ${u.wallet_balance})" class="bg-blue-600 px-4 py-2 rounded text-white text-xs font-bold hover:bg-blue-500 transition">MARK PAID</button></td>
-        `;
-        tbody.appendChild(row);
-    });
-    
-    const liabilityEl = document.getElementById("statLiability");
-    if(liabilityEl) liabilityEl.innerText = totalLiability;
+  body.innerHTML = "";
+  data?.forEach(u => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.username}</td>
+      <td>${u.upi_id}</td>
+      <td>₹${u.wallet_balance}</td>
+      <td><button onclick="markPaid('${u.id}',${u.wallet_balance})">MARK PAID</button></td>
+    `;
+    body.appendChild(tr);
+  });
 }
 
-async function markPaid(userId, amount) {
-    if(!confirm(`Confirm payment of ₹${amount}? This resets wallet to 0.`)) return;
-    
-    const { error } = await db.rpc('reset_wallet', { target_user_id: userId });
-    
-    if(error) {
-        console.warn("RPC failed, trying manual update...");
-        await db.from('promoters').update({ wallet_balance: 0 }).eq('id', userId);
-    }
-    
-    loadPayouts();
-    loadStats();
+async function markPaid(id, amt) {
+  if (!confirm(`Confirm ₹${amt}?`)) return;
+
+  const { error } = await db.rpc("reset_wallet", {
+    target_user_id: id
+  });
+
+  if (error) {
+    await db
+      .from("promoters")
+      .update({ wallet_balance: 0, referral_earnings: 0 })
+      .eq("id", id);
+  }
+
+  loadPayouts();
+  loadStats();
 }
 
-// --- ANALYTICS (Stats) ---
+/* ================== STATS ================== */
 async function loadStats() {
-    // 1. Fetch Counts (Leads & Promoters)
-    const { count: approvedCount } = await db.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'approved');
-    const { count: totalPromoters } = await db.from('promoters').select('*', { count: 'exact', head: true });
-    
-    // 2. Calculate Payout Liability (Sum of all promoter balances)
-    const { data: balances } = await db.from('promoters').select('wallet_balance');
-    const totalLiability = balances ? balances.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0) : 0;
+  const { count: leads } = await db
+    .from("leads")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "approved");
 
-    // 3. Update the Glass UI
-    const leadsEl = document.getElementById("statLeads");
-    const promotersEl = document.getElementById("statPromoters");
-    const liabilityEl = document.getElementById("statLiability");
+  const { count: users } = await db
+    .from("promoters")
+    .select("*", { count: "exact", head: true });
 
-    if (leadsEl) leadsEl.innerText = approvedCount || 0;
-    if (promotersEl) promotersEl.innerText = totalPromoters || 0;
-    if (liabilityEl) {
-        // Formats number with commas (e.g., 10,000) for a professional look
-        liabilityEl.innerText = totalLiability.toLocaleString('en-IN');
-    }
+  const { data: bal } = await db.from("promoters").select("wallet_balance");
+  const total = bal?.reduce((s, p) => s + Number(p.wallet_balance || 0), 0);
 
-    console.log("📊 Stats Synced: Liability is ₹" + totalLiability);
+  document.getElementById("statLeads").textContent = leads || 0;
+  document.getElementById("statPromoters").textContent = users || 0;
+  document.getElementById("statLiability").textContent =
+    total?.toLocaleString("en-IN") || 0;
 }
 
-// --- BROADCAST HUB ---
+/* ================== BROADCAST ================== */
 function openBroadcastModal() {
-    document.getElementById("broadcastModal").classList.remove("hidden");
+  document.getElementById("broadcastModal")?.classList.remove("hidden");
 }
-
 function closeBroadcastModal() {
-    document.getElementById("broadcastModal").classList.add("hidden");
+  document.getElementById("broadcastModal")?.classList.add("hidden");
 }
 
 async function sendBroadcast() {
-    const msgInput = document.getElementById("broadcastMsg");
-    const msg = msgInput.value.trim();
-    const btn = document.getElementById("sendBtn");
+  const msg = document.getElementById("broadcastMsg").value.trim();
+  if (!msg) return alert("Empty message");
 
-    if(!msg) return alert("Message cannot be empty!");
+  await db
+    .from("system_config")
+    .update({ broadcast_message: msg })
+    .eq("key", "site_status");
 
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> BLASTING...`;
-
-    // 🚀 Update the broadcast_message column in your config row
-    const { error } = await db
-        .from('system_config')
-        .update({ broadcast_message: msg }) 
-        .eq('key', 'site_status'); // Target the main config row
-
-    if(!error) {
-        alert("🚀 BROADCAST LIVE: All promoters notified!");
-        msgInput.value = "";
-        closeBroadcastModal();
-    } else {
-        alert("Error: " + error.message);
-    }
-    
-    btn.disabled = false;
-    btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> BLAST MESSAGE`;
+  closeBroadcastModal();
 }
 
-async function clearBroadcast() {
-    // 🛑 CHANGE: Removed .eq('id', 1) because the column 'id' does not exist
-    const { error } = await db
-        .from('system_config')
-        .update({ broadcast_message: 'OFF' })
-        .eq('key', 'site_status'); // Target the same row used in sendBroadcast
-
-    if(!error) {
-        alert("🧹 Broadcast Cleared: All dashboards are now clean.");
-    } else {
-        alert("Error clearing broadcast: " + error.message);
-    }
-}
-
-
-// Load current config when admin opens settings
+/* ================== SYSTEM CONFIG ================== */
 async function loadSystemConfig() {
-    const { data } = await db.from('system_config').select('*');
-    if (data) {
-        data.forEach(item => {
-            if (item.key === 'min_payout') document.getElementById('cfg_min_payout').value = item.value;
-            if (item.key === 'support_number') document.getElementById('cfg_support').value = item.value;
-            if (item.key === 'site_status') document.getElementById('cfg_status').value = item.value;
-        });
-    }
+  const { data } = await db.from("system_config").select("*");
+  data?.forEach(c => {
+    if (c.key === "min_payout")
+      document.getElementById("cfg_min_payout").value = c.value;
+    if (c.key === "support_number")
+      document.getElementById("cfg_support").value = c.value;
+    if (c.key === "site_status")
+      document.getElementById("cfg_status").value = c.value;
+  });
 }
 
-// Save and Broadcast changes
 async function saveSystemConfig() {
-    const minPayout = document.getElementById('cfg_min_payout').value;
-    const supportNum = document.getElementById('cfg_support').value;
-    const status = document.getElementById('cfg_status').value;
-    const saveBtn = document.querySelector('.unlock-btn'); // Target the God Config button
+  await Promise.all([
+    db
+      .from("system_config")
+      .update({ value: document.getElementById("cfg_min_payout").value })
+      .eq("key", "min_payout"),
+    db
+      .from("system_config")
+      .update({ value: document.getElementById("cfg_support").value })
+      .eq("key", "support_number"),
+    db
+      .from("system_config")
+      .update({ value: document.getElementById("cfg_status").value })
+      .eq("key", "site_status")
+  ]);
 
-    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> SYNCING LAWS...`;
-    saveBtn.disabled = true;
-
-    // Execute all updates simultaneously for maximum speed
-    const results = await Promise.all([
-        db.from('system_config').update({ value: minPayout }).eq('key', 'min_payout'),
-        db.from('system_config').update({ value: supportNum }).eq('key', 'support_number'),
-        db.from('system_config').update({ value: status }).eq('key', 'site_status')
-    ]);
-
-    const hasError = results.some(res => res.error);
-
-    if (!hasError) {
-        alert("🌍 GOD MODE: System laws updated and synced!");
-        if (status === 'MAINTENANCE') {
-            alert("⚠️ WARNING: The Empire is now under Lockdown (Maintenance Mode).");
-        }
-    } else {
-        alert("❌ Error: One or more laws failed to sync. Check database permissions.");
-    }
-
-    saveBtn.innerHTML = `<i class="fas fa-save mr-2"></i> APPLY CHANGES GLOBALLY`;
-    saveBtn.disabled = false;
+  alert("System updated");
 }
