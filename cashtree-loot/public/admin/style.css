@@ -24,7 +24,7 @@ body {
     background-image: radial-gradient(1200px 600px at 12% 12%, rgba(36, 54, 60, 0.12), transparent 60%),
                       linear-gradient(180deg, var(--bg-deep), var(--bg-slate) 100%);
     height: 100vh;
-    overflow: hidden; /* Recommended for Admin Panels */
+    overflow: hidden; 
 }
 
 /* =========================================
@@ -110,46 +110,67 @@ aside {
 .stat-card.border-blue-500 { border-top: 5px solid var(--brand-blue); }
 
 /* =========================================
-   5. SECURITY VAULT & INPUTS
-   ========================================= */
-/* =========================================
-   FIXED: ADMIN LOGIN SHAPE LOCK
+   5. FIXED: EXTRAORDINARY ADMIN LOGIN
    ========================================= */
 #loginModal {
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: rgba(4, 6, 10, 0.98); /* Deep black overlay */
-    display: flex;
+    background: radial-gradient(circle at center, #0a1520 0%, #04060a 100%);
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
 }
 
-#loginModal .glass-panel {
-    width: 100%;
-    max-width: 400px; /* Forces the box to stay shaped */
-    padding: 40px;
-    border-radius: 28px;
+.login-card-fixed {
+    width: 90%;
+    max-width: 420px;
+    padding: 50px 40px !important;
+    border-radius: 40px !important;
     text-align: center;
-    border: 1px solid var(--glass-border);
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(34, 197, 94, 0.2) !important;
+    box-shadow: 0 0 100px rgba(0, 0, 0, 0.8), 
+                inset 0 0 20px rgba(34, 197, 94, 0.05) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated Green Laser Scan Line */
+.login-card-fixed::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(transparent, rgba(34, 197, 94, 0.15), transparent);
+    animation: scan 4s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes scan {
+    0% { top: -100%; }
+    100% { top: 100%; }
 }
 
 .vault-input {
     width: 100%;
-    background: rgba(0, 0, 0, 0.5) !important;
-    border: 2px solid var(--accent);
-    border-radius: 16px;
+    background: #000 !important;
+    border: 1px solid var(--glass-border);
+    border-bottom: 3px solid var(--accent) !important;
+    border-radius: 12px;
     color: var(--accent);
-    font-size: 24px; /* Reduced from 32px for better fit */
+    font-size: 32px !important;
     font-weight: 900;
     text-align: center;
-    letter-spacing: 4px;
-    padding: 18px;
-    margin-bottom: 20px;
-    display: block;
-    box-shadow: inset 0 0 15px rgba(34, 197, 94, 0.1);
+    letter-spacing: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    transition: 0.3s;
+    text-shadow: 0 0 10px var(--accent-glow);
+    outline: none;
 }
 
 .unlock-btn {
@@ -164,10 +185,14 @@ aside {
     letter-spacing: 1px;
     cursor: pointer;
     box-shadow: 0 10px 30px var(--accent-glow);
+    transition: 0.3s;
 }
 
+.unlock-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
 
-
+/* =========================================
+   6. TABLES & BUTTONS
+   ========================================= */
 .input-dark { 
     width: 100%; 
     padding: 1.1rem; 
@@ -181,9 +206,6 @@ aside {
 
 .input-dark:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 
-/* =========================================
-   6. TABLES & BUTTONS
-   ========================================= */
 .btn-primary { background: var(--brand-blue); color: #fff; padding: 0.8rem 1.5rem; border-radius: 12px; border:none; font-weight: 700; cursor: pointer; }
 .btn-success { background: var(--accent); color: #022c22; padding: 0.8rem 1.5rem; border-radius: 12px; border:none; font-weight: 800; cursor: pointer; }
 
@@ -193,17 +215,13 @@ th { color: var(--muted); text-transform: uppercase; font-size: 0.7rem; letter-s
 td { padding: 1rem; }
 
 /* =========================================
-   7. UTILITIES
+   7. UTILITIES & PULSE
    ========================================= */
 .hidden { display: none !important; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
 
-/* 10/10 Live Pulse */
-.animate-pulse-green {
-    animation: pulseGlow 2s infinite;
-}
-
+.animate-pulse-green { animation: pulseGlow 2s infinite; }
 @keyframes pulseGlow {
     0% { filter: drop-shadow(0 0 2px var(--accent)); }
     50% { filter: drop-shadow(0 0 8px var(--accent)); }

@@ -10,13 +10,14 @@
     <link rel="stylesheet" href="admin.css"> </head>
 <body class="h-screen flex overflow-hidden">
 
-    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
-    <div class="glass-panel">
-        <div style="color: var(--accent); font-size: 50px; margin-bottom: 20px;">
+    <div id="loginModal">
+    <div class="glass-panel login-card-fixed">
+        <div class="animate-pulse-green" style="color: var(--accent); font-size: 50px; margin-bottom: 20px;">
             <i class="fas fa-fingerprint"></i>
         </div>
-        <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 8px;">SECURITY VAULT</h2>
-        <p style="color: var(--muted); font-size: 12px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;">Enter Master Key</p>
+        
+        <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 8px; letter-spacing: -1px;">SECURITY VAULT</h2>
+        <p style="color: var(--muted); font-size: 10px; margin-bottom: 35px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800;">Master Key Required</p>
         
         <input type="password" id="masterKey" placeholder="••••" class="vault-input">
         
@@ -67,7 +68,7 @@
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-6 md:p-12 relative">
+    <main id="mainDeck" class="flex-1 overflow-y-auto p-6 md:p-12 relative" style="margin-left: 0;">
         
         <div id="dashboard" class="section">
             <h1 class="text-5xl font-black mb-2 text-white tracking-tighter">Command Center</h1>

@@ -18,12 +18,24 @@ try {
 // 2. Security Vault
 function checkAuth() {
     const keyInput = document.getElementById("masterKey");
+    const btn = document.querySelector(".unlock-btn");
     const key = keyInput.value.trim();
 
     if(key === "znek7906") {
-        document.getElementById("loginModal").classList.add("hidden");
-        initDashboard();
+        // High-end UI feedback
+        btn.innerHTML = `<i class="fas fa-sync fa-spin mr-2"></i> AUTHORIZING...`;
+        btn.style.filter = "hue-rotate(90deg)"; // Turns it slightly different green
+        
+        setTimeout(() => {
+            document.getElementById("loginModal").classList.add("hidden");
+            initDashboard();
+        }, 800); // 800ms delay for "Security Scanning" feel
     } else {
+        // Visual shake error
+        const card = document.querySelector(".login-card-fixed");
+        card.style.animation = "none";
+        card.offsetHeight; // trigger reflow
+        card.style.border = "1px solid var(--brand-red)";
         alert("❌ ACCESS DENIED: Invalid Master Key");
         keyInput.value = "";
     }
