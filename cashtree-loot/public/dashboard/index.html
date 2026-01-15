@@ -19,16 +19,20 @@
     </div>
     
     <div class="dashboard">
-        <header class="top">
-            <div class="user-info">
-                <div class="user-avatar">👤</div>
-                <div>
-                    <div class="greeting">Verified Partner,</div>
-                    <div class="username" id="partnerName">Loading...</div>
-                </div>
-            </div>
-            <button class="logout-btn" onclick="logout()">Logout ➔</button>
-        </header>
+       <header class="top">
+    <div class="user-info">
+        <div class="user-avatar" id="userInitial">K</div> 
+        
+        <div class="user-details">
+            <div class="greeting">Verified Partner</div>
+            <div class="username">
+                <span id="partnerName">KENZ7906</span>
+                <i class="fas fa-check-circle"></i> </div>
+        </div>
+    </div>
+    
+    <button class="logout-btn" onclick="logout()">Logout ➔</button>
+</header>
 
         <div id="broadcastContainer" class="hidden" style="margin-bottom: 25px; animation: slideDown 0.5s ease-out;">
             <div style="background: linear-gradient(90deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05)); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 14px; padding: 15px; display: flex; gap: 15px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
@@ -102,8 +106,9 @@
         </div>
 
         <div class="section-header" style="margin-top: 25px;">
-            <h3>🔥 Active Campaigns</h3>
-            <span class="badge" style="background: #22c55e; color: #000;">LIVE</span>
+    <h3>🔥 Active Campaigns</h3>
+    <span class="badge-live">LIVE</span> </div>
+    
         </div>
         <div id="offersContainer" class="offers-list">
             <div style="text-align:center; color:#666;">Syncing offers...</div>

@@ -97,6 +97,7 @@ async function initDashboard(id) {
         // 1. Basic Stats
         document.getElementById("balanceDisplay").innerText = "₹" + (user.wallet_balance || 0);
         document.getElementById("partnerName").innerText = user.username;
+        document.getElementById("userInitial").innerText = user.username.charAt(0).toUpperCase();
         const teamEarnEl = document.getElementById("teamEarnings");
         if (teamEarnEl) teamEarnEl.innerText = "₹" + (user.referral_earnings || 0);
 
@@ -249,11 +250,23 @@ async function loadOffers(partnerCode) {
         container.innerHTML = "<p>No active offers.</p>";
         return;
     }
-    container.innerHTML = offers.map(offer => {
-        const folder = (offer.title || "offer").toLowerCase().replace(/\s+/g, '');
-        const link = `${window.location.origin}/${folder}/?ref=${partnerCode}`;
-        return `<div class="offer-card"><h4>${offer.title}</h4><p>Earn ₹${offer.payout}</p><button onclick="copyLink('${link}')">Copy Link</button></div>`;
-    }).join('');
+   container.innerHTML = offers.map(offer => {
+    const folder = (offer.title || "offer").toLowerCase().replace(/\s+/g, '');
+    const link = `${window.location.origin}/${folder}/?ref=${partnerCode}`;
+    
+    return `
+        <div class="offer-card">
+            <div class="offer-info">
+                <h4>${offer.title}</h4>
+                <div class="payout-tag">EARN ₹${offer.payout}</div>
+            </div>
+            <button class="copy-btn" onclick="copyLink('${link}')">
+                <i class="fas fa-link mr-1"></i> COPY
+            </button>
+        </div>
+    `;
+}).join('');
+
 }
 
 function copyLink(text) { navigator.clipboard.writeText(text).then(() => showToast("Copied!")); }
