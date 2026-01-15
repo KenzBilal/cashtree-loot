@@ -330,3 +330,13 @@ async function sendBroadcast() {
     alert("📢 BROADCAST LIVE");
     closeBroadcastModal();
 }
+
+function hardRefresh() {
+    if (confirm("🚀 Force System Update? This will clear temporary cache and reload all laws.")) {
+        // Clear session storage (optional, but keeps things clean)
+        sessionStorage.clear();
+        
+        // Force reload from server, ignoring cache
+        window.location.reload(true);
+    }
+}
