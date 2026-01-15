@@ -21,6 +21,18 @@
 
 <body class="h-screen flex overflow-hidden">
 
+    <div class="md:hidden fixed top-0 left-0 right-0 z-50 p-4 pointer-events-none flex justify-between items-start">
+    
+    <button onclick="hardRefresh()" class="pointer-events-auto glass-panel w-10 h-10 rounded-full flex items-center justify-center text-blue-400 border border-blue-500/30 shadow-lg active:scale-90 transition backdrop-blur-xl">
+        <i id="refresh-icon-mobile" class="fas fa-sync-alt text-sm"></i>
+    </button>
+
+    <button onclick="openBroadcastModal()" class="pointer-events-auto glass-panel w-10 h-10 rounded-full flex items-center justify-center text-yellow-500 border border-yellow-500/30 shadow-lg active:scale-90 transition backdrop-blur-xl">
+        <i class="fas fa-bullhorn text-sm animate-pulse"></i>
+    </button>
+
+</div>
+
 <div id="loginModal">
     <div class="glass-panel login-card-fixed">
         <div class="animate-pulse-green text-6xl mb-6">
@@ -245,40 +257,34 @@
 <div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none">
     <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto border-white/10 shadow-2xl shadow-black">
         
-        <button onclick="showSection('dashboard')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
-            <i class="fas fa-chart-pie text-xl"></i>
+        <button onclick="showSection('dashboard')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
+            <i class="fas fa-chart-pie text-lg"></i>
             <span class="text-[8px] font-black uppercase tracking-widest">Pulse</span>
         </button>
 
-        <button onclick="showSection('campaigns')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
-            <i class="fas fa-rocket text-xl"></i>
+        <button onclick="showSection('campaigns')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
+            <i class="fas fa-rocket text-lg"></i>
             <span class="text-[8px] font-black uppercase tracking-widest">Lab</span>
         </button>
 
-        <button onclick="showSection('leads')" class="relative flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
-            <i class="fas fa-check-double text-xl"></i>
-            <span id="mobilePendingBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] font-black px-1 rounded-full hidden">0</span>
+        <button onclick="showSection('leads')" class="relative flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
+            <i class="fas fa-check-double text-lg"></i>
+            <span id="mobilePendingBadge" class="absolute top-0 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden border border-black">0</span>
             <span class="text-[8px] font-black uppercase tracking-widest">Leads</span>
         </button>
 
-        <button onclick="showSection('payouts')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
-            <i class="fas fa-wallet text-xl"></i>
+        <button onclick="showSection('payouts')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
+            <i class="fas fa-wallet text-lg"></i>
             <span class="text-[8px] font-black uppercase tracking-widest">Pay</span>
         </button>
 
-        <button onclick="hardRefresh()" class="flex flex-col items-center gap-1 text-yellow-500 active:scale-90 transition">
-    <i id="refresh-icon" class="fas fa-sync-alt text-xl"></i>
-    <span class="text-[8px] font-black uppercase tracking-widest">Reload</span>
-</button>
-
-        <button onclick="showSection('settings')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition">
-            <i class="fas fa-user-shield text-xl"></i>
+        <button onclick="showSection('settings')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
+            <i class="fas fa-user-shield text-lg"></i>
             <span class="text-[8px] font-black uppercase tracking-widest">God</span>
         </button>
 
     </div>
 </div>
-
 <script src="admin.js"></script>
 </body>
 </html>

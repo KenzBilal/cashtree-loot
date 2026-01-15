@@ -245,7 +245,7 @@ async function loadCampaigns() {
             // FIX: Your DB column is 'target_url', not 'url'
             const destLink = c.target_url || '#'; 
             const payoutVal = c.payout_amount || 0;
-            const imgUrl = c.image_url || 'https://via.placeholder.com/50';
+            const imgUrl = c.image_url || 'https://placehold.co/50';
 
             const card = document.createElement("div");
             card.className = `glass-panel p-6 rounded-2xl border transition-all hover:bg-white/5 ${c.is_active ? 'border-green-500/30' : 'border-white/5 opacity-75'}`;
@@ -507,20 +507,21 @@ function closeEditModal() {
 // 5. APPROVAL PROTOCOL (PASSIVE INCOME LOGIC)
 // =========================================
 async function loadLeads() {
-    // 1. Fetch Leads with correct relationships
-    // Note: We request 'payout_amount' because that is your actual DB column
+    // 1. FETCH LEADS (Disambiguated Query)
+    // FIX: We added '!leads_user_id_fkey' to tell Supabase exactly which relationship to use.
+    // We also use 'promoters:...' to alias it back to 'promoters' so your old code doesn't break.
     const { data: leads, error } = await db
         .from('leads')
         .select(`
             *,
-            promoters (full_name, username),
+            promoters:promoters!leads_user_id_fkey (full_name, username),
             campaigns (title, payout_amount)
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error("Leads Load Error:", error);
+        console.error("❌ Leads Load Error:", error);
         return;
     }
 
@@ -528,16 +529,19 @@ async function loadLeads() {
     const noLeadsMsg = document.getElementById("noLeadsMsg");
     const badge = document.getElementById("navPendingBadge");
 
+    // 2. SAFETY CHECKS (If DOM elements are missing, stop gracefully)
+    if (!tbody || !noLeadsMsg) return;
+
     tbody.innerHTML = "";
 
-    // 2. Handle Empty State
+    // 3. HANDLE EMPTY STATE
     if (!leads || leads.length === 0) {
         noLeadsMsg.classList.remove("hidden");
         if (badge) badge.classList.add("hidden");
         return;
     }
 
-    // 3. Populate Data
+    // 4. POPULATE DATA
     noLeadsMsg.classList.add("hidden");
     if (badge) {
         badge.innerText = leads.length;
@@ -547,16 +551,19 @@ async function loadLeads() {
     leads.forEach(lead => {
         const row = document.createElement("tr");
         
-        // Safety checks for missing data (deleted campaigns/users)
+        // Data Fallbacks
         const campaignTitle = lead.campaigns?.title || 'Unknown Campaign';
         const payout = lead.campaigns?.payout_amount || 0;
         const promoterName = lead.promoters?.username || 'Unknown User';
         const promoterFull = lead.promoters?.full_name || '';
 
+        // Safe Date Formatting
+        const dateStr = new Date(lead.created_at).toLocaleDateString();
+        const timeStr = new Date(lead.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
         row.innerHTML = `
             <td style="color: var(--muted); font-size: 11px;">
-                ${new Date(lead.created_at).toLocaleDateString()} <br> 
-                ${new Date(lead.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                ${dateStr} <br> ${timeStr}
             </td>
             
             <td>
@@ -856,7 +863,6 @@ async function loadStats() {
 
     try {
         // 2. PARALLEL EXECUTION (Speed Boost)
-        // We fire all 3 requests at once instead of waiting one-by-one
         const [leadsRes, armyRes, balRes] = await Promise.all([
             db.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
             db.from('promoters').select('*', { count: 'exact', head: true }),
@@ -864,31 +870,29 @@ async function loadStats() {
         ]);
 
         // 3. DATA PROCESSING
-        // Check for errors in any of the requests
-        if (leadsRes.error) console.warn("Stats Error (Leads):", leadsRes.error);
-        if (armyRes.error) console.warn("Stats Error (Army):", armyRes.error);
-        
         const leadsCount = leadsRes.count || 0;
         const armyCount = armyRes.count || 0;
-        const balData = balRes.data || []; // Default to empty array if null
+        const balData = balRes.data || []; 
 
-        // Calculate Total Liability (Safe Reduce)
+        // Calculate Total Liability
         const liability = balData.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0);
 
-        // 4. DOM UPDATES (With Null Checks)
+        // 4. DOM UPDATES
         const elLeads = document.getElementById("statLeads");
         const elArmy = document.getElementById("statPromoters");
         const elLiability = document.getElementById("statLiability");
 
         if (elLeads) elLeads.innerText = leadsCount.toLocaleString();
         if (elArmy) elArmy.innerText = armyCount.toLocaleString();
-        if (elLiability) elLiability.innerText = "₹" + liability.toLocaleString('en-IN');
+        
+        // FIX: Removed the manual "₹" symbol here. 
+        // We let your HTML handle the symbol, or just show the raw number.
+        if (elLiability) elLiability.innerText = liability.toLocaleString('en-IN');
 
     } catch (err) {
         console.error("❌ ANALYTICS CRASH:", err);
     }
 }
-
 // Load current config when admin opens settings
 async function loadSystemConfig() {
     console.log("⚙️ Syncing God Config...");
@@ -1044,7 +1048,8 @@ async function sendBroadcast() {
 async function hardRefresh() {
     // 1. START ANIMATION (Visual Feedback)
     const btn = document.getElementById('hardRefreshBtn'); // Optional: Lock the button
-    const icon = document.getElementById('refresh-icon');
+    const icons = document.querySelectorAll('.fa-sync-alt');
+icons.forEach(i => i.classList.add('fa-spin'));
     
     if (icon) icon.classList.add('fa-spin');
     if (btn) btn.disabled = true;
