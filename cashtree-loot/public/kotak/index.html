@@ -25,26 +25,30 @@
 
     <div class="section">
       <label>Phone Number (Used for Kotak)</label>
-      <input type="tel" id="phone" placeholder="10-digit mobile number">
+      <input type="tel" id="phone" placeholder="Enter 10-digit mobile number">
     </div>
 
     <div class="section">
       <label>Your UPI ID (For Payment)</label>
-      <input type="text" id="upi" placeholder="name@okaxis">
+      <input type="text" id="upi" placeholder="Ex: name@upi">
     </div>
+
+    <button class="submit-btn" id="startBtn" style="margin-bottom: 20px; background: linear-gradient(180deg, #3b82f6, #1d4ed8);">
+      👉 Step 1: Submit Details & Start Task
+    </button>
+
+    <div style="border-top: 1px dashed rgba(255,255,255,0.2); margin: 20px 0;"></div>
 
     <div class="section">
-      <label>Upload Success Screenshot (Required)</label>
-      <div style="position:relative;">
-        <input type="file" id="screenshot" accept="image/*" style="display:none;">
-        <label for="screenshot" id="fileLabel" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:14px; background: rgba(255,255,255,0.05); border:1px dashed var(--border); border-radius:12px; cursor:pointer; color:var(--muted);">
-          <i class="fas fa-camera"></i> <span id="fileName">Select Screenshot</span>
-        </label>
-      </div>
+      <label style="color: #fbbf24;">Step 2: Upload Proof (After Task)</label>
+      <input type="file" id="screenshot" accept="image/*" style="display:none;">
+      <label for="screenshot" id="fileLabel" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:15px; background: rgba(255,255,255,0.05); border:1px dashed var(--border); border-radius:12px; cursor:pointer; color:#9aa4af;">
+        <i class="fas fa-camera"></i> <span id="fileName">Select Screenshot</span>
+      </label>
     </div>
 
-    <button class="submit-btn" id="submitBtn">
-      Submit & Start Task
+    <button class="submit-btn" id="uploadBtn" style="opacity: 0.5; cursor: not-allowed;" disabled>
+      ✅ Submit Proof & Finish
     </button>
 
     <div id="timerNotice" style="font-size: 10px; color: #ef4444; text-align: center; margin-top: 10px; font-weight: bold; text-transform: uppercase;">
