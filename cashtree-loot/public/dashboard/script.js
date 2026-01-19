@@ -225,13 +225,25 @@ async function updatePassword() {
 }
 
 async function handlePasswordReset() {
-    const username = document.getElementById("resetUsername").value.trim();
-    if (!username) return alert("Enter username.");
-    const { data, error } = await db.from('promoters').select('username').eq('username', username).single();
+    const usernameInput = document.getElementById("resetUsername").value.trim();
+    
+    if (!usernameInput) return alert("Enter username.");
+
+    // 🟢 FIX: Used .ilike() instead of .eq()
+    // This tells Supabase: "Find this user, ignore capitalization"
+    const { data, error } = await db
+        .from('promoters')
+        .select('username')
+        .ilike('username', usernameInput) 
+        .maybeSingle(); 
+
     if (error || !data) return alert("User not found.");
 
     const adminWhatsApp = "919778430867"; 
-    const message = `RECOVERY: I forgot my access key. Username: ${username}`;
+    
+    // We send data.username (the REAL one from DB) to WhatsApp
+    // So if they typed 'kenz', you still receive 'KENZ' in the message
+    const message = `RECOVERY: I forgot my access key. Username: ${data.username}`;
     window.location.href = `https://wa.me/${adminWhatsApp}?text=${encodeURIComponent(message)}`;
 }
 
