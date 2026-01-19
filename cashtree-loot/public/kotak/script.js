@@ -6,7 +6,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 // Your Kotak Affiliate Link
-const OFFER_LINK = "https://cgrj.in/c/rnf6yrzd"; 
+const OFFER_LINK = "https://biitly.in/l/re76yb0u"; 
 
 // Update File Name UI on selection
 document.getElementById('screenshot').onchange = function() {
