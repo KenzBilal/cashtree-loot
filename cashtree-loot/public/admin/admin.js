@@ -506,7 +506,7 @@ function closeEditModal() {
 // =========================================
 // 5. APPROVAL PROTOCOL (PASSIVE INCOME LOGIC)
 // =========================================
-aasync function loadLeads() {
+async function loadLeads() {
     // 1. Fetch ALL pending leads first (Simple query that never fails)
     const { data: leads, error } = await db
         .from('leads')
@@ -1049,11 +1049,14 @@ async function sendBroadcast() {
 
 async function hardRefresh() {
     // 1. START ANIMATION (Visual Feedback)
-    const btn = document.getElementById('hardRefreshBtn'); // Optional: Lock the button
-    const icons = document.querySelectorAll('.fa-sync-alt');
-icons.forEach(i => i.classList.add('fa-spin'));
+    // We try to find a specific button, or just use any sync icon we find
+    const btn = document.getElementById('hardRefreshBtn'); 
     
-    if (icon) icon.classList.add('fa-spin');
+    // Select ALL sync icons (desktop & mobile) and make them spin
+    const icons = document.querySelectorAll('.fa-sync-alt');
+    icons.forEach(i => i.classList.add('fa-spin'));
+
+    // Lock the button if it exists
     if (btn) btn.disabled = true;
 
     console.log("🚀 INITIALIZING HARD SYSTEM SYNC...");
@@ -1078,7 +1081,7 @@ icons.forEach(i => i.classList.add('fa-spin'));
         }
 
         // 4. FORCE RELOAD (Cache-Busting Strategy)
-        // We append ?t=timestamp so the browser treats it as a brand new page
+        // We append ?v=timestamp so the browser treats it as a brand new page
         const timestamp = new Date().getTime();
         const freshUrl = window.location.pathname + "?v=" + timestamp;
         
@@ -1087,7 +1090,7 @@ icons.forEach(i => i.classList.add('fa-spin'));
 
     } catch (error) {
         console.error("❌ Refresh Protocol Failed:", error);
-        // Fallback: Standard browser reload
+        // Fallback: Standard browser reload (Force Get)
         window.location.reload(true);
     }
 }
