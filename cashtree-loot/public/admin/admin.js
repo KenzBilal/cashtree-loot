@@ -507,97 +507,153 @@ function closeEditModal() {
 // 5. APPROVAL PROTOCOL (PASSIVE INCOME LOGIC)
 // =========================================
 async function loadLeads() {
-    // 1. Fetch ALL pending leads first (Simple query that never fails)
+    // 1. FETCH DATA (Simple Query First)
     const { data: leads, error } = await db
         .from('leads')
         .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error("❌ Leads Load Error:", error.message);
-        return;
-    }
+    if (error) return console.error("❌ Leads Load Error:", error.message);
 
     const tbody = document.getElementById("leadsTableBody");
     const noLeadsMsg = document.getElementById("noLeadsMsg");
     const badge = document.getElementById("navPendingBadge");
 
-    // 2. Handle Empty State
+    // 2. EMPTY STATE HANDLING
     if (!leads || leads.length === 0) {
-        if(tbody) tbody.innerHTML = "";
-        if(noLeadsMsg) noLeadsMsg.classList.remove("hidden");
-        if(badge) badge.classList.add("hidden");
+        if (tbody) tbody.innerHTML = "";
+        if (noLeadsMsg) noLeadsMsg.classList.remove("hidden");
+        if (badge) badge.classList.add("hidden");
         return;
     }
 
-    // 3. Update Badge
-    if(noLeadsMsg) noLeadsMsg.classList.add("hidden");
-    if(badge) {
+    // 3. UPDATE NOTIFICATION BADGE
+    if (noLeadsMsg) noLeadsMsg.classList.add("hidden");
+    if (badge) {
         badge.innerText = leads.length;
         badge.classList.remove("hidden");
     }
 
-    // 4. Manual Lookup (Prevents "Foreign Key" Crashes)
-    // We extract all unique IDs to fetch names in one go
-    const campaignIds = [...new Set(leads.map(l => l.campaign_id))];
-    const userIds = [...new Set(leads.map(l => l.user_id))];
+    // 4. SMART MAPPING (The "No-Crash" Strategy)
+    // Get unique IDs only. Filter out nulls to prevent DB errors.
+    const campaignIds = [...new Set(leads.map(l => l.campaign_id).filter(id => id))];
+    const userIds = [...new Set(leads.map(l => l.user_id).filter(id => id))];
 
-    // Fetch Details separately
+    // Fetch Names Separately
     const { data: campaigns } = await db.from('campaigns').select('id, title, payout_amount').in('id', campaignIds);
     const { data: promoters } = await db.from('promoters').select('id, username, full_name').in('id', userIds);
 
-    // Create easy lookup maps
+    // Create Lookup Maps (O(1) Speed)
     const campMap = {};
-    if(campaigns) campaigns.forEach(c => campMap[c.id] = c);
+    if (campaigns) campaigns.forEach(c => campMap[c.id] = c);
 
     const promMap = {};
-    if(promoters) promoters.forEach(p => promMap[p.id] = p);
+    if (promoters) promoters.forEach(p => promMap[p.id] = p);
 
-    // 5. Render the Rows
+    // 5. RENDER ROWS
     if (tbody) {
         tbody.innerHTML = "";
         leads.forEach(lead => {
             const row = document.createElement("tr");
             row.className = "border-b border-white/5 hover:bg-white/[0.02] transition";
             
-            // Safe Data Retrieval (Fallbacks if data is missing)
+            // A. Resolve Campaign
             const camp = campMap[lead.campaign_id] || { title: 'Unknown Campaign', payout_amount: 0 };
-            const user = promMap[lead.user_id] || { username: 'Direct/Unknown', full_name: 'Guest' };
             
-            // Link for Screenshot
-            const proofLink = lead.screenshot_url 
-                ? `<a href="${lead.screenshot_url}" target="_blank" class="text-blue-400 text-[10px] font-bold underline ml-2">VIEW PROOF ↗</a>` 
-                : '';
+            // B. Resolve User (Handle Direct Visitors)
+            let userName = '<span class="text-slate-500 italic">Direct Visitor</span>';
+            let fullName = 'No Promoter';
+            
+            // If we have a user ID and found them in the map
+            if (lead.user_id && promMap[lead.user_id]) {
+                userName = promMap[lead.user_id].username;
+                fullName = promMap[lead.user_id].full_name;
+            }
 
+            // C. Screenshot Link Logic
+            const proofLink = lead.screenshot_url 
+                ? `<a href="${lead.screenshot_url}" target="_blank" class="text-blue-400 text-[10px] font-bold underline ml-2 hover:text-blue-300">VIEW PROOF ↗</a>` 
+                : '<span class="text-red-500 text-[10px]">No Proof</span>';
+
+            // D. Render HTML
             row.innerHTML = `
                 <td class="p-6 text-slate-400 text-xs">
                     ${new Date(lead.created_at).toLocaleDateString()}
-                    <div class="text-[10px] opacity-50">${new Date(lead.created_at).toLocaleTimeString()}</div>
+                    <div class="text-[10px] opacity-50 font-mono">${new Date(lead.created_at).toLocaleTimeString()}</div>
                 </td>
-                <td class="p-6 font-bold text-white">${camp.title}</td>
+                <td class="p-6 font-bold text-white tracking-wide">${camp.title}</td>
                 <td class="p-6">
-                    <div class="font-black text-white text-sm">${user.username}</div>
-                    <div class="text-[10px] text-slate-500 font-bold uppercase">${user.full_name}</div>
+                    <div class="font-black text-white text-sm">${userName}</div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase">${fullName}</div>
                 </td>
                 <td class="p-6">
-                    <div class="text-green-400 font-mono text-xs">${lead.phone}</div>
-                    <div class="text-[10px] text-slate-500 font-bold">UPI: ${lead.upi_id}</div>
+                    <div class="text-green-400 font-mono text-xs font-bold">${lead.phone}</div>
+                    <div class="text-[10px] text-slate-500 font-bold">UPI: <span class="text-slate-300">${lead.upi_id}</span></div>
                     ${proofLink}
                 </td>
                 <td class="p-6 text-center flex gap-2 justify-center">
                     <button onclick="approveLead('${lead.id}', '${lead.user_id}', ${camp.payout_amount})" 
-                            class="bg-green-600 text-black font-black px-3 py-2 rounded-lg text-[10px] hover:scale-105 transition">
+                            class="bg-green-600 text-black font-black px-4 py-2 rounded-lg text-[10px] hover:scale-105 hover:bg-green-500 transition shadow-lg shadow-green-900/20">
                         PAY ₹${camp.payout_amount}
                     </button>
                     <button onclick="rejectLead('${lead.id}')" 
-                            class="bg-white/10 text-slate-400 hover:text-red-400 px-3 py-2 rounded-lg text-[10px] font-bold transition">
+                            class="bg-white/5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 px-3 py-2 rounded-lg text-[10px] font-bold transition border border-transparent hover:border-red-500/30">
                         REJECT
                     </button>
                 </td>
             `;
             tbody.appendChild(row);
         });
+    }
+}
+// =========================================
+//  REJECT LOGIC (Must be present!)
+// =========================================
+
+async function rejectLead(leadId) {
+    // 1. SAFETY CONFIRMATION
+    if (!confirm("⚠️ CONFIRM REJECTION\n\nThis will mark the task as failed and the user will get ₹0.\n\nContinue?")) {
+        return;
+    }
+
+    // 2. LOCK UI (Find the specific button pressed)
+    const btn = document.activeElement;
+    const originalText = btn ? btn.innerText : "REJECT";
+    
+    if (btn) {
+        btn.innerText = "Processing...";
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
+    }
+
+    try {
+        // 3. EXECUTE DB UPDATE
+        const { error } = await db
+            .from('leads')
+            .update({ status: 'rejected' })
+            .eq('id', leadId);
+
+        if (error) throw error;
+
+        // 4. SUCCESS & REFRESH
+        // We do a small timeout to let the DB settle
+        setTimeout(() => {
+            loadLeads(); // Reload table
+            if (typeof loadStats === 'function') loadStats(); // Update dashboard numbers
+            alert("🚫 Lead marked as Rejected.");
+        }, 500);
+
+    } catch (err) {
+        console.error("Reject Error:", err);
+        alert("❌ Error: " + err.message);
+        
+        // Restore button if failed
+        if (btn) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.classList.remove("opacity-50", "cursor-not-allowed");
+        }
     }
 }
 
