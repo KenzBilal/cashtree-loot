@@ -4,11 +4,45 @@
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
 
-// Unified variable name 'db' to prevent "supabase is not defined" errors
 const db = supabase.createClient(supabaseUrl, supabaseKey);
 
 /* =========================================
-   2. SIGNUP LOGIC (THE GATEWAY)
+   2. SYSTEM INIT (Maintenance Check)
+   ========================================= */
+// We run this immediately to lock the door if needed
+(async function initSystem() {
+    try {
+        const { data: config, error } = await db.from('system_config').select('*');
+        if (error) throw error;
+
+        // Convert array to object for easy access
+        const laws = {};
+        config.forEach(row => { laws[row.key] = row.value; });
+
+        // --- 🛑 ENFORCE MAINTENANCE ---
+        const maintenanceOverlay = document.getElementById('maintenanceOverlay');
+        const contentCard = document.querySelector('.glass-panel'); // Target the login/signup card
+
+        if (laws.site_status === 'MAINTENANCE') {
+            // 1. Show Screen
+            if (maintenanceOverlay) {
+                maintenanceOverlay.classList.remove('hidden');
+                maintenanceOverlay.style.display = 'flex';
+            }
+            // 2. Hide Content
+            if (contentCard) contentCard.style.display = 'none';
+        } else {
+            // ✅ SYSTEM LIVE
+            if (maintenanceOverlay) maintenanceOverlay.classList.add('hidden');
+            if (contentCard) contentCard.style.display = 'block';
+        }
+    } catch (err) {
+        console.error("System Check Failed:", err);
+    }
+})();
+
+/* =========================================
+   3. SIGNUP LOGIC (THE GATEWAY)
    ========================================= */
 async function attemptSignup() {
     const nameInput = document.getElementById("newName");
@@ -26,6 +60,7 @@ async function attemptSignup() {
     const pass = passInput.value.trim();
     const referCode = referInput.value.trim().toUpperCase();
 
+    // VALIDATION
     if (!name || !code || !phone || !upi || !pass) {
         alert("⚠️ Please fill all required fields.");
         return;
@@ -35,11 +70,13 @@ async function attemptSignup() {
         return;
     }
 
-    btn.innerText = "Connecting to Database...";
+    // LOCK UI
+    const originalText = btn.innerText;
+    btn.innerText = "Connecting...";
     btn.disabled = true;
 
     try {
-        // Check if Username/Code already exists
+        // A. CHECK EXISTING USER
         const { data: existingUser } = await db
             .from('promoters')
             .select('username')
@@ -47,13 +84,11 @@ async function attemptSignup() {
             .maybeSingle();
 
         if (existingUser) {
-            alert("❌ This Promoter Code is already taken. Try another!");
-            btn.innerText = "Create Partner Account";
-            btn.disabled = false;
+            alert("❌ User Code taken. Try another.");
             return;
         }
 
-        // Referral UUID Lookup
+        // B. REFERRAL LOGIC (Safe)
         let referrerUuid = null;
         if (referCode && referCode !== "DIRECT") {
             const { data: refData } = await db
@@ -65,57 +100,36 @@ async function attemptSignup() {
             if (refData) {
                 referrerUuid = refData.id;
             } else {
-                alert("ℹ️ Referral code not found. Continuing without bonus.");
+                // If invalid code, we just ignore it and proceed as DIRECT
+                console.log("Invalid referral code, proceeding as direct.");
             }
         }
 
+        // C. CREATE ACCOUNT
         const promoterData = {
             full_name: name,
             username: code,
             phone: phone,
             upi_id: upi,
             password: pass,
-            referred_by: referrerUuid,
-            wallet_balance: referrerUuid ? 20 : 0
+            referred_by: referrerUuid, // Can be UUID or null
+            wallet_balance: referrerUuid ? 20 : 0 // Bonus logic
         };
 
         const { error } = await db.from('promoters').insert([promoterData]);
+        
         if (error) throw error;
 
+        // D. SUCCESS
         alert("🚀 Welcome to the team! Registration Successful.");
-        window.location.href = "../dashboard/login.html";
+        window.location.href = "fdashboard/login.html"; // Ensure this path is correct relative to your file
 
     } catch (err) {
         console.error("Signup Error:", err);
         alert("❌ Error: " + err.message);
     } finally {
-        btn.innerText = "Create Partner Account";
+        // UNLOCK UI
+        btn.innerText = originalText;
         btn.disabled = false;
     }
 }
-
-// --- 🛑 ENFORCE MAINTENANCE (Login & Signup Gate) ---
-    if (laws.site_status === 'MAINTENANCE') {
-        // 1. Show the Maintenance Blanket
-        if (maintenanceOverlay) {
-            maintenanceOverlay.classList.remove('hidden');
-            maintenanceOverlay.style.display = 'flex'; // Centering logic
-        }
-        
-        // 2. Hide the Login/Signup Card (The Front Door)
-        if (loginCard) loginCard.style.display = 'none';
-        
-        // 3. Hide Dashboard (if user is already inside)
-        if (mainDashboard) mainDashboard.style.display = 'none';
-        
-        return; // Stop execution while locked
-    } else {
-        // --- ✅ SYSTEM IS LIVE ---
-        if (maintenanceOverlay) {
-            maintenanceOverlay.classList.add('hidden');
-            maintenanceOverlay.style.display = 'none';
-        }
-        // Restore visibility to whichever page the user is on
-        if (loginCard) loginCard.style.display = 'block';
-        if (mainDashboard) mainDashboard.style.display = 'block';
-    }
