@@ -292,3 +292,50 @@ function logout() { localStorage.clear(); window.location.href = "login.html"; }
 function copyReferralLink() { const el = document.getElementById('referralLinkInput'); navigator.clipboard.writeText(el.value).then(() => showToast("Invite Link Copied!")); }
 function openResetModal() { document.getElementById('resetModal').style.display = 'flex'; }
 function closeResetModal() { document.getElementById('resetModal').style.display = 'none'; }
+
+/* =========================================
+   7. WITHDRAWAL PROTOCOL
+   ========================================= */
+async function handleWithdraw() {
+    const btn = document.getElementById("withdrawBtn");
+    const balEl = document.getElementById("balanceDisplay");
+    const nameEl = document.getElementById("partnerName");
+    
+    // 1. Get Values
+    const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
+    const username = nameEl.innerText;
+    
+    // 2. Safety Check (Double Verification)
+    if (btn.disabled || currentBalance < 500) { // Hardcoded 500 safety or read from laws
+        return showToast("❌ Requirement not met.");
+    }
+
+    // 3. Lock Button
+    btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> PROCESSING...";
+    btn.disabled = true;
+
+    // 4. Fetch Support Number & Execute
+    try {
+        const { data } = await db.from('system_config').select('value').eq('key', 'support_number').single();
+        const adminNumber = data?.value || "919778430867"; // Fallback to your number
+
+        const message = `💰 *PAYOUT REQUEST* 💰\n\nUser: ${username}\nBalance: ₹${currentBalance}\n\nPlease credit my registered UPI ID.`;
+        
+        // 5. Open WhatsApp
+        setTimeout(() => {
+            window.location.href = `https://wa.me/${adminNumber}?text=${encodeURIComponent(message)}`;
+            
+            // Reset Button after redirect
+            setTimeout(() => {
+                btn.innerHTML = "WITHDRAW NOW";
+                btn.disabled = false;
+            }, 2000);
+        }, 1000);
+
+    } catch (err) {
+        console.error(err);
+        showToast("❌ Connection Error");
+        btn.innerHTML = "RETRY";
+        btn.disabled = false;
+    }
+}
