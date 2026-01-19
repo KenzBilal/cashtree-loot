@@ -266,15 +266,24 @@ async function loadOffers(partnerCode) {
     }
 
     container.innerHTML = offers.map(offer => {
-        // 🟢 FIX: USE DB URL INSTEAD OF FOLDER NAME
-        // We get the URL you saved (e.g., "https://cashttree.online/kotak/index.html")
-        const baseUrl = offer.target_url || "#";
+        // 1. Get the path from DB (e.g., "kotak/index.html")
+        let dbUrl = offer.target_url || "#";
+        let fullUrl;
+
+        // 2. SMART CHECK: Is it a full link (https://...) or a partial path?
+        if (dbUrl.startsWith('http')) {
+            // It's already a full link (e.g., https://google.com)
+            fullUrl = dbUrl;
+        } else {
+            // It's a partial path, so we add your website domain
+            // We also remove any leading slash to prevent double slashes (//)
+            const cleanPath = dbUrl.startsWith('/') ? dbUrl.substring(1) : dbUrl;
+            fullUrl = `${window.location.origin}/${cleanPath}`;
+        }
         
-        // We check if the URL already has a '?' to decide between '?' or '&'
-        const separator = baseUrl.includes('?') ? '&' : '?';
-        
-        // Final Link: https://cashttree.online/kotak/index.html?ref=KENZ
-        const link = `${baseUrl}${separator}ref=${partnerCode}`;
+        // 3. Add the Referral Code
+        const separator = fullUrl.includes('?') ? '&' : '?';
+        const finalLink = `${fullUrl}${separator}ref=${partnerCode}`;
         
         return `
             <div class="offer-card">
@@ -284,7 +293,7 @@ async function loadOffers(partnerCode) {
                           EARN ₹${offer.payout_amount ?? 0}
                     </div>
                 </div>
-                <button class="copy-btn" onclick="copyLink('${link}')">
+                <button class="copy-btn" onclick="copyLink('${finalLink}')">
                     <i class="fas fa-link mr-1"></i> COPY
                 </button>
             </div>
