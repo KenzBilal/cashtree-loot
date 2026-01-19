@@ -1,4 +1,121 @@
 // =========================================
+// 🎨 UI GOD ENGINE (Visual Override)
+// =========================================
+const ui = {
+    // 1. TOAST NOTIFICATION (Non-blocking)
+    toast: (msg, type = 'neutral') => {
+        const container = document.getElementById('toast-container');
+        const box = document.createElement('div');
+        
+        // Color Logic
+        const colors = {
+            success: 'border-green-500 bg-green-500/10 text-green-400',
+            error: 'border-red-500 bg-red-500/10 text-red-400',
+            neutral: 'border-blue-500 bg-blue-500/10 text-blue-400'
+        };
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-triangle',
+            neutral: 'fa-info-circle'
+        };
+
+        box.className = `pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-xl border-l-4 backdrop-blur-md shadow-xl translate-x-10 opacity-0 transition-all duration-300 ${colors[type] || colors.neutral}`;
+        box.innerHTML = `
+            <i class="fas ${icons[type]} text-xl"></i>
+            <span class="font-bold text-sm text-white">${msg}</span>
+        `;
+
+        container.appendChild(box);
+
+        // Animate In
+        setTimeout(() => box.classList.remove('translate-x-10', 'opacity-0'), 10);
+
+        // Animate Out & Remove
+        setTimeout(() => {
+            box.classList.add('translate-x-10', 'opacity-0');
+            setTimeout(() => box.remove(), 300);
+        }, 3000);
+    },
+
+    // 2. CUSTOM ALERT (Promise-based)
+    alert: (title, msg) => {
+        return new Promise((resolve) => {
+            ui._showModal(title, msg, 'info', [
+                { text: 'ACKNOWLEDGED', class: 'col-span-2 bg-white text-black hover:bg-slate-200', click: resolve }
+            ]);
+        });
+    },
+
+    // 3. CUSTOM CONFIRM (Promise-based)
+    // Usage: if (await ui.confirm('Title', 'Msg')) { ... }
+    confirm: (title, msg, type = 'danger') => {
+        return new Promise((resolve) => {
+            const confirmBtnClass = type === 'danger' 
+                ? 'bg-red-600 text-white hover:bg-red-500 shadow-red-900/50' 
+                : 'bg-green-600 text-black hover:bg-green-500 shadow-green-900/50';
+
+            ui._showModal(title, msg, type, [
+                { text: 'CANCEL', class: 'bg-white/5 text-slate-400 hover:bg-white/10', click: () => resolve(false) },
+                { text: 'CONFIRM', class: `${confirmBtnClass} shadow-lg`, click: () => resolve(true) }
+            ]);
+        });
+    },
+
+    // INTERNAL HELPER (Do not call directly)
+    _showModal: (title, msg, type, buttons) => {
+        const overlay = document.getElementById('ui-modal-overlay');
+        const box = document.getElementById('ui-modal-box');
+        const titleEl = document.getElementById('ui-title');
+        const msgEl = document.getElementById('ui-msg');
+        const iconEl = document.getElementById('ui-icon');
+        const actionsEl = document.getElementById('ui-actions');
+
+        // Set Content
+        titleEl.innerText = title;
+        msgEl.innerText = msg;
+        actionsEl.innerHTML = '';
+
+        // Set Icon
+        const icons = { info: '✨', danger: '⚠️', success: '🚀' };
+        iconEl.innerText = icons[type] || '✨';
+
+        // Create Buttons
+        buttons.forEach(btn => {
+            const b = document.createElement('button');
+            b.className = `py-3 rounded-xl font-black text-[10px] tracking-widest transition-all ${btn.class}`;
+            b.innerText = btn.text;
+            b.onclick = () => {
+                ui._closeModal();
+                btn.click();
+            };
+            actionsEl.appendChild(b);
+        });
+
+        // Show
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-90');
+            box.classList.add('scale-100');
+        }, 10);
+    },
+
+    _closeModal: () => {
+        const overlay = document.getElementById('ui-modal-overlay');
+        const box = document.getElementById('ui-modal-box');
+        
+        overlay.classList.add('opacity-0');
+        box.classList.remove('scale-100');
+        box.classList.add('scale-90');
+        
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+};
+
+// OVERRIDE BROWSER DEFAULTS (Optional, but recommended)
+window.alert = (msg) => ui.alert("System Notice", msg);
+
+// =========================================
 // 1. SUPABASE CONNECTION CORE
 // =========================================
 let db; 
@@ -607,28 +724,88 @@ async function loadLeads() {
         });
     }
 }
+
+async function approveLead(leadId, promoterId, amount) {
+    // 1. CUSTOM GLASS CONFIRMATION (Matches Reject Logic)
+    const confirmed = await ui.confirm(
+        "AUTHORIZE PAYOUT?", 
+        `You are about to credit ₹${amount} to this promoter.\n\nThis action cannot be undone. Proceed?`,
+        "success" // Green styling
+    );
+
+    if (!confirmed) return;
+
+    // Find button for loading state
+    // Note: Since we use a modal, 'document.activeElement' might be the modal button
+    // So we skip the button loading state here to keep it clean, 
+    // or we'd need to pass the button element into the function.
+    
+    try {
+        // 2. CHECK STATUS (Race Condition)
+        const { data: leadStatus } = await db.from('leads').select('status').eq('id', leadId).single();
+        if (leadStatus.status === 'approved') {
+            ui.toast("❌ STOP: Lead already approved!", "error");
+            return;
+        }
+
+        // 3. FETCH USER
+        const { data: user, error: userError } = await db.from('promoters').select('wallet_balance, referred_by').eq('id', promoterId).single();
+        if (userError || !user) throw new Error("Promoter wallet not found.");
+
+        // 4. CALC BALANCE
+        const payout = parseFloat(amount);
+        const newBalance = (parseFloat(user.wallet_balance) || 0) + payout;
+
+        // 5. PAY USER
+        const { error: payError } = await db.from('promoters').update({ wallet_balance: newBalance }).eq('id', promoterId);
+        if (payError) throw new Error("Payment Transaction Failed.");
+
+        // 6. REFERRAL BONUS (10%)
+        if (user.referred_by) {
+            const bonus = payout * 0.10;
+            const { data: boss } = await db.from('promoters').select('wallet_balance, referral_earnings').eq('id', user.referred_by).single();
+            if (boss) {
+                await db.from('promoters').update({ 
+                    wallet_balance: (boss.wallet_balance || 0) + bonus,
+                    referral_earnings: (boss.referral_earnings || 0) + bonus 
+                }).eq('id', user.referred_by);
+                console.log(`✅ Passive Income: ₹${bonus} sent.`);
+            }
+        }
+
+        // 7. CLOSE LEAD
+        const { error: closeError } = await db.from('leads').update({ status: 'approved' }).eq('id', leadId);
+        if (closeError) console.error("⚠️ Close Status Failed");
+
+        // 8. SUCCESS TOAST
+        ui.toast(`✅ ₹${payout} Credited Successfully`, "success");
+
+        // Refresh Tables
+        loadLeads();
+        if (typeof loadStats === 'function') loadStats();
+
+    } catch (err) {
+        console.error("❌ FAILURE:", err);
+        ui.toast("Transaction Failed: " + err.message, "error");
+    }
+}
 // =========================================
 //  REJECT LOGIC (Must be present!)
 // =========================================
-
 async function rejectLead(leadId) {
-    // 1. SAFETY CONFIRMATION
-    if (!confirm("⚠️ CONFIRM REJECTION\n\nThis will mark the task as failed and the user will get ₹0.\n\nContinue?")) {
-        return;
-    }
+    // 1. CUSTOM GLASS CONFIRMATION
+    // We use 'await' so the code pauses until they click a button in the modal
+    const confirmed = await ui.confirm(
+        "REJECT SUBMISSION?", 
+        "This will permanently mark the task as failed. The user will receive ₹0.\n\nAre you sure you want to proceed?",
+        "danger" // Triggers Red styling
+    );
 
-    // 2. LOCK UI (Find the specific button pressed)
-    const btn = document.activeElement;
-    const originalText = btn ? btn.innerText : "REJECT";
-    
-    if (btn) {
-        btn.innerText = "Processing...";
-        btn.disabled = true;
-        btn.classList.add("opacity-50", "cursor-not-allowed");
-    }
+    // If they clicked "CANCEL", we stop immediately
+    if (!confirmed) return;
 
     try {
-        // 3. EXECUTE DB UPDATE
+        // 2. DATABASE UPDATE
         const { error } = await db
             .from('leads')
             .update({ status: 'rejected' })
@@ -636,126 +813,18 @@ async function rejectLead(leadId) {
 
         if (error) throw error;
 
-        // 4. SUCCESS & REFRESH
-        // We do a small timeout to let the DB settle
-        setTimeout(() => {
-            loadLeads(); // Reload table
-            if (typeof loadStats === 'function') loadStats(); // Update dashboard numbers
-            alert("🚫 Lead marked as Rejected.");
-        }, 500);
+        // 3. SUCCESS FEEDBACK
+        // Shows a beautiful notification in the top right
+        ui.toast("🚫 Task Rejected Successfully", "success");
 
-    } catch (err) {
-        console.error("Reject Error:", err);
-        alert("❌ Error: " + err.message);
-        
-        // Restore button if failed
-        if (btn) {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            btn.classList.remove("opacity-50", "cursor-not-allowed");
-        }
-    }
-}
-
-async function approveLead(leadId, promoterId, amount) {
-    // 1. CONFIRMATION PROTOCOL
-    if (!confirm(`⚠️ AUTHORIZE SETTLEMENT?\n\nAmount: ₹${amount}\nPromoter ID: ${promoterId}`)) {
-        return;
-    }
-
-    // Lock UI prevents double-clicking and paying twice
-    const btn = document.activeElement; 
-    const originalText = btn ? btn.innerText : "PAY";
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "PROCESSING...";
-    }
-
-    try {
-        // 2. VERIFY LEAD STATUS (Race Condition Protection)
-        // Ensure the lead wasn't already approved by another admin 1 second ago
-        const { data: leadStatus } = await db
-            .from('leads')
-            .select('status')
-            .eq('id', leadId)
-            .single();
-
-        if (leadStatus.status === 'approved') {
-            alert("❌ STOP: This lead was already approved!");
-            return;
-        }
-
-        // 3. FETCH PROMOTER DATA
-        const { data: user, error: userError } = await db
-            .from('promoters')
-            .select('wallet_balance, referred_by')
-            .eq('id', promoterId)
-            .single();
-
-        if (userError || !user) throw new Error("Promoter wallet not found.");
-
-        // 4. CALCULATE NEW BALANCE
-        // Use parseFloat to ensure decimal precision if needed
-        const payout = parseFloat(amount);
-        const newBalance = (parseFloat(user.wallet_balance) || 0) + payout;
-
-        // 5. EXECUTE PAYMENT (The Money Move)
-        const { error: payError } = await db
-            .from('promoters')
-            .update({ wallet_balance: newBalance })
-            .eq('id', promoterId);
-
-        if (payError) throw new Error("Payment Transaction Failed. Database Error.");
-
-        // 6. PASSIVE INCOME (The 10% Cut)
-        if (user.referred_by) {
-            try {
-                const bonus = payout * 0.10; // 10% logic
-                
-                // Fetch Boss
-                const { data: boss } = await db
-                    .from('promoters')
-                    .select('wallet_balance, referral_earnings')
-                    .eq('id', user.referred_by)
-                    .single();
-
-                if (boss) {
-                    await db.from('promoters').update({ 
-                        wallet_balance: (boss.wallet_balance || 0) + bonus,
-                        referral_earnings: (boss.referral_earnings || 0) + bonus 
-                    }).eq('id', user.referred_by);
-                    console.log(`✅ Passive Income: ₹${bonus} sent to Upline.`);
-                }
-            } catch (refErr) {
-                console.warn("⚠️ Referral Error (Non-Fatal):", refErr);
-                // We do NOT stop the main process if referral fails
-            }
-        }
-
-        // 7. CLOSE THE LEAD (Finalize)
-        const { error: closeError } = await db
-            .from('leads')
-            .update({ status: 'approved' })
-            .eq('id', leadId);
-
-        if (closeError) console.error("⚠️ Money sent, but failed to close lead status.");
-
-        // 8. SUCCESS
-        alert("✅ PROTOCOL EXECUTED: ₹" + payout + " Sent.");
-        
-        // Refresh dashboard to remove the lead from the list
-        if (typeof loadLeads === 'function') loadLeads();
+        // 4. REFRESH DASHBOARD
+        // Instantly remove the row and update stats
+        loadLeads(); 
         if (typeof loadStats === 'function') loadStats();
 
     } catch (err) {
-        console.error("❌ CRITICAL FAILURE:", err);
-        alert("TRANSACTION FAILED: " + err.message);
-    } finally {
-        // Unlock button (if it still exists in DOM)
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = originalText;
-        }
+        console.error("Reject Error:", err);
+        ui.toast("❌ Error: " + err.message, "error");
     }
 }
 
