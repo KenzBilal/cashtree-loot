@@ -506,22 +506,16 @@ function closeEditModal() {
 // =========================================
 // 5. APPROVAL PROTOCOL (PASSIVE INCOME LOGIC)
 // =========================================
-async function loadLeads() {
-    // 1. FETCH LEADS (Disambiguated Query)
-    // FIX: We added '!leads_user_id_fkey' to tell Supabase exactly which relationship to use.
-    // We also use 'promoters:...' to alias it back to 'promoters' so your old code doesn't break.
+aasync function loadLeads() {
+    // 1. Fetch ALL pending leads first (Simple query that never fails)
     const { data: leads, error } = await db
         .from('leads')
-        .select(`
-            *,
-            promoters:promoters!leads_user_id_fkey (full_name, username),
-            campaigns (title, payout_amount)
-        `)
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error("❌ Leads Load Error:", error);
+        console.error("❌ Leads Load Error:", error.message);
         return;
     }
 
@@ -529,74 +523,82 @@ async function loadLeads() {
     const noLeadsMsg = document.getElementById("noLeadsMsg");
     const badge = document.getElementById("navPendingBadge");
 
-    // 2. SAFETY CHECKS (If DOM elements are missing, stop gracefully)
-    if (!tbody || !noLeadsMsg) return;
-
-    tbody.innerHTML = "";
-
-    // 3. HANDLE EMPTY STATE
+    // 2. Handle Empty State
     if (!leads || leads.length === 0) {
-        noLeadsMsg.classList.remove("hidden");
-        if (badge) badge.classList.add("hidden");
+        if(tbody) tbody.innerHTML = "";
+        if(noLeadsMsg) noLeadsMsg.classList.remove("hidden");
+        if(badge) badge.classList.add("hidden");
         return;
     }
 
-    // 4. POPULATE DATA
-    noLeadsMsg.classList.add("hidden");
-    if (badge) {
+    // 3. Update Badge
+    if(noLeadsMsg) noLeadsMsg.classList.add("hidden");
+    if(badge) {
         badge.innerText = leads.length;
         badge.classList.remove("hidden");
     }
 
-    leads.forEach(lead => {
-        const row = document.createElement("tr");
-        
-        // Data Fallbacks
-        const campaignTitle = lead.campaigns?.title || 'Unknown Campaign';
-        const payout = lead.campaigns?.payout_amount || 0;
-        const promoterName = lead.promoters?.username || 'Unknown User';
-        const promoterFull = lead.promoters?.full_name || '';
+    // 4. Manual Lookup (Prevents "Foreign Key" Crashes)
+    // We extract all unique IDs to fetch names in one go
+    const campaignIds = [...new Set(leads.map(l => l.campaign_id))];
+    const userIds = [...new Set(leads.map(l => l.user_id))];
 
-        // Safe Date Formatting
-        const dateStr = new Date(lead.created_at).toLocaleDateString();
-        const timeStr = new Date(lead.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    // Fetch Details separately
+    const { data: campaigns } = await db.from('campaigns').select('id, title, payout_amount').in('id', campaignIds);
+    const { data: promoters } = await db.from('promoters').select('id, username, full_name').in('id', userIds);
 
-        row.innerHTML = `
-            <td style="color: var(--muted); font-size: 11px;">
-                ${dateStr} <br> ${timeStr}
-            </td>
+    // Create easy lookup maps
+    const campMap = {};
+    if(campaigns) campaigns.forEach(c => campMap[c.id] = c);
+
+    const promMap = {};
+    if(promoters) promoters.forEach(p => promMap[p.id] = p);
+
+    // 5. Render the Rows
+    if (tbody) {
+        tbody.innerHTML = "";
+        leads.forEach(lead => {
+            const row = document.createElement("tr");
+            row.className = "border-b border-white/5 hover:bg-white/[0.02] transition";
             
-            <td>
-                <span style="color: #fff; font-weight: 800; font-size: 14px;">${campaignTitle}</span>
-            </td>
+            // Safe Data Retrieval (Fallbacks if data is missing)
+            const camp = campMap[lead.campaign_id] || { title: 'Unknown Campaign', payout_amount: 0 };
+            const user = promMap[lead.user_id] || { username: 'Direct/Unknown', full_name: 'Guest' };
             
-            <td>
-                <div style="font-weight: 800; color: #fff;">${promoterName}</div>
-                <div style="font-size: 10px; text-transform: uppercase; color: var(--muted);">${promoterFull}</div>
-            </td>
-            
-            <td>
-                <div style="font-family: monospace; color: var(--accent); font-size: 13px;">${lead.phone}</div>
-                <div style="font-size: 10px; font-weight: 800; color: var(--muted);">UPI: ${lead.upi_id}</div>
-                ${lead.screenshot_url ? `<a href="${lead.screenshot_url}" target="_blank" style="color: var(--brand-blue); font-size: 10px; text-decoration: underline; font-weight: 800;">VIEW PROOF ↗</a>` : ''}
-            </td>
-            
-            <td style="text-align: center;">
-                <div style="display: flex; gap: 8px; justify-content: center;">
-                    <button onclick="approveLead('${lead.id}', '${lead.user_id}', ${payout})" 
-                            class="unlock-btn" style="padding: 8px 16px; font-size: 10px; min-width: auto;">
-                        PAY ₹${payout}
+            // Link for Screenshot
+            const proofLink = lead.screenshot_url 
+                ? `<a href="${lead.screenshot_url}" target="_blank" class="text-blue-400 text-[10px] font-bold underline ml-2">VIEW PROOF ↗</a>` 
+                : '';
+
+            row.innerHTML = `
+                <td class="p-6 text-slate-400 text-xs">
+                    ${new Date(lead.created_at).toLocaleDateString()}
+                    <div class="text-[10px] opacity-50">${new Date(lead.created_at).toLocaleTimeString()}</div>
+                </td>
+                <td class="p-6 font-bold text-white">${camp.title}</td>
+                <td class="p-6">
+                    <div class="font-black text-white text-sm">${user.username}</div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase">${user.full_name}</div>
+                </td>
+                <td class="p-6">
+                    <div class="text-green-400 font-mono text-xs">${lead.phone}</div>
+                    <div class="text-[10px] text-slate-500 font-bold">UPI: ${lead.upi_id}</div>
+                    ${proofLink}
+                </td>
+                <td class="p-6 text-center flex gap-2 justify-center">
+                    <button onclick="approveLead('${lead.id}', '${lead.user_id}', ${camp.payout_amount})" 
+                            class="bg-green-600 text-black font-black px-3 py-2 rounded-lg text-[10px] hover:scale-105 transition">
+                        PAY ₹${camp.payout_amount}
                     </button>
-                    
                     <button onclick="rejectLead('${lead.id}')" 
-                            style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 10px; cursor: pointer;">
+                            class="bg-white/10 text-slate-400 hover:text-red-400 px-3 py-2 rounded-lg text-[10px] font-bold transition">
                         REJECT
                     </button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
 }
 
 async function approveLead(leadId, promoterId, amount) {
