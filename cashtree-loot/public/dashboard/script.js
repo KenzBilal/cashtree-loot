@@ -290,8 +290,22 @@ function showToast(msg) {
 
 function logout() { localStorage.clear(); window.location.href = "login.html"; }
 function copyReferralLink() { const el = document.getElementById('referralLinkInput'); navigator.clipboard.writeText(el.value).then(() => showToast("Invite Link Copied!")); }
-function openResetModal() { document.getElementById('resetModal').style.display = 'flex'; }
-function closeResetModal() { document.getElementById('resetModal').style.display = 'none'; }
+
+function openResetModal() {
+    const modal = document.getElementById('resetModal');
+    if (modal) {
+        modal.classList.remove('hidden'); // 1. Remove the restrictive class
+        modal.style.display = 'flex';     // 2. Force visibility
+    }
+}
+
+function closeResetModal() {
+    const modal = document.getElementById('resetModal');
+    if (modal) {
+        modal.classList.add('hidden');    // 1. Add class back
+        modal.style.display = 'none';     // 2. Hide manually
+    }
+}
 
 /* =========================================
    7. WITHDRAWAL PROTOCOL
