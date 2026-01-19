@@ -763,54 +763,56 @@ async function approveLead(leadId, promoterId, amount) {
 // 6. SETTLEMENTS (PAYOUTS)
 // =========================================
 async function loadPayouts() {
-    // 1. DATABASE SAFETY
     if (!db) return;
 
     try {
-        // 2. FETCH DATA
-        // Only get users who actually have money (wallet > 0)
+        // Fetch users with money
         const { data: users, error } = await db
             .from('promoters')
             .select('*')
             .gt('wallet_balance', 0)
             .order('wallet_balance', { ascending: false });
 
-        if (error) {
-            console.error("❌ Payout Sync Failed:", error.message);
-            return;
-        }
+        if (error) return console.error("Payout Sync Failed:", error);
 
-        // 3. DOM SAFETY
         const tbody = document.getElementById("payoutTableBody");
         if (!tbody) return;
 
         tbody.innerHTML = "";
 
-        // 4. EMPTY STATE (The "All Clear" Message)
         if (!users || users.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="p-8 text-center text-slate-600 font-mono text-xs uppercase tracking-widest">
-                        <i class="fas fa-check-circle mb-2 text-2xl"></i><br>
-                        All Settlements Complete
-                    </td>
-                </tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-600 font-mono text-xs uppercase">All Settlements Complete</td></tr>`;
             return;
         }
 
-        // 5. RENDER ROWS
         users.forEach(u => {
             const row = document.createElement("tr");
             row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors";
             
-            // Safe string handling for onclick
             const safeUpi = u.upi_id ? u.upi_id.replace(/'/g, "\\'") : '';
             const safeId = u.id;
+            
+            // 🟢 LOGIC: Check the Signal
+            const isRequested = u.withdrawal_requested === true;
+
+            // 🎨 BUTTON STYLING
+            // Green if requested, Grey if not.
+            const btnClass = isRequested 
+                ? "bg-green-600 hover:bg-green-500 text-black shadow-lg shadow-green-900/20 cursor-pointer" 
+                : "bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed";
+
+            const btnText = isRequested ? "PAY NOW" : "NOT REQUESTED";
+            
+            // Only add onclick if it is requested
+            const btnAction = isRequested 
+                ? `onclick="markPaid('${safeId}', ${u.wallet_balance}, '${safeUpi}')"` 
+                : "disabled";
 
             row.innerHTML = `
                 <td class="p-6">
                     <div class="font-bold text-white">${u.username}</div>
                     <div class="text-[10px] text-slate-500 uppercase">ID: ${u.id.substring(0,8)}...</div>
+                    ${isRequested ? '<span class="text-[9px] text-green-400 font-bold animate-pulse">● REQUEST PENDING</span>' : ''}
                 </td>
                 
                 <td class="p-6">
@@ -826,9 +828,9 @@ async function loadPayouts() {
                 </td>
                 
                 <td class="p-6 text-center">
-                    <button onclick="markPaid('${safeId}', ${u.wallet_balance}, '${safeUpi}')" 
-                            class="bg-blue-600 hover:bg-blue-500 text-white font-black px-4 py-2 rounded-lg text-[10px] transition-all shadow-lg shadow-blue-900/20">
-                        MARK PAID
+                    <button ${btnAction} 
+                            class="${btnClass} font-black px-4 py-2 rounded-lg text-[10px] transition-all">
+                        ${btnText}
                     </button>
                 </td>
             `;
@@ -836,7 +838,7 @@ async function loadPayouts() {
         });
 
     } catch (err) {
-        console.error("❌ CRITICAL: Payout Loader Crashed", err);
+        console.error("Payout Loader Crashed", err);
     }
 }
 
@@ -855,7 +857,8 @@ async function markPaid(userId, amount, upiId) {
             // 2. VERIFICATION DELAY
             // We wait 3 seconds for them to switch apps, then ask for confirmation
             setTimeout(async () => {
-                if (confirm("✅ Did the payment succeed? Click OK to reset their wallet to ₹0.")) {
+                // UPDATED TEXT: Confirms that the request will be closed
+                if (confirm("✅ Did the payment succeed?\n\nClick OK to reset wallet to ₹0 and close the request.")) {
                     await executeWalletReset(userId);
                 }
             }, 3000);
@@ -864,26 +867,30 @@ async function markPaid(userId, amount, upiId) {
     }
 
     // 3. DESKTOP/MANUAL FALLBACK
-    if (confirm(`Confirm manual settlement of ₹${amount}?`)) {
+    // UPDATED TEXT
+    if (confirm(`Confirm manual settlement of ₹${amount}?\n\nThis will clear the user's withdrawal request.`)) {
         await executeWalletReset(userId);
     }
 }
 
 // Helper Function to update Database
 async function executeWalletReset(userId) {
-    // We update the wallet_balance to 0
+    // We reset wallet to 0 AND turn off the withdrawal flag
     const { error } = await db
         .from('promoters')
-        .update({ wallet_balance: 0 })
+        .update({ 
+            wallet_balance: 0,
+            withdrawal_requested: false 
+        })
         .eq('id', userId);
 
     if (error) {
         console.error("Settlement Error:", error);
         alert("❌ Database Error: " + error.message);
     } else {
-        alert("✅ WALLET RESET: Settlement recorded.");
+        alert("✅ SETTLEMENT COMPLETE: Wallet reset.");
         
-        // Refresh the UI instantly
+        // Refresh UI
         if (typeof loadPayouts === 'function') loadPayouts();
         if (typeof loadStats === 'function') loadStats();
     }

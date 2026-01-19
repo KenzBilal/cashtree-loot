@@ -337,53 +337,52 @@ function closeResetModal() {
 /* =========================================
    7. WITHDRAWAL PROTOCOL (FINAL BOSS)
    ========================================= */
+/* =========================================
+   7. WITHDRAWAL PROTOCOL (DATABASE SIGNAL)
+   ========================================= */
 async function handleWithdraw() {
     const btn = document.getElementById("withdrawBtn");
     const balEl = document.getElementById("balanceDisplay");
-    const nameEl = document.getElementById("partnerName");
-    // 1. SELECT THE LIMIT DISPLAY
     const minPayoutEl = document.getElementById("display_min_payout");
-    
-    // 2. GET LIVE VALUES
-    const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
-    const username = nameEl.innerText;
+    const partnerId = localStorage.getItem("p_id"); // Ensure we have the ID
 
-    // 3. DYNAMIC LIMIT CHECK (The Fix)
-    // We read the limit directly from the screen. If missing, default to 100.
+    // 1. GET VALUES
+    const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
     const minText = minPayoutEl ? minPayoutEl.innerText.replace('₹', '').trim() : "100";
     const minRequired = parseInt(minText) || 100;
     
-    // 4. VALIDATION
+    // 2. VALIDATION
+    if (!partnerId) return logout();
+    
     if (btn.disabled || currentBalance < minRequired) { 
         return showToast(`❌ Minimum withdrawal is ₹${minRequired}`);
     }
 
-    // 5. LOCK UI
-    btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> PROCESSING...";
+    // 3. LOCK UI
+    btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> REQUESTING...";
     btn.disabled = true;
 
     try {
-        // 6. FETCH ADMIN NUMBER
-        const { data } = await db.from('system_config').select('value').eq('key', 'support_number').single();
-        const adminNumber = data?.value || "919778430867"; 
+        // 4. SEND SIGNAL TO ADMIN (Update DB)
+        const { error } = await db
+            .from('promoters')
+            .update({ withdrawal_requested: true })
+            .eq('id', partnerId);
 
-        // 7. FORMAT MESSAGE
-        const message = `💰 *PAYOUT REQUEST* 💰\n\nUser: ${username}\nBalance: ₹${currentBalance}\n\nPlease credit my registered UPI ID.`;
+        if (error) throw error;
+
+        // 5. SUCCESS FEEDBACK
+        showToast("✅ Withdrawal Requested! Admin notified.");
+        btn.innerHTML = "✅ REQUEST SENT";
         
-        // 8. EXECUTE
+        // Keep disabled to prevent spamming
         setTimeout(() => {
-            window.location.href = `https://wa.me/${adminNumber}?text=${encodeURIComponent(message)}`;
-            
-            // Reset Button after 2 seconds
-            setTimeout(() => {
-                btn.innerHTML = "WITHDRAW NOW";
-                btn.disabled = false;
-            }, 2000);
-        }, 1000);
+            btn.innerHTML = "REQUEST SENT (Pending)";
+        }, 2000);
 
     } catch (err) {
         console.error(err);
-        showToast("❌ Connection Error");
+        showToast("❌ Request Failed");
         btn.innerHTML = "RETRY";
         btn.disabled = false;
     }
