@@ -122,7 +122,7 @@ async function attemptSignup() {
 
         // D. SUCCESS
         alert("🚀 Welcome to the team! Registration Successful.");
-        window.location.href = "fdashboard/login.html"; // Ensure this path is correct relative to your file
+        window.location.href = "../dashboard/login.html"; // Ensure this path is correct relative to your file
 
     } catch (err) {
         console.error("Signup Error:", err);
