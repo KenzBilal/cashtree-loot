@@ -257,32 +257,39 @@ function copyShareMessage() {
 async function loadOffers(partnerCode) {
     const container = document.getElementById("offersContainer");
     if (!container) return;
+
     const { data: offers } = await db.from('campaigns').select('*').eq('is_active', true);
+
     if (!offers || offers.length === 0) {
         container.innerHTML = "<p>No active offers.</p>";
         return;
     }
-   container.innerHTML = offers.map(offer => {
-    const folder = (offer.title || "offer").toLowerCase().replace(/\s+/g, '');
-    const link = `${window.location.origin}/${folder}/?ref=${partnerCode}`;
-    
-    return `
-        <div class="offer-card">
-            <div class="offer-info">
-                <h4>${offer.title}</h4>
-                <div class="payout-tag">
-                     EARN ₹${offer.payout_amount ?? 0}
+
+    container.innerHTML = offers.map(offer => {
+        // 🟢 FIX: USE DB URL INSTEAD OF FOLDER NAME
+        // We get the URL you saved (e.g., "https://cashttree.online/kotak/index.html")
+        const baseUrl = offer.target_url || "#";
+        
+        // We check if the URL already has a '?' to decide between '?' or '&'
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        
+        // Final Link: https://cashttree.online/kotak/index.html?ref=KENZ
+        const link = `${baseUrl}${separator}ref=${partnerCode}`;
+        
+        return `
+            <div class="offer-card">
+                <div class="offer-info">
+                    <h4>${offer.title}</h4>
+                    <div class="payout-tag">
+                          EARN ₹${offer.payout_amount ?? 0}
+                    </div>
                 </div>
-
-
+                <button class="copy-btn" onclick="copyLink('${link}')">
+                    <i class="fas fa-link mr-1"></i> COPY
+                </button>
             </div>
-            <button class="copy-btn" onclick="copyLink('${link}')">
-                <i class="fas fa-link mr-1"></i> COPY
-            </button>
-        </div>
-    `;
-}).join('');
-
+        `;
+    }).join('');
 }
 
 function copyLink(text) { navigator.clipboard.writeText(text).then(() => showToast("Copied!")); }
