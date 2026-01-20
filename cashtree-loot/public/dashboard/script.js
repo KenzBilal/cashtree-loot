@@ -158,9 +158,11 @@ async function handleLogin() {
         // 🚦 SMART REDIRECT SYSTEM
         setTimeout(() => {
             if (pCode === "ADMIN") {
-                window.location.href = "../admin/index.html"; // 👑 God Mode
+                // Go UP one level to find the admin folder
+                window.location.href = "../admin/index.html"; 
             } else {
-                window.location.href = "index.html"; // 👤 Partner Mode
+                // Stay in dashboard folder
+                window.location.href = "index.html"; 
             }
         }, 1000);
 
@@ -172,25 +174,30 @@ async function handleLogin() {
     }
 }
 
- 
-
 /* =========================================
-   5. DASHBOARD CONTROLLER
+   5. DASHBOARD CONTROLLER (FIXED)
    ========================================= */
 async function loadUserProfile(userId) {
+    // 1. Fetch Data
     const { data: user, error } = await db
         .from('promoters')
         .select('*, withdrawal_requested') 
         .eq('id', userId)
         .single();
 
-    if (error || !user) return logout();
+    // 🛑 THE FIX: Do NOT logout immediately. Just warn the user.
+    if (error || !user) {
+        console.error("Critical Sync Error:", error);
+        ui.toast("⚠️ Profile Sync Failed. Please refresh.", "error");
+        return; 
+    }
 
+    // 2. Render Profile
     document.getElementById("partnerName").innerText = user.username;
     document.getElementById("userInitial").innerText = user.username.charAt(0).toUpperCase();
     document.getElementById("balanceDisplay").innerText = `₹${user.wallet_balance}`;
     
-    // Withdrawal Button State
+    // 3. Withdrawal Button State
     const btn = document.getElementById("withdrawBtn");
     if(btn) {
         if(user.withdrawal_requested) {
@@ -202,10 +209,13 @@ async function loadUserProfile(userId) {
         }
     }
 
-    const refLink = `${window.location.origin}/login.html?ref=${user.username}`;
+    // 4. Referral Link Generator (Smart Pathing)
+    // Points to PROMOTER SIGNUP page so new users can actually register
+    const refLink = `${window.location.origin}/promoter/index.html?ref=${user.username}`;
     const refInput = document.getElementById("referralLinkInput");
     if(refInput) refInput.value = refLink;
 
+    // 5. Load Modules
     loadOffers(user.username);
     loadTeamStats(userId);
     checkBroadcast();
@@ -319,7 +329,7 @@ async function logout() {
     if (confirmed) { localStorage.clear(); window.location.href = "login.html"; }
 }
 
-// 🟢 NEW: SECURE PASSWORD UPDATE
+// 🟢 SECURE PASSWORD UPDATE
 async function updatePassword() {
     const newPass = document.getElementById("newPass").value.trim();
     if (newPass.length < 6) return ui.toast("⚠️ Key must be 6+ characters", "error");
