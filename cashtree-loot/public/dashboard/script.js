@@ -12,7 +12,7 @@ const ui = {
     // A. TOAST NOTIFICATION
     toast: (msg, type = 'neutral') => {
         const container = document.getElementById('toast-container');
-        if(!container) return alert(msg); // Fallback for login page if container missing
+        if(!container) return alert(msg); // Fallback
 
         const box = document.createElement('div');
         const colors = {
@@ -21,10 +21,7 @@ const ui = {
             neutral: 'border-blue-500 bg-blue-500/20 text-blue-400'
         };
 
-        // Icon Logic
-        let icon = 'fa-info-circle';
-        if(type === 'success') icon = 'fa-check-circle';
-        if(type === 'error') icon = 'fa-exclamation-triangle';
+        let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
 
         box.className = `pointer-events-auto px-6 py-3 rounded-xl border-l-4 backdrop-blur-md shadow-lg translate-x-10 opacity-0 transition-all duration-300 font-bold text-xs ${colors[type] || colors.neutral}`;
         box.innerHTML = `<i class="fas ${icon} mr-2"></i>${msg}`;
@@ -52,7 +49,6 @@ const ui = {
         const overlay = document.getElementById('ui-modal-overlay');
         const box = document.getElementById('ui-modal-box');
         
-        // Fallback for pages without the modal HTML
         if(!overlay) return confirm(msg) ? buttons[1].click() : buttons[0].click(); 
 
         document.getElementById('ui-title').innerText = title;
@@ -119,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async function() {
    4. LOGIN LOGIC
    ========================================= */
 async function handleLogin() {
-    // Removed .toUpperCase() to allow Case Sensitive login
+    // 🟢 CASE INSENSITIVE: 'kenz' becomes 'KENZ' automatically
     const codeInput = document.getElementById("code").value.trim().toUpperCase(); 
     const passInput = document.getElementById("pass").value.trim();
     const loginBtn = document.getElementById("loginBtn");
@@ -147,7 +143,6 @@ async function handlePasswordReset() {
     const usernameInput = document.getElementById("resetUsername").value.trim();
     if (!usernameInput) return alert("Enter username.");
 
-    // Smart Search (Case Insensitive)
     const { data, error } = await db
         .from('promoters')
         .select('username')
@@ -174,25 +169,38 @@ function closeResetModal() {
    5. DASHBOARD CONTROLLER
    ========================================= */
 async function loadUserProfile(userId) {
+    // 🟢 FETCH REQUEST STATUS: We get 'withdrawal_requested' column
     const { data: user, error } = await db
         .from('promoters')
-        .select('*')
+        .select('*, withdrawal_requested') 
         .eq('id', userId)
         .single();
 
     if (error || !user) return logout();
 
-    // 1. Update Identity Cluster
+    // 1. Update Identity
     document.getElementById("partnerName").innerText = user.username;
     document.getElementById("userInitial").innerText = user.username.charAt(0).toUpperCase();
     document.getElementById("balanceDisplay").innerText = `₹${user.wallet_balance}`;
     
-    // 2. Generate Referral Link
+    // 2. Withdrawal Button State (Persistent Check)
+    const btn = document.getElementById("withdrawBtn");
+    if(btn) {
+        if(user.withdrawal_requested) {
+            btn.innerHTML = "REQUEST PENDING";
+            btn.disabled = true;
+            btn.setAttribute("data-status", "pending"); // Lock for GodMode Loop
+        } else {
+            btn.setAttribute("data-status", "active");
+        }
+    }
+
+    // 3. Generate Referral Link
     const refLink = `${window.location.origin}/login.html?ref=${user.username}`;
     const refInput = document.getElementById("referralLinkInput");
     if(refInput) refInput.value = refLink;
 
-    // 3. Load Modules
+    // 4. Load Modules
     loadOffers(user.username);
     loadTeamStats(userId, user.username);
     checkBroadcast();
@@ -210,7 +218,6 @@ async function loadOffers(partnerCode) {
     }
 
     container.innerHTML = offers.map(offer => {
-        // Smart Link Logic
         let dbUrl = offer.target_url || "#";
         let fullUrl = dbUrl.startsWith('http') ? dbUrl : `${window.location.origin}/${dbUrl.startsWith('/') ? dbUrl.substring(1) : dbUrl}`;
         const separator = fullUrl.includes('?') ? '&' : '?';
@@ -234,22 +241,17 @@ async function loadOffers(partnerCode) {
    6. INTELLIGENCE HUB (TEAM STATS)
    ========================================= */
 async function loadTeamStats(userId, username) {
-    // 1. Team Count
     const { count } = await db.from('promoters').select('*', { count: 'exact', head: true }).eq('referred_by', userId);
     const countEl = document.getElementById("teamCount");
     if(countEl) countEl.innerText = count || 0;
 
-    // 2. Earnings
     const { data: userData } = await db.from('promoters').select('referral_earnings').eq('id', userId).single();
     const earnEl = document.getElementById("teamEarnings");
     if(earnEl) earnEl.innerText = `₹${userData?.referral_earnings || 0}`;
     
-    // 3. Network Scanner (Recent Activity)
     const container = document.getElementById("teamIntelligence");
     if(container) {
-        // Fetch last 3 recruits
         const { data: recruits } = await db.from('promoters').select('username, created_at').eq('referred_by', userId).order('created_at', {ascending:false}).limit(3);
-        // Fetch last 3 leads
         const { data: leads } = await db.from('leads').select('phone, status').eq('user_id', userId).order('created_at', {ascending:false}).limit(3);
 
         let html = "";
@@ -292,24 +294,19 @@ async function handleWithdraw() {
     const minPayoutEl = document.getElementById("display_min_payout");
     const partnerId = localStorage.getItem("p_id");
 
-    // 1. GET VALUES
     const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
     const minText = minPayoutEl ? minPayoutEl.innerText.replace('₹', '').trim() : "100";
     const minRequired = parseInt(minText) || 100;
     
-    // 2. VALIDATION
     if (!partnerId) return logout();
-    
     if (btn.disabled || currentBalance < minRequired) { 
         return ui.toast(`❌ Minimum withdrawal is ₹${minRequired}`, "error");
     }
 
-    // 3. LOCK UI
     btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> REQUESTING...";
     btn.disabled = true;
 
     try {
-        // 4. SEND SIGNAL TO ADMIN
         const { error } = await db
             .from('promoters')
             .update({ withdrawal_requested: true })
@@ -317,14 +314,9 @@ async function handleWithdraw() {
 
         if (error) throw error;
 
-        // 5. SUCCESS
         ui.toast("✅ Request Sent! Admin notified.", "success");
-        btn.innerHTML = "✅ SENT";
-        
-        // Keep disabled to prevent spamming
-        setTimeout(() => {
-            btn.innerHTML = "REQUEST PENDING";
-        }, 2000);
+        btn.innerHTML = "REQUEST PENDING";
+        btn.setAttribute("data-status", "pending"); // 🟢 LOCKS BUTTON FROM GOD MODE OVERWRITE
 
     } catch (err) {
         console.error(err);
@@ -403,10 +395,11 @@ async function applyGodModeLaws() {
         const minRequired = parseInt(laws.min_payout || 100);
         displayMin.innerText = `₹${minRequired}`;
         
-        const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
+        // 🟢 SMART CHECK: Only update button if it's NOT pending
+        const isPending = withdrawBtn.getAttribute("data-status") === "pending";
         
-        // Only update styling if user hasn't already clicked it (button not disabled by JS)
-        if (withdrawBtn.innerText !== "REQUEST PENDING" && withdrawBtn.innerText !== "✅ SENT") {
+        if (!isPending) {
+            const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
             if (currentBalance >= minRequired) {
                 withdrawBtn.disabled = false;
                 withdrawBtn.style.opacity = "1";

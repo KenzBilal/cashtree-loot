@@ -64,6 +64,20 @@
       </div>
   </div>
 
+  <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+<div id="ui-modal-overlay" class="fixed inset-0 z-[99] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 opacity-0">
+    <div id="ui-modal-box" class="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl max-w-xs w-full mx-6 transform scale-90 transition-all duration-300 text-center">
+        
+        <div id="ui-icon" class="text-4xl mb-4 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">✨</div>
+
+        <h3 id="ui-title" class="text-xl font-black text-white uppercase tracking-tight mb-2">Notice</h3>
+        <p id="ui-msg" class="text-slate-400 text-xs font-bold leading-relaxed mb-6">Message goes here...</p>
+
+        <div id="ui-actions" class="grid grid-cols-2 gap-3"></div>
+    </div>
+</div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 
