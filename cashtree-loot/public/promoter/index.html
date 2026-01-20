@@ -2,134 +2,241 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Join CashTree | Become a Partner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Join CashTree | Elite Partner</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <link rel="stylesheet" href="style.css">
-
   <style>
+    :root {
+      --bg-dark: #02050a;
+      --glass: rgba(15, 23, 42, 0.6);
+      --border: rgba(255, 255, 255, 0.1);
+      --primary: #22c55e; /* Green */
+      --accent: #4ade80;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(circle at 50% 0%, #1a2c38 0%, #02050a 80%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* GLASS CARD */
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 30px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes floatUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* INPUTS */
+    .input-wrapper { margin-bottom: 18px; position: relative; }
+    .input-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .custom-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    .custom-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+      background: rgba(0,0,0,0.5);
+    }
+    .custom-input::placeholder { color: #475569; }
+
+    /* BUTTONS */
+    .action-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary), #16a34a);
+      color: #02050a;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .action-btn:active { transform: scale(0.98); }
+    .action-btn:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(1); }
+
+    /* PERKS BOX */
+    .perk-box {
+      background: rgba(34, 197, 94, 0.05);
+      border: 1px dashed rgba(34, 197, 94, 0.3);
+      border-radius: 16px;
+      padding: 15px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 25px;
+    }
+    .perk-highlight { color: var(--accent); font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+
+    /* TOAST NOTIFICATIONS (Mobile Optimized) */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast-msg {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-left: 4px solid var(--primary);
+      color: white;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .toast-msg.error { border-color: #ef4444; }
+    .toast-msg.success { border-color: #22c55e; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
     /* PRELOADER */
-    #app-loader { position: fixed; inset: 0; z-index: 99999; background: #02050a; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
-    
-    /* TOAST CONTAINER */
-    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
-    
-    /* GLASS MODAL */
-    #ui-modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
-    #ui-modal-overlay:not(.hidden) { display: flex; opacity: 1; }
-    #ui-modal-box { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 90%; max-width: 320px; text-align: center; transform: scale(0.9); transition: transform 0.3s ease; color: white; font-family: 'Inter', sans-serif; }
-    #ui-modal-overlay:not(.hidden) #ui-modal-box { transform: scale(1); }
+    #app-loader { position: fixed; inset: 0; z-index: 99999; background: #02050a; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+    .loader-icon { font-size: 40px; animation: pulse 1.5s infinite; margin-bottom: 15px; }
+    .loader-text { color: var(--primary); font-family: monospace; font-size: 12px; letter-spacing: 3px; }
+    @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.9); opacity: 0.6; } 100% { transform: scale(1); opacity: 1; } }
+
+    /* MAINTENANCE OVERLAY */
+    #maintenanceScreen { position: fixed; inset: 0; z-index: 9999; background: #0f172a; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 20px; }
   </style>
 </head>
 
-<body class="center-body" style="background-color: #02050a; color: white; font-family: 'Inter', sans-serif;">
+<body>
 
   <div id="app-loader">
-      <div style="text-align: center;">
-          <div style="font-size: 40px; margin-bottom: 20px; animation: pulse 1.5s infinite;">🌱</div>
-          <div style="color: #4ade80; font-family: monospace; font-weight: bold; letter-spacing: 2px; font-size: 12px; text-transform: uppercase;">
-              Securing Connection...
-          </div>
-      </div>
+      <div class="loader-icon">🌱</div>
+      <div class="loader-text">ESTABLISHING SECURE LINK...</div>
   </div>
 
-  <div id="maintenanceScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 9999; background: #0f172a; display: none; align-items: center; justify-content: center; text-align: center; flex-direction: column; padding: 20px;">
-      <div style="max-width: 400px;">
-          <div style="margin-bottom: 24px; display: inline-flex; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 20px; border-radius: 50%;">
-              <i class="fas fa-tools" style="font-size: 40px;"></i>
-          </div>
-          <h1 style="color: white; font-size: 28px; font-weight: 900; margin-bottom: 15px; text-transform: uppercase;">System Lockdown</h1>
-          <p style="color: #94a3b8; margin-bottom: 30px; line-height: 1.6;">
-              The Command Center is undergoing a scheduled God-Mode upgrade. We'll be back online in a few minutes.
-          </p>
-          <div style="display: flex; items-center; justify-content: center; gap: 10px; color: #3b82f6; font-weight: bold; font-size: 14px;">
-              <i class="fas fa-sync fa-spin"></i> AUTO-RECONNECTING...
-          </div>
+  <div id="maintenanceScreen">
+      <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 25px; border-radius: 50%; margin-bottom: 20px;">
+          <i class="fas fa-server" style="font-size: 40px;"></i>
       </div>
-  </div>
-
-  <div class="card login-card" style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 40px; max-width: 450px; width: 100%; margin: 20px;">
-    
-    <div class="brand" style="text-align: center; font-size: 28px; font-weight: 900; margin-bottom: 10px;">
-        🌱 Cash<span style="color: #22c55e;">Tree</span>
-    </div>
-    
-    <h1 style="text-align: center; font-size: 18px; color: #94a3b8; margin-bottom: 30px; font-weight: 600;">Partner Application</h1>
-
-    <div class="info-box" style="margin-bottom: 25px; font-size: 12px; background: rgba(34, 197, 94, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(34, 197, 94, 0.2); line-height: 1.8; color: #cbd5e1;">
-      <strong style="color: #4ade80; display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
-        <i class="fas fa-crown"></i> EXCLUSIVE PERKS
-      </strong>
-      • Choose your own unique <b>Promoter Code</b><br>
-      • Instant <b>₹20 Bonus</b> (if referred)<br>
-      • Real-time "My Team" tracking dashboard<br>
-      • Fast Withdrawals starting at ₹100
-    </div>
-
-    <div class="input-group" style="margin-bottom: 15px;">
-      <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Full Name</label>
-      <input type="text" id="newName" placeholder="Enter your legal name" style="width: 100%; padding: 12px; background: #02050a; border: 1px solid #334155; border-radius: 10px; color: white; outline: none; font-weight: 600;">
-    </div>
-
-    <div class="input-group" style="margin-bottom: 15px;">
-      <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Choose Promoter Code</label>
-      <input type="text" id="newCode" placeholder="Ex: BATMAN77 (Your Login ID)" style="width: 100%; padding: 12px; background: #02050a; border: 1px solid #334155; border-radius: 10px; color: white; outline: none; font-weight: 600; text-transform: uppercase;">
-    </div>
-
-    <div class="input-group" style="margin-bottom: 15px;">
-      <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">UPI ID (For Payouts)</label>
-      <input type="text" id="newUpi" placeholder="example@ybl" style="width: 100%; padding: 12px; background: #02050a; border: 1px solid #334155; border-radius: 10px; color: white; outline: none; font-weight: 600;">
-    </div>
-
-    <div class="input-group" style="margin-bottom: 15px;">
-      <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Phone Number</label>
-      <input type="tel" id="newPhone" placeholder="10-digit mobile number" style="width: 100%; padding: 12px; background: #02050a; border: 1px solid #334155; border-radius: 10px; color: white; outline: none; font-weight: 600;">
-    </div>
-
-    <div class="input-group" style="margin-bottom: 25px;">
-      <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Set Access Key (Password)</label>
-      <input type="password" id="newPass" placeholder="Min 6 characters" style="width: 100%; padding: 12px; background: #02050a; border: 1px solid #334155; border-radius: 10px; color: white; outline: none; font-weight: 600;">
-    </div>
-
-    <div class="input-group" style="background: rgba(34, 197, 94, 0.05); border: 1px dashed #22c55e; padding: 15px; border-radius: 12px; margin-bottom: 25px;">
-      <label style="display: block; font-size: 11px; font-weight: 800; color: #22c55e; text-transform: uppercase; margin-bottom: 5px;">
-          <i class="fas fa-gift mr-1"></i> Have a Referral Code?
-      </label>
-      <input type="text" id="referCode" placeholder="Enter code for Bonus" style="width: 100%; padding: 10px; background: #02050a; border: 1px solid #334155; border-radius: 8px; color: white; outline: none; font-weight: 600; text-transform: uppercase;">
-    </div>
-
-    <button class="submit-btn" id="signupBtn" onclick="attemptSignup()" style="width: 100%; padding: 15px; background: #22c55e; color: black; font-weight: 800; border: none; border-radius: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.2s;">
-      🚀 Create Account
-    </button>
-
-    <div class="footer-link" style="margin-top: 25px; text-align: center; font-size: 13px; color: #64748b; font-weight: 600;">
-      Already a partner? <a href="../login.html" style="color: #4ade80; text-decoration: none; font-weight: 800; margin-left: 5px;">Login Here →</a>
-    </div>
+      <h1 style="font-size: 24px; font-weight: 900; margin-bottom: 10px;">SYSTEM UPDATE</h1>
+      <p style="color: #94a3b8; font-size: 14px; max-width: 300px; line-height: 1.5;">The CashTree Network is undergoing critical upgrades. Access will be restored shortly.</p>
   </div>
 
   <div id="toast-container"></div>
-  <div id="ui-modal-overlay" class="hidden"></div>
+
+  <div class="glass-card login-card">
+    
+    <div style="text-align: center; margin-bottom: 30px;">
+        <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">
+            🌱 Cash<span style="color: var(--primary);">Tree</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; margin-top: 5px;">
+            OFFICIAL PARTNER GATEWAY
+        </div>
+    </div>
+
+    <div class="perk-box">
+      <div class="perk-highlight"><i class="fas fa-shield-alt"></i> VERIFIED ACCESS</div>
+      • Instant <b>₹20 Bonus</b> upon activation<br>
+      • Access to Premium Campaigns<br>
+      • Daily Payouts via UPI
+    </div>
+
+    <div class="input-wrapper">
+      <label class="input-label">Legal Name</label>
+      <input type="text" id="newName" class="custom-input" placeholder="e.g. Rahul Kumar" autocomplete="name">
+    </div>
+
+    <div class="input-wrapper">
+      <label class="input-label">Create Username (Login ID)</label>
+      <input type="text" id="newCode" class="custom-input" placeholder="e.g. RAHUL99" style="text-transform: uppercase;">
+    </div>
+
+    <div class="input-wrapper">
+      <label class="input-label">WhatsApp Number</label>
+      <input type="tel" id="newPhone" class="custom-input" placeholder="10-digit number" maxlength="10">
+    </div>
+
+    <div class="input-wrapper">
+      <label class="input-label">UPI ID (For Payments)</label>
+      <input type="text" id="newUpi" class="custom-input" placeholder="e.g. 9876543210@ybl">
+    </div>
+
+    <div class="input-wrapper">
+      <label class="input-label">Set Access Key (Password)</label>
+      <input type="password" id="newPass" class="custom-input" placeholder="Min 6 characters">
+    </div>
+
+    <div class="input-wrapper" style="margin-top: 25px;">
+      <label class="input-label" style="color: var(--primary);"><i class="fas fa-gift"></i> Referral Code</label>
+      <input type="text" id="referCode" class="custom-input" placeholder="Enter code for Bonus" style="border-color: rgba(34,197,94,0.3); text-transform: uppercase;">
+    </div>
+
+    <button id="signupBtn" class="action-btn" onclick="attemptSignup()">
+      Initialize Account <i class="fas fa-arrow-right" style="margin-left: 8px; opacity: 0.8;"></i>
+    </button>
+
+    <div style="text-align: center; margin-top: 25px; font-size: 13px; color: var(--text-muted);">
+      Already verified? 
+      <a href="../dashboard/login.html" style="color: var(--primary); text-decoration: none; font-weight: 800; margin-left: 5px;">Login</a>
+    </div>
+
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
-  
-  <script>
-      // Remove Preloader after load
-      window.addEventListener('load', () => {
-          setTimeout(() => {
-              const loader = document.getElementById('app-loader');
-              if(loader) {
-                  loader.style.opacity = '0';
-                  setTimeout(() => loader.remove(), 500);
-              }
-          }, 800);
-      });
-  </script>
 
 </body>
 </html>

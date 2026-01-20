@@ -1,89 +1,67 @@
 /* =========================================
-   1. DATABASE CONNECTION (GOD-MODE)
+   1. DATABASE CONNECTION
    ========================================= */
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
 const db = supabase.createClient(supabaseUrl, supabaseKey);
 
 /* =========================================
-   2. UI ENGINE (Glassmorphism System)
+   2. UI ENGINE (TOASTS)
    ========================================= */
-// Note: Ensure your index.html has the #toast-container div at bottom
 const ui = {
     toast: (msg, type = 'neutral') => {
         const container = document.getElementById('toast-container');
-        if(!container) return alert(msg); // Fallback
+        if(!container) return alert(msg); 
 
         const box = document.createElement('div');
-        const colors = {
-            success: 'border-green-500 bg-green-500/20 text-green-400',
-            error: 'border-red-500 bg-red-500/20 text-red-400',
-            neutral: 'border-blue-500 bg-blue-500/20 text-blue-400'
-        };
-        let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
-
-        box.className = `pointer-events-auto px-6 py-3 rounded-xl border-l-4 backdrop-blur-md shadow-lg translate-x-10 opacity-0 transition-all duration-300 font-bold text-xs ${colors[type] || colors.neutral}`;
-        box.innerHTML = `<i class="fas ${icon} mr-2"></i>${msg}`;
+        const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
+        
+        box.className = `toast-msg ${type}`;
+        box.innerHTML = `<i class="fas ${icon}"></i> <span>${msg}</span>`;
 
         container.appendChild(box);
-        setTimeout(() => box.classList.remove('translate-x-10', 'opacity-0'), 10);
+
+        // Remove after 3 seconds
         setTimeout(() => {
-            box.classList.add('translate-x-10', 'opacity-0');
+            box.style.opacity = '0';
+            box.style.transform = 'translateY(-20px)';
             setTimeout(() => box.remove(), 300);
         }, 3000);
     }
 };
 
 /* =========================================
-   3. SYSTEM INIT (Maintenance Check)
+   3. SYSTEM INIT
    ========================================= */
-// Auto-run immediately to lock the door if needed
-(async function initSystem() {
+window.addEventListener('load', async () => {
+    // A. Remove Preloader
+    setTimeout(() => {
+        const loader = document.getElementById('app-loader');
+        if(loader) { loader.style.opacity = '0'; setTimeout(() => loader.remove(), 500); }
+    }, 800);
+
+    // B. Check Maintenance Mode
     try {
-        const { data: config, error } = await db.from('system_config').select('*');
-        if (error) throw error;
-
-        // Convert array to object
-        const laws = {};
-        config.forEach(row => { laws[row.key] = row.value; });
-
-        // --- 🛑 ENFORCE MAINTENANCE ---
-        const maintenanceOverlay = document.getElementById('maintenanceScreen');
-        const contentCard = document.querySelector('.login-card'); 
-
-        // CRITICAL: We only lock if Admin explicitly sets it to MAINTENANCE
-        if (laws.site_status === 'MAINTENANCE') {
-            if (maintenanceOverlay) {
-                maintenanceOverlay.classList.remove('hidden');
-                maintenanceOverlay.style.display = 'flex';
+        const { data: config } = await db.from('system_config').select('*');
+        if (config) {
+            const laws = {};
+            config.forEach(r => laws[r.key] = r.value);
+            
+            if (laws.site_status === 'MAINTENANCE') {
+                document.getElementById('maintenanceScreen').style.display = 'flex';
+                document.querySelector('.login-card').style.display = 'none';
             }
-            if (contentCard) contentCard.style.display = 'none';
-        } else {
-            // ✅ SYSTEM LIVE
-            if (maintenanceOverlay) {
-                maintenanceOverlay.classList.add('hidden');
-                maintenanceOverlay.style.display = 'none';
-            }
-            if (contentCard) contentCard.style.display = 'block';
         }
-    } catch (err) {
-        console.error("System Check Failed:", err);
-    }
-})();
+    } catch(e) { console.error("Sys Check:", e); }
 
-// Auto-fill Referral Code from URL
-window.onload = function() {
+    // C. Check URL for Referral Code
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('ref');
     if (ref) {
-        const referInput = document.getElementById("referCode");
-        if (referInput) {
-            referInput.value = ref.toUpperCase();
-            referInput.style.borderColor = "#22c55e"; // Visual cue
-            ui.toast("Referral Code Applied!", "success");
-        }
+        document.getElementById("referCode").value = ref.toUpperCase();
+        ui.toast("Referral Code Applied", "success");
     }
-};
+});
 
 /* =========================================
    4. SIGNUP LOGIC (THE GATEWAY)
@@ -105,90 +83,76 @@ async function attemptSignup() {
     const pass = passInput.value.trim();
     const referCode = referInput.value.trim().toUpperCase();
 
-    // VALIDATION
-    if (!name || !code || !phone || !upi || !pass) {
-        ui.toast("⚠️ Please fill all required fields.", "error");
-        return;
-    }
-    if (!/^[0-9]{10}$/.test(phone)) {
-        ui.toast("⚠️ Enter a valid 10-digit phone number.", "error");
-        return;
-    }
-    if (code.includes(" ")) {
-        ui.toast("⚠️ Username cannot have spaces.", "error");
-        return;
-    }
+    // 1. VALIDATION
+    if (!name || !code || !phone || !upi || !pass) return ui.toast("⚠️ Please fill all fields.", "error");
+    if (!/^[0-9]{10}$/.test(phone)) return ui.toast("⚠️ Invalid Phone Number.", "error");
+    if (code.length < 3 || code.includes(" ")) return ui.toast("⚠️ Invalid Username (No spaces).", "error");
+    if (pass.length < 6) return ui.toast("⚠️ Password too short (Min 6).", "error");
 
-    // LOCK UI
-    const originalText = btn.innerText;
-    btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> CONNECTING...";
+    // 2. LOCK UI
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> CREATING ID...";
     btn.disabled = true;
 
     try {
-        // A. CHECK EXISTING USER
-        const { data: existingUser } = await db
-            .from('promoters')
-            .select('username')
-            .eq('username', code)
-            .maybeSingle();
-
+        // A. CHECK EXISTING USER (DB Query)
+        const { data: existingUser } = await db.from('promoters').select('username').eq('username', code).maybeSingle();
         if (existingUser) {
             ui.toast("❌ Username taken. Try another.", "error");
-            btn.innerText = originalText;
+            btn.innerHTML = originalText;
             btn.disabled = false;
             return;
         }
 
-        // B. REFERRAL LOGIC (Safe)
+        // B. RESOLVE REFERRAL
         let referrerUuid = null;
-        if (referCode && referCode !== "DIRECT") {
-            const { data: refData } = await db
-                .from('promoters')
-                .select('id')
-                .eq('username', referCode)
-                .maybeSingle();
-            
-            if (refData) {
-                referrerUuid = refData.id;
-            } else {
-                console.log("Invalid referral code, proceeding as direct.");
-            }
+        if (referCode) {
+            const { data: refData } = await db.from('promoters').select('id').eq('username', referCode).maybeSingle();
+            if (refData) referrerUuid = refData.id;
         }
 
-        // C. CREATE ACCOUNT
-        const promoterData = {
+        // 🟢 C. INVISIBLE EMAIL MAGIC (Security Core)
+        // We create a fake email so Supabase Auth works, but user never sees it.
+        const fakeEmail = `${code}@cashttree.internal`;
+
+        const { data: authData, error: authError } = await db.auth.signUp({
+            email: fakeEmail,
+            password: pass
+        });
+
+        if (authError) throw authError;
+
+        // D. INSERT PUBLIC PROFILE
+        // We link the Auth ID to the Public Profile Table
+        const { error: dbError } = await db.from('promoters').insert([{
+            id: authData.user.id,
             full_name: name,
             username: code,
             phone: phone,
             upi_id: upi,
-            password: pass,
+            password: pass, // Storing for user reference
             referred_by: referrerUuid, 
             wallet_balance: referrerUuid ? 20 : 0 // Bonus logic
-        };
+        }]);
 
-        const { error } = await db.from('promoters').insert([promoterData]);
+        if (dbError) throw dbError;
+
+        // E. SUCCESS
+        ui.toast("🚀 Setup Complete! Redirecting...", "success");
         
-        if (error) throw error;
-
-        // D. SUCCESS
-        ui.toast("🚀 Account Created! Redirecting...", "success");
         setTimeout(() => {
+            // 🟢 REDIRECT TO DASHBOARD LOGIN
             window.location.href = "../dashboard/login.html";
         }, 1500);
 
     } catch (err) {
         console.error("Signup Error:", err);
-        // Handle Unique Constraint (Phone Number) gracefully
-        if (err.message.includes("unique constraint")) {
-            ui.toast("❌ Phone number already registered.", "error");
+        if (err.message && err.message.includes("unique constraint")) {
+            ui.toast("❌ Phone/Username already registered.", "error");
         } else {
             ui.toast("❌ Error: " + err.message, "error");
         }
-    } finally {
-        // UNLOCK UI
-        if(btn.disabled) {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
