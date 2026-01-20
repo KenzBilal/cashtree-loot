@@ -1,85 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Partner Access | CashTree Security</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Partner Access | CashTree Security</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 800: '#1e293b', 900: '#0f172a' },
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body class="login-mode">
+<body class="login-mode flex items-center justify-center min-h-screen bg-[#02050a] overflow-hidden relative">
 
-  <div class="login-box">
-    <div style="font-size: 10px; color: var(--green); letter-spacing: 2px; font-weight: 800; margin-bottom: 15px; text-transform: uppercase;">
-      <i class="fas fa-shield-halved"></i> Encrypted Connection
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px]"></div>
     </div>
 
-    <div class="login-brand">Cash<span>Tree</span></div>
-    <p class="login-desc">Secure access for verified partners.</p>
-
-    <div class="input-field">
-      <label for="code">Partner Code (Username)</label>
-      <input type="text" id="code" placeholder="Enter your username" autocomplete="off">
-    </div>
-
-    <div class="input-field">
-      <label for="pass">Access Key</label>
-      <input type="password" id="pass" placeholder="••••••••">
-    </div>
-
-    <button id="loginBtn" class="login-submit-btn" onclick="handleLogin()">
-  UNLOCK DASHBOARD
-</button>
-
-    <div style="margin-top: 15px;">
-        <a href="javascript:void(0)" onclick="openResetModal()" 
-           style="color: #64748b; font-size: 0.8rem; text-decoration: none; font-weight: 600; transition: 0.2s;">
-           Forgot Access Key?
-        </a>
-    </div>
-
-    <div class="login-footer">
-      New here? <a href="../promoter/index.html">Apply for Access →</a>
-    </div>
-  </div>
-
-  <div id="resetModal" class="hidden" style="position: fixed; inset: 0; z-index: 100; background: rgba(2, 5, 10, 0.9); display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px);">
-      <div class="login-box" style="border: 1px solid var(--green); max-width: 380px;">
-          <h3 style="color: white; font-weight: 800; margin-bottom: 10px;">Account Recovery</h3>
-          <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 25px;">Enter your username to verify your identity via WhatsApp Support.</p>
-          
-          <div class="input-field" style="text-align: left;">
-              <label>Partner Code</label>
-              <input type="text" id="resetUsername" placeholder="e.g. CT-8821" style="background: rgba(0,0,0,0.5);">
-          </div>
-          
-          <button onclick="handlePasswordReset()" class="login-submit-btn" style="padding: 14px;">VERIFY IDENTITY</button>
-          
-          <button onclick="closeResetModal()" style="background: transparent; color: #ef4444; border: none; margin-top: 15px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
-            CANCEL
-          </button>
-      </div>
-  </div>
-
-  <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-
-<div id="ui-modal-overlay" class="fixed inset-0 z-[99] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 opacity-0">
-    <div id="ui-modal-box" class="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl max-w-xs w-full mx-6 transform scale-90 transition-all duration-300 text-center">
+    <div class="login-box relative z-10 w-full max-w-[400px] mx-4 p-8 rounded-3xl bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 shadow-2xl">
         
-        <div id="ui-icon" class="text-4xl mb-4 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">✨</div>
+        <div class="flex items-center gap-2 text-[10px] text-green-400 font-black tracking-widest uppercase mb-6">
+            <i class="fas fa-shield-halved"></i> 
+            <span>Encrypted Connection</span>
+        </div>
 
-        <h3 id="ui-title" class="text-xl font-black text-white uppercase tracking-tight mb-2">Notice</h3>
-        <p id="ui-msg" class="text-slate-400 text-xs font-bold leading-relaxed mb-6">Message goes here...</p>
+        <div class="login-brand text-4xl font-black text-white tracking-tighter mb-2">
+            Cash<span class="text-green-500">Tree</span>
+        </div>
+        <p class="login-desc text-slate-400 text-sm font-bold mb-8">Secure access for verified partners.</p>
 
-        <div id="ui-actions" class="grid grid-cols-2 gap-3"></div>
+        <div class="input-field mb-4">
+            <label for="code" class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Partner Code</label>
+            <input type="text" id="code" placeholder="Enter username" autocomplete="off" 
+                   class="w-full bg-[#02050a] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-green-500 transition-colors font-bold text-sm">
+        </div>
+
+        <div class="input-field mb-6">
+            <label for="pass" class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Access Key</label>
+            <input type="password" id="pass" placeholder="••••••••" 
+                   class="w-full bg-[#02050a] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-green-500 transition-colors font-bold text-sm">
+        </div>
+
+        <button id="loginBtn" class="login-submit-btn w-full bg-green-600 hover:bg-green-500 text-black font-black py-4 rounded-xl text-xs tracking-widest uppercase transition-all shadow-lg shadow-green-900/20" onclick="handleLogin()">
+            UNLOCK DASHBOARD
+        </button>
+
+        <div class="mt-6 text-center">
+            <a href="javascript:void(0)" onclick="openResetModal()" 
+               class="text-slate-500 text-xs font-bold hover:text-white transition-colors">
+               Forgot Access Key?
+            </a>
+        </div>
+
+        <div class="login-footer mt-8 pt-6 border-t border-white/5 text-center text-[11px] text-slate-600 font-bold">
+            New here? <a href="../promoter/index.html" class="text-green-500 hover:underline">Apply for Access →</a>
+        </div>
     </div>
-</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js"></script>
+    <div id="resetModal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-[#0f172a] border border-white/10 p-8 rounded-3xl shadow-2xl relative">
+            <h3 class="text-xl font-black text-white mb-2">Account Recovery</h3>
+            <p class="text-slate-400 text-xs font-bold mb-6">Enter your username to verify identity via WhatsApp.</p>
+            
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Partner Code</label>
+                <input type="text" id="resetUsername" placeholder="e.g. CT-8821" 
+                       class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors font-bold text-sm">
+            </div>
+            
+            <button onclick="handlePasswordReset()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl text-xs tracking-widest uppercase mb-3">
+                VERIFY IDENTITY
+            </button>
+            
+            <button onclick="closeResetModal()" class="w-full text-red-500 text-xs font-bold hover:text-red-400 py-2">
+                CANCEL
+            </button>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-5 right-5 z-[150] flex flex-col gap-3 pointer-events-none w-full max-w-xs px-4 sm:px-0"></div>
+
+    <div id="ui-modal-overlay" class="fixed inset-0 z-[140] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div id="ui-modal-box" class="glass-panel bg-[#0f172a] border border-white/10 p-8 rounded-3xl shadow-2xl max-w-xs w-full mx-6 transform scale-90 transition-all duration-300 text-center">
+            
+            <div id="ui-icon" class="text-4xl mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">✨</div>
+
+            <h3 id="ui-title" class="text-xl font-black text-white uppercase tracking-tight mb-2">Notice</h3>
+            <p id="ui-msg" class="text-slate-400 text-xs font-bold leading-relaxed mb-6">Message goes here...</p>
+
+            <div id="ui-actions" class="grid grid-cols-2 gap-3"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
 
 </body>
 </html>
