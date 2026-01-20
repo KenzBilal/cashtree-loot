@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", async function() {
    ========================================= */
 async function handleLogin() {
     // Removed .toUpperCase() to allow Case Sensitive login
-    const codeInput = document.getElementById("code").value.trim(); 
+    const codeInput = document.getElementById("code").value.trim().toUpperCase(); 
     const passInput = document.getElementById("pass").value.trim();
     const loginBtn = document.getElementById("loginBtn");
 
