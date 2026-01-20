@@ -3,37 +3,67 @@
    ========================================= */
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
-
 const db = supabase.createClient(supabaseUrl, supabaseKey);
 
 /* =========================================
-   2. SYSTEM INIT (Maintenance Check)
+   2. UI ENGINE (Glassmorphism System)
    ========================================= */
-// We run this immediately to lock the door if needed
+// Note: Ensure your index.html has the #toast-container div at bottom
+const ui = {
+    toast: (msg, type = 'neutral') => {
+        const container = document.getElementById('toast-container');
+        if(!container) return alert(msg); // Fallback
+
+        const box = document.createElement('div');
+        const colors = {
+            success: 'border-green-500 bg-green-500/20 text-green-400',
+            error: 'border-red-500 bg-red-500/20 text-red-400',
+            neutral: 'border-blue-500 bg-blue-500/20 text-blue-400'
+        };
+        let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
+
+        box.className = `pointer-events-auto px-6 py-3 rounded-xl border-l-4 backdrop-blur-md shadow-lg translate-x-10 opacity-0 transition-all duration-300 font-bold text-xs ${colors[type] || colors.neutral}`;
+        box.innerHTML = `<i class="fas ${icon} mr-2"></i>${msg}`;
+
+        container.appendChild(box);
+        setTimeout(() => box.classList.remove('translate-x-10', 'opacity-0'), 10);
+        setTimeout(() => {
+            box.classList.add('translate-x-10', 'opacity-0');
+            setTimeout(() => box.remove(), 300);
+        }, 3000);
+    }
+};
+
+/* =========================================
+   3. SYSTEM INIT (Maintenance Check)
+   ========================================= */
+// Auto-run immediately to lock the door if needed
 (async function initSystem() {
     try {
         const { data: config, error } = await db.from('system_config').select('*');
         if (error) throw error;
 
-        // Convert array to object for easy access
+        // Convert array to object
         const laws = {};
         config.forEach(row => { laws[row.key] = row.value; });
 
         // --- 🛑 ENFORCE MAINTENANCE ---
-        const maintenanceOverlay = document.getElementById('maintenanceOverlay');
-        const contentCard = document.querySelector('.glass-panel'); // Target the login/signup card
+        const maintenanceOverlay = document.getElementById('maintenanceScreen');
+        const contentCard = document.querySelector('.login-card'); 
 
+        // CRITICAL: We only lock if Admin explicitly sets it to MAINTENANCE
         if (laws.site_status === 'MAINTENANCE') {
-            // 1. Show Screen
             if (maintenanceOverlay) {
                 maintenanceOverlay.classList.remove('hidden');
                 maintenanceOverlay.style.display = 'flex';
             }
-            // 2. Hide Content
             if (contentCard) contentCard.style.display = 'none';
         } else {
             // ✅ SYSTEM LIVE
-            if (maintenanceOverlay) maintenanceOverlay.classList.add('hidden');
+            if (maintenanceOverlay) {
+                maintenanceOverlay.classList.add('hidden');
+                maintenanceOverlay.style.display = 'none';
+            }
             if (contentCard) contentCard.style.display = 'block';
         }
     } catch (err) {
@@ -41,8 +71,22 @@ const db = supabase.createClient(supabaseUrl, supabaseKey);
     }
 })();
 
+// Auto-fill Referral Code from URL
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+        const referInput = document.getElementById("referCode");
+        if (referInput) {
+            referInput.value = ref.toUpperCase();
+            referInput.style.borderColor = "#22c55e"; // Visual cue
+            ui.toast("Referral Code Applied!", "success");
+        }
+    }
+};
+
 /* =========================================
-   3. SIGNUP LOGIC (THE GATEWAY)
+   4. SIGNUP LOGIC (THE GATEWAY)
    ========================================= */
 async function attemptSignup() {
     const nameInput = document.getElementById("newName");
@@ -54,7 +98,8 @@ async function attemptSignup() {
     const btn = document.getElementById("signupBtn");
 
     const name = nameInput.value.trim();
-    const code = codeInput.value.trim().toUpperCase();
+    // 🟢 CASE INSENSITIVE: Force Uppercase for consistency
+    const code = codeInput.value.trim().toUpperCase(); 
     const phone = phoneInput.value.trim();
     const upi = upiInput.value.trim();
     const pass = passInput.value.trim();
@@ -62,17 +107,21 @@ async function attemptSignup() {
 
     // VALIDATION
     if (!name || !code || !phone || !upi || !pass) {
-        alert("⚠️ Please fill all required fields.");
+        ui.toast("⚠️ Please fill all required fields.", "error");
         return;
     }
     if (!/^[0-9]{10}$/.test(phone)) {
-        alert("⚠️ Please enter a valid 10-digit phone number.");
+        ui.toast("⚠️ Enter a valid 10-digit phone number.", "error");
+        return;
+    }
+    if (code.includes(" ")) {
+        ui.toast("⚠️ Username cannot have spaces.", "error");
         return;
     }
 
     // LOCK UI
     const originalText = btn.innerText;
-    btn.innerText = "Connecting...";
+    btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> CONNECTING...";
     btn.disabled = true;
 
     try {
@@ -84,7 +133,9 @@ async function attemptSignup() {
             .maybeSingle();
 
         if (existingUser) {
-            alert("❌ User Code taken. Try another.");
+            ui.toast("❌ Username taken. Try another.", "error");
+            btn.innerText = originalText;
+            btn.disabled = false;
             return;
         }
 
@@ -100,7 +151,6 @@ async function attemptSignup() {
             if (refData) {
                 referrerUuid = refData.id;
             } else {
-                // If invalid code, we just ignore it and proceed as DIRECT
                 console.log("Invalid referral code, proceeding as direct.");
             }
         }
@@ -112,7 +162,7 @@ async function attemptSignup() {
             phone: phone,
             upi_id: upi,
             password: pass,
-            referred_by: referrerUuid, // Can be UUID or null
+            referred_by: referrerUuid, 
             wallet_balance: referrerUuid ? 20 : 0 // Bonus logic
         };
 
@@ -121,15 +171,24 @@ async function attemptSignup() {
         if (error) throw error;
 
         // D. SUCCESS
-        alert("🚀 Welcome to the team! Registration Successful.");
-        window.location.href = "../dashboard/login.html"; // Ensure this path is correct relative to your file
+        ui.toast("🚀 Account Created! Redirecting...", "success");
+        setTimeout(() => {
+            window.location.href = "../dashboard/login.html";
+        }, 1500);
 
     } catch (err) {
         console.error("Signup Error:", err);
-        alert("❌ Error: " + err.message);
+        // Handle Unique Constraint (Phone Number) gracefully
+        if (err.message.includes("unique constraint")) {
+            ui.toast("❌ Phone number already registered.", "error");
+        } else {
+            ui.toast("❌ Error: " + err.message, "error");
+        }
     } finally {
         // UNLOCK UI
-        btn.innerText = originalText;
-        btn.disabled = false;
+        if(btn.disabled) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
     }
 }

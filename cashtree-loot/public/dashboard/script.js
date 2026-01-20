@@ -9,10 +9,9 @@ const db = supabase.createClient(supabaseUrl, supabaseKey);
    2. UI ENGINE (Glassmorphism System)
    ========================================= */
 const ui = {
-    // A. TOAST NOTIFICATION
     toast: (msg, type = 'neutral') => {
         const container = document.getElementById('toast-container');
-        if(!container) return alert(msg); // Fallback
+        if(!container) return alert(msg);
 
         const box = document.createElement('div');
         const colors = {
@@ -20,7 +19,6 @@ const ui = {
             error: 'border-red-500 bg-red-500/20 text-red-400',
             neutral: 'border-blue-500 bg-blue-500/20 text-blue-400'
         };
-
         let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
 
         box.className = `pointer-events-auto px-6 py-3 rounded-xl border-l-4 backdrop-blur-md shadow-lg translate-x-10 opacity-0 transition-all duration-300 font-bold text-xs ${colors[type] || colors.neutral}`;
@@ -34,7 +32,6 @@ const ui = {
         }, 3000);
     },
 
-    // B. CONFIRMATION MODAL
     confirm: (title, msg, type = 'neutral') => {
         return new Promise((resolve) => {
             ui._showModal(title, msg, type, [
@@ -44,11 +41,8 @@ const ui = {
         });
     },
 
-    // INTERNAL HELPER
     _showModal: (title, msg, type, buttons) => {
         const overlay = document.getElementById('ui-modal-overlay');
-        const box = document.getElementById('ui-modal-box');
-        
         if(!overlay) return confirm(msg) ? buttons[1].click() : buttons[0].click(); 
 
         document.getElementById('ui-title').innerText = title;
@@ -57,7 +51,6 @@ const ui = {
         
         const actions = document.getElementById('ui-actions');
         actions.innerHTML = '';
-        
         buttons.forEach(btn => {
             const b = document.createElement('button');
             b.className = `py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${btn.class}`;
@@ -67,7 +60,7 @@ const ui = {
         });
 
         overlay.classList.remove('hidden');
-        setTimeout(() => { overlay.classList.remove('opacity-0'); box.classList.remove('scale-90'); }, 10);
+        setTimeout(() => { overlay.classList.remove('opacity-0'); document.getElementById('ui-modal-box').classList.remove('scale-90'); }, 10);
     },
 
     _closeModal: () => {
@@ -77,16 +70,21 @@ const ui = {
     }
 };
 
-// BRIDGE: Connects old calls to new UI
 function showToast(msg) {
     const type = msg.toLowerCase().includes('error') || msg.includes('❌') || msg.includes('⚠️') ? 'error' : 'success';
     ui.toast(msg, type);
 }
 
 /* =========================================
-   3. ROUTER (Login vs Dashboard)
+   3. ROUTER & INITIALIZATION
    ========================================= */
 document.addEventListener("DOMContentLoaded", async function() {
+    // 1. Remove Preloader
+    setTimeout(() => {
+        const loader = document.getElementById('app-loader');
+        if(loader) { loader.style.opacity = '0'; setTimeout(() => loader.remove(), 500); }
+    }, 800);
+
     const loginBtn = document.getElementById("loginBtn");
     const p_id = localStorage.getItem("p_id");
 
@@ -106,70 +104,75 @@ document.addEventListener("DOMContentLoaded", async function() {
     await loadUserProfile(p_id);
     await applyGodModeLaws();
     
-    // Start Realtime Laws (Every 5s)
+    // Start Realtime Checks
     setInterval(applyGodModeLaws, 5000);
     setInterval(checkBroadcast, 30000);
 });
 
 /* =========================================
-   4. LOGIN LOGIC
+   4. SMART LOGIN (10/10 SECURITY)
    ========================================= */
 async function handleLogin() {
-    // 🟢 CASE INSENSITIVE: 'kenz' becomes 'KENZ' automatically
-    const codeInput = document.getElementById("code").value.trim().toUpperCase(); 
+    const rawInput = document.getElementById("code").value.trim();
     const passInput = document.getElementById("pass").value.trim();
     const loginBtn = document.getElementById("loginBtn");
 
-    if (!codeInput || !passInput) return showToast("⚠️ Enter credentials");
+    if (!rawInput || !passInput) return showToast("⚠️ Enter credentials");
 
-    loginBtn.innerHTML = "Verifying...";
+    loginBtn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> VERIFYING...";
     loginBtn.disabled = true;
 
-    const { data, error } = await db.from('promoters').select('*').eq('username', codeInput).eq('password', passInput).maybeSingle();
+    try {
+        let secureEmail;
+        let pCode;
 
-    if (error || !data) {
-        showToast("❌ Invalid Credentials");
-        loginBtn.innerHTML = "Unlock Dashboard";
+        // A. ADMIN LOGIN (Direct Email)
+        if (rawInput.includes('@')) {
+            secureEmail = rawInput; 
+            pCode = "ADMIN"; 
+        } 
+        // B. PROMOTER LOGIN (Username Code)
+        else {
+            const username = rawInput.toUpperCase();
+            // 🟢 THE INVISIBLE TAG: Adds @cashttree.internal automatically
+            secureEmail = `${username}@cashttree.internal`;
+            pCode = username;
+        }
+
+        // 🟢 AUTHENTICATE WITH SUPABASE
+        const { data, error } = await db.auth.signInWithPassword({
+            email: secureEmail,
+            password: passInput
+        });
+
+        if (error) throw error;
+
+        // Success
+        localStorage.setItem("p_id", data.user.id);
+        localStorage.setItem("p_code", pCode);
+        
+        loginBtn.innerHTML = "✅ ACCESS GRANTED";
+        loginBtn.classList.remove("bg-green-600");
+        loginBtn.classList.add("bg-emerald-500");
+
+        // Redirect Admin vs User
+        setTimeout(() => {
+            // if(pCode === "ADMIN") window.location.href = "admin.html"; // Uncomment if you have an admin file
+            window.location.href = "admin/index.html"; 
+        }, 1000);
+
+    } catch (err) {
+        console.error("Login Failed:", err);
+        showToast("❌ Invalid Credentials", "error");
+        loginBtn.innerHTML = "UNLOCK DASHBOARD";
         loginBtn.disabled = false;
-    } else {
-        localStorage.setItem("p_id", data.id);
-        localStorage.setItem("p_code", data.username);
-        loginBtn.innerHTML = "✅ Success!";
-        setTimeout(() => window.location.href = "index.html", 1000);
     }
-}
-
-async function handlePasswordReset() {
-    const usernameInput = document.getElementById("resetUsername").value.trim();
-    if (!usernameInput) return alert("Enter username.");
-
-    const { data, error } = await db
-        .from('promoters')
-        .select('username')
-        .ilike('username', usernameInput) 
-        .maybeSingle(); 
-
-    if (error || !data) return alert("User not found.");
-
-    const adminWhatsApp = "919778430867"; 
-    const message = `RECOVERY: I forgot my access key. Username: ${data.username}`;
-    window.location.href = `https://wa.me/${adminWhatsApp}?text=${encodeURIComponent(message)}`;
-}
-
-function openResetModal() {
-    const modal = document.getElementById('resetModal');
-    if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
-}
-function closeResetModal() {
-    const modal = document.getElementById('resetModal');
-    if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
 }
 
 /* =========================================
    5. DASHBOARD CONTROLLER
    ========================================= */
 async function loadUserProfile(userId) {
-    // 🟢 FETCH REQUEST STATUS: We get 'withdrawal_requested' column
     const { data: user, error } = await db
         .from('promoters')
         .select('*, withdrawal_requested') 
@@ -178,40 +181,39 @@ async function loadUserProfile(userId) {
 
     if (error || !user) return logout();
 
-    // 1. Update Identity
     document.getElementById("partnerName").innerText = user.username;
     document.getElementById("userInitial").innerText = user.username.charAt(0).toUpperCase();
     document.getElementById("balanceDisplay").innerText = `₹${user.wallet_balance}`;
     
-    // 2. Withdrawal Button State (Persistent Check)
+    // Withdrawal Button State
     const btn = document.getElementById("withdrawBtn");
     if(btn) {
         if(user.withdrawal_requested) {
             btn.innerHTML = "REQUEST PENDING";
             btn.disabled = true;
-            btn.setAttribute("data-status", "pending"); // Lock for GodMode Loop
+            btn.setAttribute("data-status", "pending"); 
         } else {
             btn.setAttribute("data-status", "active");
         }
     }
 
-    // 3. Generate Referral Link
     const refLink = `${window.location.origin}/login.html?ref=${user.username}`;
     const refInput = document.getElementById("referralLinkInput");
     if(refInput) refInput.value = refLink;
 
-    // 4. Load Modules
     loadOffers(user.username);
-    loadTeamStats(userId, user.username);
+    loadTeamStats(userId);
     checkBroadcast();
 }
 
+/* =========================================
+   6. MODULES (Offers, Stats, Withdraw)
+   ========================================= */
 async function loadOffers(partnerCode) {
     const container = document.getElementById("offersContainer");
     if (!container) return;
 
     const { data: offers } = await db.from('campaigns').select('*').eq('is_active', true);
-
     if (!offers || offers.length === 0) {
         container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>No active missions.</p>";
         return;
@@ -237,10 +239,7 @@ async function loadOffers(partnerCode) {
     }).join('');
 }
 
-/* =========================================
-   6. INTELLIGENCE HUB (TEAM STATS)
-   ========================================= */
-async function loadTeamStats(userId, username) {
+async function loadTeamStats(userId) {
     const { count } = await db.from('promoters').select('*', { count: 'exact', head: true }).eq('referred_by', userId);
     const countEl = document.getElementById("teamCount");
     if(countEl) countEl.innerText = count || 0;
@@ -255,39 +254,21 @@ async function loadTeamStats(userId, username) {
         const { data: leads } = await db.from('leads').select('phone, status').eq('user_id', userId).order('created_at', {ascending:false}).limit(3);
 
         let html = "";
-
         if (recruits && recruits.length > 0) {
             html += `<div style="padding:10px 15px; color:#60a5fa; font-size:10px; font-weight:800; background:rgba(59,130,246,0.1);">🔥 RECENT RECRUITS</div>`;
-            recruits.forEach(r => {
-                html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;">
-                            <span style="color:white;">${r.username}</span>
-                            <span style="color:#64748b;">Joined</span>
-                         </div>`;
-            });
+            recruits.forEach(r => html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;"><span style="color:white;">${r.username}</span><span style="color:#64748b;">Joined</span></div>`);
         }
-
         if (leads && leads.length > 0) {
             html += `<div style="padding:10px 15px; color:#fbbf24; font-size:10px; font-weight:800; background:rgba(234,179,8,0.1); margin-top:5px;">🎯 RECENT TASKS</div>`;
             leads.forEach(l => {
                 const statusColor = l.status === 'approved' ? '#22c55e' : (l.status === 'rejected' ? '#ef4444' : '#fbbf24');
-                html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;">
-                            <span style="color:white;">User (...${l.phone.slice(-4)})</span>
-                            <span style="color:${statusColor}; font-weight:bold;">${l.status.toUpperCase()}</span>
-                         </div>`;
+                html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;"><span style="color:white;">User (...${l.phone.slice(-4)})</span><span style="color:${statusColor}; font-weight:bold;">${l.status.toUpperCase()}</span></div>`;
             });
         }
-
-        if (html === "") {
-             container.innerHTML = `<div style="padding:30px; text-align:center; color:#475569; font-size:11px;">No network activity yet. Start promoting!</div>`;
-        } else {
-            container.innerHTML = html;
-        }
+        container.innerHTML = html === "" ? `<div style="padding:30px; text-align:center; color:#475569; font-size:11px;">No network activity yet. Start promoting!</div>` : html;
     }
 }
 
-/* =========================================
-   7. WITHDRAWAL SYSTEM (SIGNAL PROTOCOL)
-   ========================================= */
 async function handleWithdraw() {
     const btn = document.getElementById("withdrawBtn");
     const balEl = document.getElementById("balanceDisplay");
@@ -299,25 +280,17 @@ async function handleWithdraw() {
     const minRequired = parseInt(minText) || 100;
     
     if (!partnerId) return logout();
-    if (btn.disabled || currentBalance < minRequired) { 
-        return ui.toast(`❌ Minimum withdrawal is ₹${minRequired}`, "error");
-    }
+    if (btn.disabled || currentBalance < minRequired) return ui.toast(`❌ Minimum withdrawal is ₹${minRequired}`, "error");
 
     btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> REQUESTING...";
     btn.disabled = true;
 
     try {
-        const { error } = await db
-            .from('promoters')
-            .update({ withdrawal_requested: true })
-            .eq('id', partnerId);
-
+        const { error } = await db.from('promoters').update({ withdrawal_requested: true }).eq('id', partnerId);
         if (error) throw error;
-
         ui.toast("✅ Request Sent! Admin notified.", "success");
         btn.innerHTML = "REQUEST PENDING";
-        btn.setAttribute("data-status", "pending"); // 🟢 LOCKS BUTTON FROM GOD MODE OVERWRITE
-
+        btn.setAttribute("data-status", "pending");
     } catch (err) {
         console.error(err);
         ui.toast("❌ Request Failed", "error");
@@ -327,47 +300,33 @@ async function handleWithdraw() {
 }
 
 /* =========================================
-   8. UTILITIES (VIRAL, SECURITY, LAWS)
+   7. UTILS & SYSTEM LAWS
    ========================================= */
-function copyLink(text) {
-    navigator.clipboard.writeText(text).then(() => ui.toast("Link Copied!", "success"));
-}
-
-function copyReferralLink() {
-    const input = document.getElementById("referralLinkInput");
-    input.select();
-    input.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(input.value).then(() => ui.toast("Invite Link Copied!", "success"));
-}
-
+function copyLink(text) { navigator.clipboard.writeText(text).then(() => ui.toast("Link Copied!", "success")); }
+function copyReferralLink() { const el = document.getElementById("referralLinkInput"); el.select(); navigator.clipboard.writeText(el.value).then(() => ui.toast("Invite Link Copied!", "success")); }
 function copyShareMessage() {
-    const partnerName = document.getElementById("partnerName").innerText;
-    const referLink = document.getElementById("referralLinkInput").value;
-    const viralMessage = `🔥 *PART TIME INCOME* 🔥\n\nEarn ₹500-₹2000 daily with your phone!\nVerified by: ${partnerName}\n\n✅ Instant Payouts\n✅ No Investment\n\n👇 *REGISTER FREE:*\n${referLink}`;
-    
-    navigator.clipboard.writeText(viralMessage).then(() => ui.toast("Viral Ad Copied!", "success"));
+    const name = document.getElementById("partnerName").innerText;
+    const link = document.getElementById("referralLinkInput").value;
+    navigator.clipboard.writeText(`🔥 *PART TIME INCOME* 🔥\nVerified by: ${name}\n👇 *REGISTER FREE:*\n${link}`).then(() => ui.toast("Viral Ad Copied!", "success"));
+}
+async function logout() {
+    const confirmed = await ui.confirm("SIGN OUT?", "You will need to login again.", "neutral");
+    if (confirmed) { localStorage.clear(); window.location.href = "login.html"; }
 }
 
+// 🟢 NEW: SECURE PASSWORD UPDATE
 async function updatePassword() {
     const newPass = document.getElementById("newPass").value.trim();
-    const partnerId = localStorage.getItem("p_id");
-
     if (newPass.length < 6) return ui.toast("⚠️ Key must be 6+ characters", "error");
 
-    const { error } = await db.from('promoters').update({ password: newPass }).eq('id', partnerId);
+    // Secure Auth Update
+    const { error } = await db.auth.updateUser({ password: newPass });
+
     if (error) {
-        ui.toast("❌ Update Failed", "error");
+        ui.toast("❌ Update Failed: " + error.message, "error");
     } else {
         ui.toast("✅ Access Key Updated!", "success");
         document.getElementById("newPass").value = "";
-    }
-}
-
-async function logout() {
-    const confirmed = await ui.confirm("SIGN OUT?", "You will need to enter your access key again.", "neutral");
-    if (confirmed) {
-        localStorage.clear();
-        window.location.href = "login.html";
     }
 }
 
@@ -378,53 +337,42 @@ async function applyGodModeLaws() {
     const laws = {};
     config.forEach(c => laws[c.key] = c.value);
 
-    // Maintenance Check
     const overlay = document.getElementById('maintenanceScreen');
-    if (laws.site_status === 'MAINTENANCE') {
-        if(overlay) overlay.classList.remove('hidden');
-    } else {
-        if(overlay) overlay.classList.add('hidden');
-    }
+    if(overlay) laws.site_status === 'MAINTENANCE' ? overlay.classList.remove('hidden') : overlay.classList.add('hidden');
 
-    // Withdrawal Limit Sync
+    const btn = document.getElementById('withdrawBtn');
     const displayMin = document.getElementById('display_min_payout');
-    const withdrawBtn = document.getElementById('withdrawBtn');
     const balEl = document.getElementById("balanceDisplay");
 
-    if (displayMin && withdrawBtn && balEl) {
+    if (displayMin && btn && balEl) {
         const minRequired = parseInt(laws.min_payout || 100);
         displayMin.innerText = `₹${minRequired}`;
         
-        // 🟢 SMART CHECK: Only update button if it's NOT pending
-        const isPending = withdrawBtn.getAttribute("data-status") === "pending";
-        
-        if (!isPending) {
+        if (btn.getAttribute("data-status") !== "pending") {
             const currentBalance = parseFloat(balEl.innerText.replace('₹', '')) || 0;
             if (currentBalance >= minRequired) {
-                withdrawBtn.disabled = false;
-                withdrawBtn.style.opacity = "1";
-                withdrawBtn.style.cursor = "pointer";
-                withdrawBtn.innerText = "WITHDRAW NOW";
-                withdrawBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.disabled = false; btn.innerText = "WITHDRAW NOW"; btn.style.opacity = "1"; btn.style.cursor = "pointer";
             } else {
-                withdrawBtn.disabled = true;
-                withdrawBtn.style.opacity = "0.5";
-                withdrawBtn.style.cursor = "not-allowed";
-                withdrawBtn.innerText = "LOCKED";
+                btn.disabled = true; btn.innerText = "LOCKED"; btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed";
             }
         }
     }
 }
-
 async function checkBroadcast() {
     const { data } = await db.from('system_config').select('broadcast_message').eq('key', 'site_status').single();
     const container = document.getElementById('broadcastContainer');
     const textEl = document.getElementById('broadcastText');
-
     if (container && textEl && data?.broadcast_message && data.broadcast_message !== "OFF") {
-        textEl.innerText = data.broadcast_message;
-        container.classList.remove('hidden');
-    } else if (container) {
-        container.classList.add('hidden');
-    }
+        textEl.innerText = data.broadcast_message; container.classList.remove('hidden');
+    } else if (container) container.classList.add('hidden');
 }
+
+// Password Reset (Redirects to WhatsApp)
+async function handlePasswordReset() {
+    const usernameInput = document.getElementById("resetUsername").value.trim();
+    if (!usernameInput) return alert("Enter username.");
+    const adminWhatsApp = "919778430867"; 
+    window.location.href = `https://wa.me/${adminWhatsApp}?text=${encodeURIComponent("RECOVERY: I forgot my access key for " + usernameInput)}`;
+}
+function openResetModal() { const m = document.getElementById('resetModal'); if(m){ m.classList.remove('hidden'); m.style.display='flex'; }}
+function closeResetModal() { const m = document.getElementById('resetModal'); if(m){ m.classList.add('hidden'); m.style.display='none'; }}
