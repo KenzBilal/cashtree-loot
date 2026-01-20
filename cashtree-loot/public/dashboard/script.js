@@ -158,7 +158,7 @@ async function handleLogin() {
         // 🚦 SMART REDIRECT SYSTEM
         setTimeout(() => {
             if (pCode === "ADMIN") {
-                window.location.href = "..admin/index.html"; // 👑 God Mode
+                window.location.href = "../admin/index.html"; // 👑 God Mode
             } else {
                 window.location.href = "index.html"; // 👤 Partner Mode
             }
