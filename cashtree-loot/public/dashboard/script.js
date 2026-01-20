@@ -155,14 +155,12 @@ async function handleLogin() {
         loginBtn.classList.remove("bg-green-600");
         loginBtn.classList.add("bg-emerald-500");
 
-        // Redirect Admin vs User
-       setTimeout(() => {
+        // 🚦 SMART REDIRECT SYSTEM
+        setTimeout(() => {
             if (pCode === "ADMIN") {
-                // 👑 If it's YOU (cashttree@gmail.com) -> Go to Command Center
-                window.location.href = "admin/index.html"; 
+                window.location.href = "..admin/index.html"; // 👑 God Mode
             } else {
-                // 👤 If it's a Partner (KENZ, etc.) -> Go to User Dashboard
-                window.location.href = "index.html"; 
+                window.location.href = "index.html"; // 👤 Partner Mode
             }
         }, 1000);
 
@@ -173,6 +171,8 @@ async function handleLogin() {
         loginBtn.disabled = false;
     }
 }
+
+ 
 
 /* =========================================
    5. DASHBOARD CONTROLLER
