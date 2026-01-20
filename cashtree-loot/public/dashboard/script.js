@@ -156,9 +156,14 @@ async function handleLogin() {
         loginBtn.classList.add("bg-emerald-500");
 
         // Redirect Admin vs User
-        setTimeout(() => {
-            // if(pCode === "ADMIN") window.location.href = "admin.html"; // Uncomment if you have an admin file
-            window.location.href = "admin/index.html"; 
+       setTimeout(() => {
+            if (pCode === "ADMIN") {
+                // 👑 If it's YOU (cashttree@gmail.com) -> Go to Command Center
+                window.location.href = "admin/index.html"; 
+            } else {
+                // 👤 If it's a Partner (KENZ, etc.) -> Go to User Dashboard
+                window.location.href = "index.html"; 
+            }
         }, 1000);
 
     } catch (err) {
