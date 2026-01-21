@@ -6,74 +6,129 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const db = supabase.createClient(supabaseUrl, supabaseKey);
 
 /* =========================================
-   2. UI ENGINE (Glassmorphism System)
+   2. UI ENGINE (10/10 THEME MATCH)
    ========================================= */
 const ui = {
+    // 🔔 TOAST NOTIFICATIONS (Glass Pills)
     toast: (msg, type = 'neutral') => {
-        const container = document.getElementById('toast-container');
-        if(!container) return alert(msg);
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.style.cssText = "position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;";
+            document.body.appendChild(container);
+        }
 
         const box = document.createElement('div');
+        
+        // Theme Colors based on Type
         const colors = {
-            success: 'border-green-500 bg-green-500/20 text-green-400',
-            error: 'border-red-500 bg-red-500/20 text-red-400',
-            neutral: 'border-blue-500 bg-blue-500/20 text-blue-400'
+            success: 'border-left: 4px solid #22c55e; color: #fff;',
+            error:   'border-left: 4px solid #ef4444; color: #fff;',
+            neutral: 'border-left: 4px solid #3b82f6; color: #fff;'
         };
-        let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
 
-        box.className = `pointer-events-auto px-6 py-3 rounded-xl border-l-4 backdrop-blur-md shadow-lg translate-x-10 opacity-0 transition-all duration-300 font-bold text-xs ${colors[type] || colors.neutral}`;
-        box.innerHTML = `<i class="fas ${icon} mr-2"></i>${msg}`;
+        const icons = {
+            success: '<i class="fas fa-check-circle" style="color:#22c55e"></i>',
+            error:   '<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i>',
+            neutral: '<i class="fas fa-info-circle" style="color:#3b82f6"></i>'
+        };
+
+        // 10/10 Glass Style
+        box.style.cssText = `
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+            transform: translateX(50px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            ${colors[type] || colors.neutral}
+        `;
+
+        box.innerHTML = `${icons[type] || icons.neutral} <span>${msg}</span>`;
 
         container.appendChild(box);
-        setTimeout(() => box.classList.remove('translate-x-10', 'opacity-0'), 10);
+
+        // Animation In
         setTimeout(() => {
-            box.classList.add('translate-x-10', 'opacity-0');
-            setTimeout(() => box.remove(), 300);
-        }, 3000);
+            box.style.transform = 'translateX(0)';
+            box.style.opacity = '1';
+        }, 10);
+
+        // Animation Out
+        setTimeout(() => {
+            box.style.transform = 'translateX(50px)';
+            box.style.opacity = '0';
+            setTimeout(() => box.remove(), 400);
+        }, 4000);
     },
 
+    // 🛑 CONFIRMATION MODAL (Command Center Style)
     confirm: (title, msg, type = 'neutral') => {
         return new Promise((resolve) => {
-            ui._showModal(title, msg, type, [
-                { text: 'CANCEL', class: 'bg-white/5 text-slate-500 hover:text-white', click: () => resolve(false) },
-                { text: 'CONFIRM', class: 'bg-white text-black hover:bg-slate-200 shadow-lg', click: () => resolve(true) }
-            ]);
+            // Create Overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'custom-modal-overlay';
+            overlay.style.cssText = `
+                position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+                z-index: 10000; display: flex; align-items: center; justify-content: center;
+                opacity: 0; transition: opacity 0.3s;
+            `;
+
+            // Icon Selection
+            const icon = type === 'error' ? '⚠️' : (type === 'success' ? '🚀' : '✨');
+            
+            // Create Box
+            const box = document.createElement('div');
+            box.style.cssText = `
+                background: #0f172a; border: 1px solid rgba(255,255,255,0.1);
+                padding: 30px; border-radius: 20px; width: 90%; max-width: 350px;
+                text-align: center; transform: scale(0.9); transition: transform 0.3s;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            `;
+
+            box.innerHTML = `
+                <div style="font-size: 40px; margin-bottom: 15px;">${icon}</div>
+                <h3 style="color:white; margin:0 0 10px 0; font-size: 18px; font-weight:800; text-transform: uppercase;">${title}</h3>
+                <p style="color:#94a3b8; font-size:13px; margin:0 0 25px 0; line-height:1.5;">${msg}</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button id="modal-cancel" style="padding: 12px; background: rgba(255,255,255,0.05); color: #94a3b8; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">CANCEL</button>
+                    <button id="modal-confirm" style="padding: 12px; background: #22c55e; color: #022c22; border: none; border-radius: 10px; font-weight: 800; cursor: pointer;">CONFIRM</button>
+                </div>
+            `;
+
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+
+            // Animate In
+            setTimeout(() => { overlay.style.opacity = '1'; box.style.transform = 'scale(1)'; }, 10);
+
+            // Handlers
+            document.getElementById('modal-cancel').onclick = () => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+                resolve(false);
+            };
+
+            document.getElementById('modal-confirm').onclick = () => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+                resolve(true);
+            };
         });
-    },
-
-    _showModal: (title, msg, type, buttons) => {
-        const overlay = document.getElementById('ui-modal-overlay');
-        if(!overlay) return confirm(msg) ? buttons[1].click() : buttons[0].click(); 
-
-        document.getElementById('ui-title').innerText = title;
-        document.getElementById('ui-msg').innerText = msg;
-        document.getElementById('ui-icon').innerText = type === 'error' ? '⚠️' : (type === 'success' ? '🚀' : '✨');
-        
-        const actions = document.getElementById('ui-actions');
-        actions.innerHTML = '';
-        buttons.forEach(btn => {
-            const b = document.createElement('button');
-            b.className = `py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${btn.class}`;
-            b.innerText = btn.text;
-            b.onclick = () => { ui._closeModal(); btn.click(); };
-            actions.appendChild(b);
-        });
-
-        overlay.classList.remove('hidden');
-        setTimeout(() => { overlay.classList.remove('opacity-0'); document.getElementById('ui-modal-box').classList.remove('scale-90'); }, 10);
-    },
-
-    _closeModal: () => {
-        const overlay = document.getElementById('ui-modal-overlay');
-        overlay.classList.add('opacity-0');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
     }
 };
-
-function showToast(msg) {
-    const type = msg.toLowerCase().includes('error') || msg.includes('❌') || msg.includes('⚠️') ? 'error' : 'success';
-    ui.toast(msg, type);
-}
 
 /* =========================================
    3. ROUTER & INITIALIZATION
@@ -117,7 +172,7 @@ async function handleLogin() {
     const passInput = document.getElementById("pass").value.trim();
     const loginBtn = document.getElementById("loginBtn");
 
-    if (!rawInput || !passInput) return showToast("⚠️ Enter credentials");
+    if (!rawInput || !passInput) return ui.toast("⚠️ Enter credentials", "neutral");
 
     loginBtn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> VERIFYING...";
     loginBtn.disabled = true;
@@ -158,17 +213,15 @@ async function handleLogin() {
         // 🚦 SMART REDIRECT SYSTEM
         setTimeout(() => {
             if (pCode === "ADMIN") {
-                // Go UP one level to find the admin folder
                 window.location.href = "../admin/index.html"; 
             } else {
-                // Stay in dashboard folder
                 window.location.href = "index.html"; 
             }
         }, 1000);
 
     } catch (err) {
         console.error("Login Failed:", err);
-        showToast("❌ Invalid Credentials", "error");
+        ui.toast("❌ Invalid Credentials", "error");
         loginBtn.innerHTML = "UNLOCK DASHBOARD";
         loginBtn.disabled = false;
     }
@@ -209,8 +262,7 @@ async function loadUserProfile(userId) {
         }
     }
 
-    // 4. Referral Link Generator (Smart Pathing)
-    // Points to PROMOTER SIGNUP page so new users can actually register
+    // 4. Referral Link Generator
     const refLink = `${window.location.origin}/promoter/index.html?ref=${user.username}`;
     const refInput = document.getElementById("referralLinkInput");
     if(refInput) refInput.value = refLink;
@@ -389,5 +441,3 @@ async function handlePasswordReset() {
     const adminWhatsApp = "919778430867"; 
     window.location.href = `https://wa.me/${adminWhatsApp}?text=${encodeURIComponent("RECOVERY: I forgot my access key for " + usernameInput)}`;
 }
-function openResetModal() { const m = document.getElementById('resetModal'); if(m){ m.classList.remove('hidden'); m.style.display='flex'; }}
-function closeResetModal() { const m = document.getElementById('resetModal'); if(m){ m.classList.add('hidden'); m.style.display='none'; }}
