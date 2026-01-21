@@ -307,32 +307,68 @@ async function loadOffers(partnerCode) {
 }
 
 async function loadTeamStats(userId) {
-    const { count } = await db.from('promoters').select('*', { count: 'exact', head: true }).eq('referred_by', userId);
-    const countEl = document.getElementById("teamCount");
-    if(countEl) countEl.innerText = count || 0;
+    try {
+        // 1. Parallel Fetching (Faster & Safer)
+        const [countResult, earningsResult, recruitsResult, leadsResult] = await Promise.allSettled([
+            db.from('promoters').select('*', { count: 'exact', head: true }).eq('referred_by', userId),
+            db.from('promoters').select('referral_earnings').eq('id', userId).single(),
+            db.from('promoters').select('username, created_at').eq('referred_by', userId).order('created_at', {ascending:false}).limit(3),
+            db.from('leads').select('phone, status').eq('user_id', userId).order('created_at', {ascending:false}).limit(3)
+        ]);
 
-    const { data: userData } = await db.from('promoters').select('referral_earnings').eq('id', userId).single();
-    const earnEl = document.getElementById("teamEarnings");
-    if(earnEl) earnEl.innerText = `₹${userData?.referral_earnings || 0}`;
-    
-    const container = document.getElementById("teamIntelligence");
-    if(container) {
-        const { data: recruits } = await db.from('promoters').select('username, created_at').eq('referred_by', userId).order('created_at', {ascending:false}).limit(3);
-        const { data: leads } = await db.from('leads').select('phone, status').eq('user_id', userId).order('created_at', {ascending:false}).limit(3);
+        // 2. Process Team Count
+        const countEl = document.getElementById("teamCount");
+        if (countEl && countResult.status === 'fulfilled') {
+            countEl.innerText = countResult.value.count || 0;
+        }
 
-        let html = "";
-        if (recruits && recruits.length > 0) {
-            html += `<div style="padding:10px 15px; color:#60a5fa; font-size:10px; font-weight:800; background:rgba(59,130,246,0.1);">🔥 RECENT RECRUITS</div>`;
-            recruits.forEach(r => html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;"><span style="color:white;">${r.username}</span><span style="color:#64748b;">Joined</span></div>`);
+        // 3. Process Earnings
+        const earnEl = document.getElementById("teamEarnings");
+        if (earnEl && earningsResult.status === 'fulfilled' && earningsResult.value.data) {
+            earnEl.innerText = `₹${earningsResult.value.data.referral_earnings || 0}`;
         }
-        if (leads && leads.length > 0) {
-            html += `<div style="padding:10px 15px; color:#fbbf24; font-size:10px; font-weight:800; background:rgba(234,179,8,0.1); margin-top:5px;">🎯 RECENT TASKS</div>`;
-            leads.forEach(l => {
-                const statusColor = l.status === 'approved' ? '#22c55e' : (l.status === 'rejected' ? '#ef4444' : '#fbbf24');
-                html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;"><span style="color:white;">User (...${l.phone.slice(-4)})</span><span style="color:${statusColor}; font-weight:bold;">${l.status.toUpperCase()}</span></div>`;
-            });
+
+        // 4. Process Intelligence Feed (Recruits + Leads)
+        const container = document.getElementById("teamIntelligence");
+        if (container) {
+            let html = "";
+            
+            // Recruits Section
+            const recruits = recruitsResult.status === 'fulfilled' ? recruitsResult.value.data : [];
+            if (recruits && recruits.length > 0) {
+                html += `<div style="padding:10px 15px; color:#60a5fa; font-size:10px; font-weight:800; background:rgba(59,130,246,0.1);">🔥 RECENT RECRUITS</div>`;
+                recruits.forEach(r => {
+                    html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;">
+                        <span style="color:white; font-weight:600;">${r.username}</span>
+                        <span style="color:#64748b;">Joined</span>
+                    </div>`;
+                });
+            }
+
+            // Leads Section
+            const leads = leadsResult.status === 'fulfilled' ? leadsResult.value.data : [];
+            if (leads && leads.length > 0) {
+                html += `<div style="padding:10px 15px; color:#fbbf24; font-size:10px; font-weight:800; background:rgba(234,179,8,0.1); margin-top:5px;">🎯 RECENT TASKS</div>`;
+                leads.forEach(l => {
+                    const statusColor = l.status === 'approved' ? '#22c55e' : (l.status === 'rejected' ? '#ef4444' : '#fbbf24');
+                    // Mask phone number for privacy (e.g. ...4321)
+                    const maskedPhone = l.phone ? `...${l.phone.slice(-4)}` : 'Unknown';
+                    
+                    html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;">
+                        <span style="color:white;">Task (${maskedPhone})</span>
+                        <span style="color:${statusColor}; font-weight:bold;">${l.status.toUpperCase()}</span>
+                    </div>`;
+                });
+            }
+
+            // Empty State
+            container.innerHTML = html === "" 
+                ? `<div style="padding:30px; text-align:center; color:#475569; font-size:11px; font-style:italic;">No network activity yet. Start promoting!</div>` 
+                : html;
         }
-        container.innerHTML = html === "" ? `<div style="padding:30px; text-align:center; color:#475569; font-size:11px;">No network activity yet. Start promoting!</div>` : html;
+
+    } catch (err) {
+        console.error("Team Stats Error:", err);
     }
 }
 
