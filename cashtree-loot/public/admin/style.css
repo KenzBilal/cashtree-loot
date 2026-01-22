@@ -1,432 +1,328 @@
 /* =====================================================
-   FINAL BOSS ADMIN THEME – CASH TREE (V2)
-   Status: 10/10 Sovereign (Scroll Fixed)
+   FINAL BOSS ADMIN THEME – SOVEREIGN ELITE (V3)
+   Status: 11/10 (Hyper-Polished)
    ===================================================== */
 
 /* ================== FONT ================== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-/* ================== ROOT ================== */
+/* ================== ROOT VARIABLES ================== */
 :root {
-  --bg-deep: #04060a;
-  --bg-slate: #07101a;
-  --bg-card: rgba(255, 255, 255, 0.045);
+  --bg-deep: #020617;        /* Darker than black */
+  --bg-slate: #0f172a;       /* Rich Slate */
+  --bg-card: rgba(30, 41, 59, 0.4); /* Lighter glass */
+  
   --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shine: rgba(255, 255, 255, 0.03);
 
-  --accent: #22c55e;
-  --accent-glow: rgba(34, 197, 94, 0.35);
-
+  --accent: #22c55e;         /* Sovereign Green */
+  --accent-glow: rgba(34, 197, 94, 0.4);
+  
   --brand-blue: #3b82f6;
   --brand-red: #ef4444;
+  --brand-gold: #eab308;
 
-  --text-main: #e5edf3;
-  --text-muted: #64748b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
 
-  --radius-xl: 2rem;
-  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-lg: 1rem;
   --radius-md: 0.75rem;
 
   --speed-fast: 0.2s;
-  --speed-normal: 0.35s;
+  --speed-normal: 0.4s;
 }
 
-/* ================== RESET ================== */
+/* ================== RESET & CORE ================== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* Removes blue tap box on mobile */
 }
 
 html, body {
   height: 100%;
+  width: 100%;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background:
-    radial-gradient(1200px 600px at 15% 15%, rgba(36, 54, 60, 0.12), transparent 60%),
-    linear-gradient(180deg, var(--bg-deep), var(--bg-slate));
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
   color: var(--text-main);
-  overflow: hidden; /* Prevents double scrollbars */
-  display: flex !important;
-  flex-direction: row !important;
-  width: 100vw;
-  height: 100vh;
+  overflow: hidden; /* Locks body, we scroll main inside */
+  display: flex;
+  flex-direction: row;
 }
 
-/* ================== 🚨 NEW: SCROLL ENGINE ================== */
-/* This is what was MISSING. It lets the content scroll while sidebar stays fixed. */
+/* ================== SCROLL ENGINE (DESKTOP) ================== */
 main {
   flex: 1;
   height: 100vh;
-  overflow-y: auto;       /* Enables vertical scrolling */
-  overflow-x: hidden;     /* Prevents horizontal scrollbar */
+  overflow-y: auto;       /* Vertical Scroll */
+  overflow-x: hidden;     /* No Horizontal Scroll */
   position: relative;
   scroll-behavior: smooth;
+  padding-bottom: 2rem;
 }
 
-/* ================== GLASS PANEL ================== */
+/* Scrollbar Styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* ================== GLASS PANEL (THE LOOK) ================== */
 .glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 0 var(--glass-shine);
 }
 
-/* ================== SECTIONS ================== */
-.section {
-  animation: fadeUp var(--speed-normal) ease;
+/* ================== ANIMATIONS ================== */
+.section { animation: slideUp var(--speed-normal) cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 /* ================== SIDEBAR ================== */
 aside {
-  background: rgba(4, 6, 10, 0.92);
-  backdrop-filter: blur(14px);
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
-  width: 288px !important; 
-  flex-shrink: 0 !important;
-  display: flex !important;
-  flex-direction: column; /* Better alignment */
-  z-index: 50; /* Ensures it stays above content */
-}
-
-.nav-label {
-  font-size: 0.65rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.28em;
-  color: var(--text-muted);
-  padding: 0 1.5rem;
-  margin-bottom: 0.75rem;
+  width: 280px; 
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem 1.4rem;
-  margin: 0 1rem 0.4rem;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  margin: 0.25rem 1rem;
   border-radius: var(--radius-md);
-  color: #94a3b8;
+  color: var(--text-muted);
+  font-weight: 500;
   cursor: pointer;
-  transition: all var(--speed-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.03);
   color: #fff;
-  transform: translateX(6px);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 .nav-item.active {
-  background: linear-gradient(
-    90deg,
-    rgba(34, 197, 94, 0.18),
-    transparent
-  );
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.1), transparent);
   color: var(--accent);
   border-left: 3px solid var(--accent);
-  box-shadow: inset 10px 0 24px -12px var(--accent-glow);
+  border-color: rgba(34, 197, 94, 0.1);
 }
 
-/* ================== BADGE ================== */
-.badge-red {
-  background: var(--brand-red);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 900;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-}
+.nav-item.active i { color: var(--accent); }
 
-/* ================== LOGIN MODAL ================== */
-#loginModal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: radial-gradient(circle at center, #0a1520 0%, #04060a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#loginModal.hidden {
-  display: none !important;
-}
-
-.login-card-fixed {
-  width: 90%;
-  max-width: 420px;
-  padding: 50px 42px;
-  border-radius: var(--radius-xl);
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  box-shadow:
-    0 0 120px rgba(0, 0, 0, 0.85),
-    inset 0 0 30px rgba(34, 197, 94, 0.08);
-}
-
-/* Laser scan */
-.login-card-fixed::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-      transparent,
-      rgba(34, 197, 94, 0.18),
-      transparent
-    );
-  animation: scan 4s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes scan {
-  from { transform: translateY(-100%); }
-  to   { transform: translateY(100%); }
-}
-
-/* ================== INPUTS ================== */
-.input-dark,
-.vault-input,
-textarea,
-select {
+/* ================== INPUTS & FORMS ================== */
+.input-dark, .vault-input, textarea, select {
   width: 100%;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.5);
+  border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
   color: #fff;
-  padding: 1rem 1.2rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
   outline: none;
-  transition: var(--speed-fast);
+  transition: all 0.2s;
 }
 
-.input-dark:focus,
-textarea:focus,
-select:focus {
+.input-dark:focus, textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 18px var(--accent-glow);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+  background: rgba(2, 6, 23, 0.8);
 }
 
-.vault-input {
-  font-size: 32px;
-  font-weight: 900;
-  text-align: center;
-  letter-spacing: 12px;
-  margin-bottom: 1.6rem;
-  color: var(--accent);
-  text-shadow: 0 0 12px var(--accent-glow);
-}
-
-/* 🚨 NEW: GLOBAL DROPDOWN FIX (Desktop & Mobile) */
+/* Custom Dropdown Arrow */
 select {
-  appearance: none;         /* Kills default browser arrow */
-  -webkit-appearance: none; /* Kills Safari/Chrome default */
-  -moz-appearance: none;    /* Kills Firefox default */
-  
-  /* Paint our Sovereign Green Arrow */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2322c55e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  
-  /* Position it perfectly 1rem from the right edge */
   background-position: right 1rem center;
   background-size: 1.2rem;
-  
-  /* Add padding so text doesn't overlap the arrow */
-  padding-right: 2.5rem !important; 
+  padding-right: 2.5rem;
   cursor: pointer;
 }
+select:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2322c55e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); }
 
 /* ================== BUTTONS ================== */
 .unlock-btn {
   width: 100%;
-  background: linear-gradient(180deg, var(--accent), #16a34a);
-  color: #022c22;
-  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent) 0%, #15803d 100%);
+  color: #fff;
+  font-weight: 800;
   letter-spacing: 0.05em;
   border: none;
-  border-radius: 16px;
-  padding: 1.1rem;
+  border-radius: var(--radius-md);
+  padding: 1rem;
   cursor: pointer;
-  box-shadow: 0 18px 40px var(--accent-glow);
-  transition: transform var(--speed-fast), filter var(--speed-fast);
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+  transition: all 0.2s;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .unlock-btn:hover {
-  transform: scale(1.03);
-  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
 }
 
-.unlock-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
+.unlock-btn:active { transform: translateY(0); }
+.unlock-btn:disabled { opacity: 0.7; cursor: wait; filter: grayscale(0.5); }
+
+/* ================== MODALS & POPUPS ================== */
+#loginModal, #editModal, #broadcastModal, #ui-modal-overlay {
+  transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.login-card-fixed {
+  width: 90%;
+  max-width: 400px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.2), 0 20px 50px rgba(0,0,0,0.5);
+  border-radius: 2rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.vault-input {
+  font-size: 2rem;
+  text-align: center;
+  letter-spacing: 0.5em;
+  font-weight: 900;
+  color: var(--accent);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(0,0,0,0.3);
+  margin: 1.5rem 0;
 }
 
 /* ================== STAT CARDS ================== */
 .stat-card {
-  padding: 2.2rem;
-  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
   border: 1px solid var(--glass-border);
-  transition: transform var(--speed-normal);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
 }
-
-.stat-card:hover {
-  transform: translateY(-8px);
+.stat-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
 }
+.stat-card.border-green-500 { border-left: 4px solid var(--accent); }
+.stat-card.border-red-500   { border-left: 4px solid var(--brand-red); }
+.stat-card.border-blue-500  { border-left: 4px solid var(--brand-blue); }
 
-.stat-card.border-green-500 { border-top: 5px solid var(--accent); }
-.stat-card.border-red-500   { border-top: 5px solid var(--brand-red); }
-.stat-card.border-blue-500  { border-top: 5px solid var(--brand-blue); }
-
-/* ================== TABLE ================== */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-tr {
+/* ================== TABLE STYLES ================== */
+table { width: 100%; border-collapse: separate; border-spacing: 0; }
+th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 800;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--glass-border);
-  transition: background var(--speed-fast);
 }
-
-tr:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-td, th {
-  padding: 1rem;
+td {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
   font-size: 0.9rem;
 }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
 
-th {
-  color: var(--text-muted);
-  text-transform: uppercase;
-  font-weight: 900;
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-}
+/* ================== UTILS ================== */
+.hidden { display: none !important; }
 
-/* ================== UTILITIES ================== */
-.hidden {
-  display: none !important;
-}
-
-/* 🚨 NEW: DESKTOP SCROLLBAR (Was missing before) */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* ================== PULSE ================== */
-.animate-pulse-green {
-  animation: pulseGlow 2.2s infinite;
-}
-
-@keyframes pulseGlow {
-  0%   { filter: drop-shadow(0 0 3px var(--accent)); }
-  50%  { filter: drop-shadow(0 0 10px var(--accent)); }
-  100% { filter: drop-shadow(0 0 3px var(--accent)); }
-}
-
-/* ================== MOBILE OPTIMIZATIONS ================== */
+/* ================== MOBILE OPTIMIZATIONS (The 10/10 Part) ================== */
 @media (max-width: 768px) {
-  /* 1. HIDE SIDEBAR */
-  aside { display: none !important; }
-
-  /* 2. 🚨 NEW: BODY SCROLL LOCK FIX */
+  
+  /* 1. Reset Body for Mobile Scroll */
   body {
-    height: 100vh !important;
-    background-attachment: fixed !important; 
-    flex-direction: column !important; /* Forces layout to stack */
-  }
-
-  main {
-    padding-bottom: 120px !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-    height: 100vh;
-    overflow-y: scroll; /* Forces native scroll on iPhone */
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* 3. FLOATING MOBILE DOCK */
-  .md\:hidden.fixed.bottom-0 {
-    background: transparent !important;
-    padding-bottom: env(safe-area-inset-bottom);
-    z-index: 100;
-  }
-
-  .md\:hidden .glass-panel {
-    background: rgba(15, 23, 42, 0.85) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-radius: 24px 24px 0 0 !important;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-    margin-bottom: 0 !important;
-  }
-
-  /* 4. TEXT SIZING */
-  .section h1 { font-size: 1.8rem !important; }
-
-  /* 5. 🚨 NEW: INPUT ZOOM FIX (iOS) */
-  input, select, textarea {
-    font-size: 16px !important; /* Prevents auto-zoom on iPhone */
-  }
-
-  /* 6. CAMPAIGN LAB FIX */
-  #campaigns .flex.justify-between {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    height: 100vh;
+    height: 100dvh; /* Dynamic Viewport for Safari */
+    overflow: hidden;
   }
 
-  #campaigns button.unlock-btn { width: 100%; }
+  aside { display: none; } /* Hide Desktop Sidebar */
 
-  /* 7. TABLE SCROLL */
-  .glass-panel.overflow-hidden {
-    overflow-x: auto !important;
-    display: block;
+  /* 2. Main Content Area */
+  main {
     width: 100%;
+    padding: 1.5rem 1rem 8rem 1rem; /* Huge bottom padding for nav bar */
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch; /* Momentum Scroll */
   }
 
-  table { min-width: 600px; }
+  /* 3. Text & Sizing Tweaks */
+  .section h1 { font-size: 1.75rem; }
+  .stat-card { padding: 1.25rem; }
+  
+  /* 4. Inputs (Prevent iOS Zoom) */
+  input, select, textarea { font-size: 16px !important; }
 
-  th, td {
-    padding: 1rem 0.5rem !important;
-    white-space: nowrap;
+  /* 5. Mobile Bottom Nav (Glass Dock) */
+  .md\:hidden.fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    background: linear-gradient(to top, #020617 80%, transparent);
+    pointer-events: none; /* Let clicks pass through the gradient area */
+  }
+  
+  .md\:hidden .glass-panel {
+    pointer-events: auto;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    margin: 0 1rem;
+    height: 65px;
+    border-radius: 20px;
   }
 
-  /* 8. DROPDOWN ARROW FIX */
-  select.input-dark {
-    padding-right: 2.5rem !important;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2322c55e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1.2rem;
+  /* 6. Campaign Forms Stacked */
+  #createCampaignForm .grid, #campaigns .flex {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  /* 7. Table Scroll Wrapper */
+  .glass-panel.overflow-x-auto {
+    margin: 0 -1rem; /* Bleed to edges */
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 }
