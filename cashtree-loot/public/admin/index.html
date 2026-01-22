@@ -8,34 +8,46 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
     <link rel="stylesheet" href="style.css"> 
-    
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#04060a">
     <link rel="icon" type="image/webp" href="../logo.webp">
     <link rel="manifest" href="manifest.json">
+
+
+      <!-- 🔒 HARD ADMIN LOCK (CSS LEVEL) -->
+    <style>
+        body:not(.admin-unlocked) aside,
+        body:not(.admin-unlocked) main,
+        body:not(.admin-unlocked) .md\\:hidden.fixed {
+            display: none !important;
+        }
+    </style>
+
 </head>
 
 <body class="h-screen w-full flex overflow-hidden bg-[#04060a]">
 
+     <!-- ================= MOBILE TOP BAR ================= -->
     <div class="md:hidden fixed top-0 left-0 right-0 z-50 h-16 glass-panel border-b border-white/5 flex items-center justify-between px-5 shadow-2xl backdrop-blur-xl bg-[#04060a]/90">
         <div class="flex items-center gap-3">
             <img src="../logo.webp" class="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
             <span class="text-sm font-black text-white tracking-widest uppercase">Admin Panel</span>
         </div>
-
         <div class="flex items-center gap-3">
-            <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 active:scale-90 transition">
+            <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
                 <i class="fas fa-bullhorn text-xs"></i>
             </button>
-            <button onclick="hardRefresh()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 active:scale-90 transition">
+            <button onclick="hardRefresh()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                 <i class="fas fa-sync-alt text-xs"></i>
             </button>
         </div>
     </div>
 
+
+    <!-- ================= LOGIN MODAL (ALWAYS VISIBLE UNTIL AUTH) ================= -->
     <div id="loginModal">
         <div class="glass-panel login-card-fixed">
             <div class="mb-6 relative">
@@ -48,24 +60,10 @@
                 Authorized Personnel Only
             </p>
 
-           <input
-  id="email"
-  type="email"
-  placeholder="Admin Email"
-  class="vault-input mb-4 text-center font-bold"
-/>
+            <input id="email" type="email" placeholder="Admin Email" class="vault-input mb-4 text-center font-bold"/>
+            <input id="password" type="password" placeholder="Password" class="vault-input text-center font-bold"/>
 
-<input
-  id="password"
-  type="password"
-  placeholder="Password"
-  class="vault-input text-center font-bold"
-/>
-
-<button class="unlock-btn mt-6" onclick="handleLogin()">
-  LOGIN
-</button>
-
+            <button class="unlock-btn mt-6" onclick="handleLogin()">LOGIN</button>
         </div>
     </div>
 
@@ -168,7 +166,9 @@
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-6 md:p-12 relative pt-20 md:pt-12 w-full">
+
+    <!-- ================= MAIN CONTENT ================= -->
+     <main class="flex-1 overflow-y-auto p-6 md:p-12 relative pt-20 md:pt-12 w-full">
 
         <div id="dashboard" class="section">
             <h1 class="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">System Overview</h1>
@@ -340,8 +340,9 @@
         </div>
     </div>
 
+    <!-- ================= MOBILE BOTTOM NAV ================= -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none">
-        <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto border-white/10 shadow-2xl shadow-black bg-[#0f172a]/90 backdrop-blur-xl">
+        <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto">
             
             <button onclick="showSection('dashboard')" class="nav-item active flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12">
                 <i class="fas fa-chart-line text-lg"></i>
@@ -372,28 +373,21 @@
         </div>
     </div>
 
+     <!-- ================= UI SYSTEM ================= -->
     <div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
     <div id="ui-modal-overlay" class="fixed inset-0 z-[99] hidden bg-black/90 backdrop-blur-md flex items-center justify-center transition-all duration-300 opacity-0">
-        <div id="ui-modal-box" class="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl shadow-black max-w-sm w-full mx-4 transform scale-90 transition-all duration-300">
-            
-            <div id="ui-icon" class="text-5xl mb-6 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                ⚠️
-            </div>
-
-            <h3 id="ui-title" class="text-2xl font-black text-white text-center mb-2 uppercase tracking-tighter">
-                CONFIRMATION
-            </h3>
-            <p id="ui-msg" class="text-slate-400 text-center text-xs font-bold mb-8 leading-relaxed px-2">
-                Are you sure you want to proceed?
-            </p>
-
+        <div id="ui-modal-box" class="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl max-w-sm w-full">
+            <div id="ui-icon" class="text-5xl mb-6 text-center">⚠️</div>
+            <h3 id="ui-title" class="text-2xl font-black text-white text-center mb-2">CONFIRMATION</h3>
+            <p id="ui-msg" class="text-slate-400 text-center text-xs font-bold mb-8"></p>
             <div id="ui-actions" class="grid grid-cols-2 gap-3"></div>
         </div>
     </div>
 
+    <!-- ================= SCRIPTS ================= -->
     <script src="auth.js"></script>
-<script src="admin.js"></script>
+    <script src="admin.js"></script>
 
 </body>
 </html>
