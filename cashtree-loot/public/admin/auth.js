@@ -1,13 +1,17 @@
-/* =========================================
-   AUTH CORE (Singleton)
-   ========================================= */
-const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA';
 
-// 1. Initialize Supabase globally on the window object
-// This prevents "Identifier already declared" errors
 if (!window.supabaseClient) {
-    window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Safety Check: Did config.js load?
+    if (!window.env || !window.env.SUPABASE_URL) {
+        console.error("❌ CRITICAL: config.js is missing!");
+        alert("System Error: Configuration missing.");
+    } else {
+        // Initialize using the keys from config.js
+        window.supabaseClient = window.supabase.createClient(
+            window.env.SUPABASE_URL, 
+            window.env.SUPABASE_KEY
+        );
+    }
 }
 
 // 2. Helper for Login
