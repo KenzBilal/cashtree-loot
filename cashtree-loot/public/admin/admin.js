@@ -1,23 +1,19 @@
+/* =========================================
+   1. SYSTEM CORE & SECURITY ENGINE
+   ========================================= */
 let db; 
 
-try {
-    // 1. Check if auth.js successfully created the client
-    if (typeof supabase !== 'undefined') {
-        db = supabase; // Link 'db' to the existing connection
-        console.log("✅ SYSTEM ONLINE: Database Linked via Auth Core.");
-    } else {
-        // Safety Fallback: Should not happen if index.html is correct
-        throw new Error("Auth Core missing. Database not initialized.");
-    }
-
-    // 2. Check Supabase SDK Integrity
-    if (typeof window.supabase === 'undefined') {
-        throw new Error("Supabase SDK Missing from <head>");
-    }
-
-} catch (err) {
-    console.error("FATAL:", err);
-    alert("Critical Failure: Database connection lost. Reload page.");
+// A. Database Connection (Dependent on auth.js)
+if (window.supabaseClient) {
+    // Link 'db' to the existing connection created in auth.js
+    db = window.supabaseClient;
+    console.log("✅ SYSTEM ONLINE: Database Linked via Auth Core.");
+} else {
+    // If we are here, it means auth.js failed to load or loaded in wrong order.
+    // We do NOT include keys here. We strictly fail.
+    console.error("❌ FATAL: Auth Core missing. Check script order in HTML.");
+    // We can't use ui.toast here yet because 'ui' isn't defined until lower down
+    alert("Critical System Error: Auth Core Failed to Load.");
 }
 
 // B. Anti-XSS Sanitizer

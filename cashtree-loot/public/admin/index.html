@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="robots" content="noindex, nofollow"> <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https:; font-src https://cdnjs.cloudflare.com https://fonts.gstatic.com;">
+    
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https:; font-src https://cdnjs.cloudflare.com https://fonts.gstatic.com;">
 
     <title>Admin Command | CashTree</title>
 
@@ -14,86 +16,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css"> 
-
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#04060a">
     <link rel="icon" type="image/webp" href="../logo.webp">
 
     <style>
-        /* Default State: Locked & Invisible */
-        body {
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            pointer-events: none; /* Stop clicks while loading */
-        }
-
-        /* Unlocked State: Visible & Interactive */
-        body.admin-unlocked {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        /* Double-Lock: Hide elements if not unlocked */
-        body:not(.admin-unlocked) aside,
-        body:not(.admin-unlocked) main,
-        body:not(.admin-unlocked) .mobile-nav,
-        body:not(.admin-unlocked) .top-bar {
-            display: none !important;
-        }
-
-        /* Login Modal Override: Always Visible when locked */
-        body:not(.admin-unlocked) #loginModal {
-            display: flex !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
-
-        /* Glass Utility */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .input-dark {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 12px;
-            border-radius: 12px;
-            width: 100%;
-            font-size: 14px;
-            font-weight: 600;
-            outline: none;
-            transition: all 0.3s;
-        }
-        .input-dark:focus {
-            border-color: #22c55e;
-            background: rgba(0,0,0,0.6);
-        }
-        
-        .unlock-btn {
-            background: #22c55e;
-            color: #000;
-            font-weight: 900;
-            padding: 12px;
-            border-radius: 12px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-        .unlock-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px -10px #22c55e;
-        }
-        .unlock-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+        /* Your CSS Styles go here... */
+        body { opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none; }
+        body.admin-unlocked { opacity: 1; pointer-events: auto; }
+        body:not(.admin-unlocked) aside, body:not(.admin-unlocked) main, body:not(.admin-unlocked) .mobile-nav, body:not(.admin-unlocked) .top-bar { display: none !important; }
+        body:not(.admin-unlocked) #loginModal { display: flex !important; opacity: 1 !important; pointer-events: auto !important; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .input-dark { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 12px; width: 100%; font-size: 14px; font-weight: 600; outline: none; transition: all 0.3s; }
+        .input-dark:focus { border-color: #22c55e; background: rgba(0,0,0,0.6); }
+        .unlock-btn { background: #22c55e; color: #000; font-weight: 900; padding: 12px; border-radius: 12px; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; transition: all 0.3s; }
+        .unlock-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px #22c55e; }
+        .unlock-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     </style>
 </head>
 
