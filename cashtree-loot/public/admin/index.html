@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#020617">
-    <link rel="icon" type="image/webp" href="../logo.webp">
+    <link rel="icon" type="image/webp" href="../logo.webp"><link rel="manifest" href="manifest.json">
 
     <style>
         body { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
@@ -41,20 +41,20 @@
 
 <body>
 
-    <div class="md:hidden fixed top-0 left-0 right-0 z-40 h-16 glass-panel flex items-center justify-between px-5" style="border-radius: 0; border-left: 0; border-right: 0;">
-        <div class="flex items-center gap-3">
-            <img src="../logo.webp" class="w-8 h-8 object-contain">
-            <span class="text-sm font-bold text-white tracking-widest uppercase">Admin Panel</span>
-        </div>
-        <div class="flex items-center gap-3">
-            <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
-                <i class="fas fa-bullhorn text-xs"></i>
-            </button>
-            <button onclick="hardRefresh()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <i class="fas fa-sync-alt text-xs"></i>
-            </button>
-        </div>
+    <div class="md:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/5 flex items-center justify-between px-5 bg-[#020617]/90 backdrop-blur-xl shadow-2xl transition-all">
+    <div class="flex items-center gap-3">
+        <img src="../logo.webp" class="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+        <span class="text-sm font-black text-white tracking-widest uppercase">Admin Panel</span>
     </div>
+    <div class="flex items-center gap-3">
+        <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 active:scale-95 transition">
+            <i class="fas fa-bullhorn text-xs"></i>
+        </button>
+        <button onclick="location.reload()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 active:scale-95 transition">
+            <i class="fas fa-sync-alt text-xs"></i>
+        </button>
+    </div>
+</div>
 
 
     <div id="loginModal" class="fixed inset-0 z-[99999] flex items-center justify-center">
@@ -107,6 +107,11 @@
 
             <div class="px-6 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">System</div>
 
+            <div onclick="openBroadcastModal()" class="nav-item group cursor-pointer hover:bg-yellow-500/10">
+                <i class="fas fa-bullhorn group-hover:text-yellow-500 transition-colors"></i> 
+                <span class="group-hover:text-yellow-100 transition-colors">Announcements</span>
+            </div>
+
             <div id="nav-settings" onclick="showSection('settings')" class="nav-item">
                 <i class="fas fa-sliders-h"></i> <span>Settings</span>
             </div>
@@ -120,7 +125,7 @@
     </aside>
 
 
-    <main>
+    <main class="flex-1 w-full h-full overflow-y-auto p-6 md:p-12 pt-24 pb-32 md:pt-10 md:pb-10 relative scroll-smooth">
         <div id="dashboard" class="section pt-20 md:pt-10 px-6 md:px-12">
             <h1 class="text-3xl md:text-4xl font-black text-white mb-2">System Overview</h1>
             <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-10">Live Analytics</p>
@@ -292,26 +297,37 @@
     </div>
 
 
-    <div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none">
-        <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto">
-            <div onclick="showSection('dashboard')" class="nav-item active flex flex-col items-center gap-1 text-slate-500" style="background: none; border: none;">
-                <i class="fas fa-chart-line text-lg"></i>
-            </div>
-            <div onclick="showSection('campaigns')" class="nav-item flex flex-col items-center gap-1 text-slate-500" style="background: none; border: none;">
-                <i class="fas fa-briefcase text-lg"></i>
-            </div>
-            <div onclick="showSection('leads')" class="nav-item relative flex flex-col items-center gap-1 text-slate-500" style="background: none; border: none;">
-                <i class="fas fa-user-check text-lg"></i>
-                <span id="mobilePendingBadge" class="absolute top-0 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden">0</span>
-            </div>
-            <div onclick="showSection('payouts')" class="nav-item flex flex-col items-center gap-1 text-slate-500" style="background: none; border: none;">
-                <i class="fas fa-credit-card text-lg"></i>
-            </div>
-            <div onclick="showSection('settings')" class="nav-item flex flex-col items-center gap-1 text-slate-500" style="background: none; border: none;">
-                <i class="fas fa-sliders-h text-lg"></i>
-            </div>
-        </div>
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none pb-6">
+    <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto bg-[#020617]/80 backdrop-blur-xl shadow-2xl border border-white/10">
+        
+        <button onclick="showSection('dashboard')" class="nav-item active flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+            <i class="fas fa-chart-line text-lg group-[.active]:text-green-400 mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Pulse</span>
+        </button>
+
+        <button onclick="showSection('campaigns')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+            <i class="fas fa-briefcase text-lg group-[.active]:text-green-400 mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Apps</span>
+        </button>
+
+        <button onclick="showSection('leads')" class="nav-item relative flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+            <i class="fas fa-user-check text-lg group-[.active]:text-green-400 mb-0.5"></i>
+            <span id="mobilePendingBadge" class="absolute -top-1 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden border border-black shadow-lg animate-pulse">0</span>
+            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Leads</span>
+        </button>
+
+        <button onclick="showSection('payouts')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+            <i class="fas fa-credit-card text-lg group-[.active]:text-green-400 mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Pay</span>
+        </button>
+
+        <button onclick="showSection('settings')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+            <i class="fas fa-sliders-h text-lg group-[.active]:text-green-400 mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Settings</span>
+        </button>
+
     </div>
+</div>
 
     <div id="toast-container" class="fixed top-24 right-6 z-[150] flex flex-col gap-3 pointer-events-none"></div>
     <script src="config.js"></script>

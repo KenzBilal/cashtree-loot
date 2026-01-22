@@ -1,10 +1,23 @@
 /* =========================================
    1. SYSTEM CONFIGURATION & CONNECTION
    ========================================= */
-const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
-const db = supabase.createClient(supabaseUrl, supabaseKey);
+let db;
 
+// 1. Try to link to the existing connection from auth.js (Preferred)
+if (window.supabaseClient) {
+    db = window.supabaseClient;
+    console.log("✅ PROMOTER DASHBOARD: Linked to Auth Core.");
+} 
+// 2. Fallback: Create a new connection using the secure config
+else if (window.env && window.env.SUPABASE_URL) {
+    db = window.supabase.createClient(window.env.SUPABASE_URL, window.env.SUPABASE_KEY);
+    console.log("✅ PROMOTER DASHBOARD: Initialized via Secure Config.");
+} 
+// 3. Hard Fail: No keys found
+else {
+    console.error("❌ CRITICAL: config.js is missing!");
+    alert("System Error: Configuration missing. Please refresh.");
+}
 /* =========================================
    2. UI ENGINE (GLASS THEME 10/10)
    ========================================= */
