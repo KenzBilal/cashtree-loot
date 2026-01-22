@@ -1,344 +1,378 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Sovereign | Admin Command Center</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-     <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#04060a">
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/622/622848.png">
-<link rel="manifest" href="manifest.json">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#04060a">
+    <link rel="icon" type="image/webp" href="../logo.webp">
+    <link rel="manifest" href="manifest.json">
 </head>
 
-<body class="h-screen flex overflow-hidden">
+<body class="h-screen flex overflow-hidden bg-[#04060a]">
 
-    <div class="md:hidden fixed top-0 left-0 right-0 z-50 p-4 pointer-events-none flex justify-between items-start">
-    <button onclick="hardRefresh()" class="pointer-events-auto glass-panel w-10 h-10 rounded-full flex items-center justify-center text-blue-400 border border-blue-500/30 shadow-lg active:scale-90 transition backdrop-blur-xl">
-        <i id="refresh-icon-mobile" class="fas fa-sync-alt text-sm"></i>
-    </button>
-    <button onclick="openBroadcastModal()" class="pointer-events-auto glass-panel w-10 h-10 rounded-full flex items-center justify-center text-yellow-500 border border-yellow-500/30 shadow-lg active:scale-90 transition backdrop-blur-xl">
-        <i class="fas fa-bullhorn text-sm animate-pulse"></i>
-    </button>
-</div>
-
-<div id="loginModal">
-    <div class="glass-panel login-card-fixed">
-        <div class="animate-pulse-green text-6xl mb-6">
-            <i class="fas fa-fingerprint"></i>
+    <div class="md:hidden fixed top-0 left-0 right-0 z-50 h-16 glass-panel border-b border-white/5 flex items-center justify-between px-5 shadow-2xl backdrop-blur-xl bg-[#04060a]/80">
+        <div class="flex items-center gap-3">
+            <img src="../logo.webp" class="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+            <span class="text-sm font-black text-white tracking-widest uppercase">Admin</span>
         </div>
 
-        <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">SECURITY VAULT</h2>
-        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-10">
-            Master Key Required for System Access
-        </p>
-
-        <input id="masterKey" type="password" class="vault-input" placeholder="••••">
-
-        <button class="unlock-btn" onclick="checkAuth()">AUTHORIZE SYSTEM ACCESS</button>
-    </div>
-</div>
-
-<aside class="w-72 flex flex-col z-20">
-    <div class="p-8 text-2xl font-black text-white border-b border-white/5 flex items-center">
-        <i class="fas fa-tree text-green-500 mr-3"></i> CashTree
-    </div>
-
-    <nav class="flex-1 flex flex-col p-4 space-y-2 h-full">
-    
-    <div class="px-4 pb-2 pt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-        Empire Overview
-    </div>
-
-    <a id="nav-dashboard" onclick="showSection('dashboard')" 
-       class="nav-item active flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
-        <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
-            <i class="fas fa-chart-pie text-sm"></i>
-        </div>
-        <span class="font-bold text-sm">Daily Pulse</span>
-    </a>
-
-    <a id="nav-campaigns" onclick="showSection('campaigns')" 
-       class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
-        <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
-            <i class="fas fa-rocket text-sm"></i>
-        </div>
-        <span class="font-bold text-sm">Campaign Lab</span>
-    </a>
-
-    <div class="px-4 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-        Operations
-    </div>
-
-    <a id="nav-leads" onclick="showSection('leads')" 
-       class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
-        <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
-            <i class="fas fa-tasks text-sm"></i>
-        </div>
-        <span class="font-bold text-sm">Approvals</span>
-        <span id="navPendingBadge" class="hidden ml-auto bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-red-500/50 animate-pulse">
-            0
-        </span>
-    </a>
-
-    <a id="nav-payouts" onclick="showSection('payouts')" 
-       class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
-        <div class="w-8 h-8 rounded-lg bg-green-500/10 text-green-400 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
-            <i class="fas fa-wallet text-sm"></i>
-        </div>
-        <span class="font-bold text-sm">Settlements</span>
-    </a>
-
-    <div class="px-4 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-        System Core
-    </div>
-
-    <a id="nav-settings" onclick="showSection('settings')" 
-       class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
-        <div class="w-8 h-8 rounded-lg bg-slate-700/30 text-slate-400 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-colors">
-            <i class="fas fa-cogs text-sm"></i>
-        </div>
-        <span class="font-bold text-sm">God Config</span>
-    </a>
-
-    <div class="mt-auto pt-6 border-t border-white/5">
-        <a onclick="logout()" 
-           class="flex items-center gap-4 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-all cursor-pointer group">
-            <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-colors">
-                <i class="fas fa-sign-out-alt text-sm"></i>
-            </div>
-            <span class="font-bold text-sm">Secure Logout</span>
-        </a>
-    </div>
-
-</nav>
-
-    <div class="p-6 border-t border-white/5 bg-black/20">
-        <div class="flex items-center">
-            <div class="admin-avatar">A</div>
-            <div class="ml-3">
-                <div class="text-sm font-black text-white">Admin Kenz</div>
-                <div class="text-[10px] font-bold text-green-400 uppercase tracking-widest">● Online Secured</div>
-            </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 active:scale-90 transition">
+                <i class="fas fa-bullhorn text-xs"></i>
+            </button>
+            
+            <button onclick="hardRefresh()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 active:scale-90 transition">
+                <i class="fas fa-sync-alt text-xs"></i>
+            </button>
         </div>
     </div>
-</aside>
 
-<main class="flex-1 overflow-y-auto p-6 md:p-12 relative">
-
-    <div id="dashboard" class="section">
-        <h1 class="text-5xl font-black text-white mb-2 tracking-tighter">Command Center</h1>
-        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-10">Live Analytics Engine</p>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="stat-card border-green-500">
-                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Approved Leads</div>
-                <div id="statLeads" class="text-5xl font-black text-white mt-4 tracking-tighter">--</div>
+    <div id="loginModal">
+        <div class="glass-panel login-card-fixed">
+            <div class="mb-6 relative">
+                <div class="absolute inset-0 bg-green-500 blur-3xl opacity-20 rounded-full"></div>
+                <img src="../logo.webp" class="w-24 h-24 mx-auto relative z-10 drop-shadow-2xl">
             </div>
 
-            <div class="stat-card border-red-500">
-                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Payout Liability</div>
-                <div class="text-5xl font-black text-white mt-4 tracking-tighter">
-                    ₹<span id="statLiability">--</span>
-                </div>
-            </div>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">SECURITY VAULT</h2>
+            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-10">
+                Master Key Required
+            </p>
 
-            <div class="stat-card border-blue-500">
-                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Army</div>
-                <div id="statPromoters" class="text-5xl font-black text-white mt-4 tracking-tighter">--</div>
-            </div>
+            <input id="masterKey" type="password" class="vault-input text-center tracking-[0.5em] font-black" placeholder="••••">
+
+            <button class="unlock-btn mt-6" onclick="checkAuth()">AUTHORIZE ACCESS</button>
         </div>
     </div>
 
-    <div id="campaigns" class="section hidden">
-        <div class="flex justify-between items-center mb-10">
-           <h1 class="text-4xl font-black uppercase text-white tracking-tighter">Campaign Lab</h1>
-        <button class="unlock-btn px-10 text-xs py-3" onclick="toggleCreateCampaign()">New Deployment</button>
-    </div>
-
-        <div id="createCampaignForm" class="glass-panel p-10 rounded-3xl hidden mb-12 border-green-500/20">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <input id="newCampTitle" class="input-dark" placeholder="Campaign Title">
-                <input id="newCampPayout" type="number" class="input-dark" placeholder="Payout (₹)">
-                <input id="newCampUrl" class="input-dark md:col-span-2" placeholder="Offer Destination Link">
-                <input id="newCampImg" class="input-dark md:col-span-2" placeholder="Brand Logo URL">
-            </div>
-            <button onclick="createNewCampaign()" class="unlock-btn w-full mt-8">LAUNCH LIVE CAMPAIGN</button>
-        </div>
-
-        <div id="campaignGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-    </div>
-
-    <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-    <div class="glass-panel p-8 rounded-3xl border-white/10 w-full max-max-w-md shadow-2xl">
-        <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Edit Payout</h2>
-        <p id="editCampTitle" class="text-white/50 text-sm mb-6 font-medium">Campaign Name</p>
-
-        <div class="space-y-4">
+    <aside class="hidden md:flex w-72 flex-col z-20 border-r border-white/5 bg-black/40 backdrop-blur-md">
+        <div class="p-8 border-b border-white/5 flex items-center gap-4">
+            <img src="../logo.webp" class="w-10 h-10 object-contain drop-shadow-lg">
             <div>
-                <label class="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2 block">New Payout Amount (₹)</label>
-                <input id="editCampPayout" type="number" class="input-dark w-full" placeholder="0.00">
+                <div class="text-lg font-black text-white tracking-tight">CashTree</div>
+                <div class="text-[9px] text-green-500 font-bold uppercase tracking-widest">Sovereign Admin</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 mt-8">
-            <button onclick="closeEditModal()" class="px-6 py-3 rounded-xl bg-white/5 text-white text-xs font-bold hover:bg-white/10 transition">CANCEL</button>
-            <button onclick="saveCampaignUpdate()" class="unlock-btn py-3 text-xs">UPDATE LIVE</button>
-        </div>
-    </div>
-    </div>
+        <nav class="flex-1 flex flex-col p-4 space-y-2 h-full overflow-y-auto">
+        
+            <div class="px-4 pb-2 pt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Empire Overview
+            </div>
 
-    <div id="leads" class="section hidden">
-        <h1 class="text-4xl font-black text-white mb-10 uppercase tracking-tighter">Approvals Queue</h1>
+            <a id="nav-dashboard" onclick="showSection('dashboard')" 
+               class="nav-item active flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-chart-pie text-sm"></i>
+                </div>
+                <span class="font-bold text-sm">Daily Pulse</span>
+            </a>
 
-        <div id="noLeadsMsg" class="hidden p-10 glass-panel rounded-3xl text-center text-slate-500 font-bold uppercase tracking-widest text-xs">
-            System Synced: No Pending Leads
-        </div>
+            <a id="nav-campaigns" onclick="showSection('campaigns')" 
+               class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-rocket text-sm"></i>
+                </div>
+                <span class="font-bold text-sm">Campaign Lab</span>
+            </a>
 
-        <div class="glass-panel rounded-3xl overflow-hidden border-white/5">
-            <table class="w-full">
-                <thead>
-                    <tr class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5">
-                        <th class="p-6 text-left">Timestamp</th>
-                        <th class="p-6 text-left">Campaign</th>
-                        <th class="p-6 text-left">Promoter</th>
-                        <th class="p-6 text-left">Identity</th>
-                        <th class="p-6 text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="leadsTableBody" class="text-sm"></tbody>
-            </table>
-        </div>
-    </div>
+            <div class="px-4 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Operations
+            </div>
 
-    <div id="payouts" class="section hidden">
-        <h1 class="text-4xl font-black text-white mb-10 uppercase tracking-tighter">Settlements</h1>
+            <a id="nav-leads" onclick="showSection('leads')" 
+               class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
+                <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-tasks text-sm"></i>
+                </div>
+                <span class="font-bold text-sm">Approvals</span>
+                <span id="navPendingBadge" class="hidden ml-auto bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-red-500/50 animate-pulse">
+                    0
+                </span>
+            </a>
 
-        <div class="glass-panel rounded-3xl overflow-hidden border-white/5">
-            <table class="w-full">
-                <thead>
-                    <tr class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5">
-                        <th class="p-6 text-left">Promoter</th>
-                        <th class="p-6 text-left">Payment Identity (UPI)</th>
-                        <th class="p-6 text-right">Balance Due</th>
-                        <th class="p-6 text-center">Protocol</th>
-                    </tr>
-                </thead>
-                <tbody id="payoutTableBody"></tbody>
-            </table>
-        </div>
-    </div>
+            <a id="nav-payouts" onclick="showSection('payouts')" 
+               class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
+                <div class="w-8 h-8 rounded-lg bg-green-500/10 text-green-400 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-wallet text-sm"></i>
+                </div>
+                <span class="font-bold text-sm">Settlements</span>
+            </a>
 
-    <div id="settings" class="section hidden">
-        <h1 class="text-5xl font-black text-white mb-2 tracking-tighter">God Config</h1>
-        <p class="text-xs uppercase tracking-widest text-slate-500 mb-10">Global System Sovereignty</p>
+            <div class="px-4 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                System Core
+            </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div class="glass-panel p-10 rounded-3xl border-white/5">
-                <h3 class="text-xl font-bold mb-8 text-green-500 uppercase tracking-tighter flex items-center">
-                    <i class="fas fa-shield-alt mr-3"></i> Core Directives
-                </h3>
-                <div class="space-y-6">
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Minimum Withdrawal Limit</label>
-                        <input id="cfg_min_payout" class="input-dark" placeholder="₹500">
+            <a onclick="openBroadcastModal()" 
+               class="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-yellow-500/10 hover:text-yellow-400 transition-all cursor-pointer group">
+                <div class="w-8 h-8 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-black transition-colors">
+                    <i class="fas fa-bullhorn text-sm"></i>
+                </div>
+                <span class="font-bold text-sm">Broadcast Hub</span>
+            </a>
+
+            <a id="nav-settings" onclick="showSection('settings')" 
+               class="nav-item flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group">
+                <div class="w-8 h-8 rounded-lg bg-slate-700/30 text-slate-400 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-colors">
+                    <i class="fas fa-cogs text-sm"></i>
+                </div>
+                <span class="font-bold text-sm">God Config</span>
+            </a>
+
+            <div class="mt-auto pt-6 border-t border-white/5">
+                <a onclick="logout()" 
+                   class="flex items-center gap-4 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-all cursor-pointer group">
+                    <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-colors">
+                        <i class="fas fa-sign-out-alt text-sm"></i>
                     </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">WhatsApp Support Bridge</label>
-                        <input id="cfg_support" class="input-dark" placeholder="+91...">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Empire Operations Status</label>
-                        <select id="cfg_status" class="input-dark">
-                            <option value="LIVE">🟢 SYSTEM ONLINE</option>
-                            <option value="MAINTENANCE">🔴 SYSTEM LOCKDOWN</option>
-                        </select>
+                    <span class="font-bold text-sm">Secure Logout</span>
+                </a>
+            </div>
+
+        </nav>
+
+        <div class="p-6 border-t border-white/5 bg-black/20">
+            <div class="flex items-center">
+                <div class="admin-avatar ring-2 ring-green-500/50">A</div>
+                <div class="ml-3">
+                    <div class="text-sm font-black text-white">Admin Kenz</div>
+                    <div class="text-[10px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Online
                     </div>
                 </div>
-                <button class="unlock-btn w-full mt-10" onclick="saveSystemConfig()">SYNC SYSTEM LAWS</button>
             </div>
         </div>
-    </div>
-</main>
+    </aside>
 
-<div id="broadcastModal" class="fixed inset-0 z-[60] hidden bg-black/95 flex items-center justify-center p-4">
-    <div class="glass-panel p-10 rounded-3xl w-full max-w-lg border-yellow-500/20">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-black text-white uppercase tracking-tighter flex items-center">
-                <i class="fas fa-bullhorn mr-4 text-yellow-500"></i> Broadcast
-            </h2>
-            <button onclick="closeBroadcastModal()" class="text-slate-500 hover:text-white transition"><i class="fas fa-times text-2xl"></i></button>
-        </div>
-        
-        <label class="text-[10px] font-black uppercase text-slate-500 block mb-3">Target: All Promoter Dashboards</label>
-        <textarea id="broadcastMsg" rows="5" class="input-dark mb-6 font-bold" placeholder="Enter directive..."></textarea>
-        
-        <button id="sendBtn" onclick="sendBroadcast()" class="unlock-btn w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black">
-            BLAST MESSAGE LIVE
-        </button>
-    </div>
-</div>
+    <main class="flex-1 overflow-y-auto p-6 md:p-12 relative pt-20 md:pt-12">
 
-<div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none">
-    <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto border-white/10 shadow-2xl shadow-black">
-        
-        <button onclick="showSection('dashboard')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
-            <i class="fas fa-chart-pie text-lg"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest">Pulse</span>
-        </button>
+        <div id="dashboard" class="section">
+            <h1 class="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">Command Center</h1>
+            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-10">Live Analytics Engine</p>
 
-        <button onclick="showSection('campaigns')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
-            <i class="fas fa-rocket text-lg"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest">Lab</span>
-        </button>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="stat-card border-green-500">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Approved Leads</div>
+                    <div id="statLeads" class="text-4xl md:text-5xl font-black text-white mt-4 tracking-tighter">--</div>
+                </div>
 
-        <button onclick="showSection('leads')" class="relative flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
-            <i class="fas fa-check-double text-lg"></i>
-            <span id="mobilePendingBadge" class="absolute top-0 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden border border-black">0</span>
-            <span class="text-[8px] font-black uppercase tracking-widest">Leads</span>
-        </button>
+                <div class="stat-card border-red-500">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Payout Liability</div>
+                    <div class="text-4xl md:text-5xl font-black text-white mt-4 tracking-tighter">
+                        ₹<span id="statLiability">--</span>
+                    </div>
+                </div>
 
-        <button onclick="showSection('payouts')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
-            <i class="fas fa-wallet text-lg"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest">Pay</span>
-        </button>
-
-        <button onclick="showSection('settings')" class="flex flex-col items-center gap-1 text-slate-400 focus:text-green-500 transition w-12">
-            <i class="fas fa-user-shield text-lg"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest">God</span>
-        </button>
-
-    </div>
-</div>
-
-<div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-
-<div id="ui-modal-overlay" class="fixed inset-0 z-[99] hidden bg-black/90 backdrop-blur-md flex items-center justify-center transition-all duration-300 opacity-0">
-    <div id="ui-modal-box" class="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl shadow-black max-w-sm w-full mx-4 transform scale-90 transition-all duration-300">
-        
-        <div id="ui-icon" class="text-5xl mb-6 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            ⚠️
-        </div>
-
-        <h3 id="ui-title" class="text-2xl font-black text-white text-center mb-2 uppercase tracking-tighter">
-            ATTENTION
-        </h3>
-        <p id="ui-msg" class="text-slate-400 text-center text-xs font-bold mb-8 leading-relaxed px-2">
-            Are you sure you want to proceed?
-        </p>
-
-        <div id="ui-actions" class="grid grid-cols-2 gap-3">
+                <div class="stat-card border-blue-500">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Army</div>
+                    <div id="statPromoters" class="text-4xl md:text-5xl font-black text-white mt-4 tracking-tighter">--</div>
+                </div>
             </div>
+        </div>
+
+        <div id="campaigns" class="section hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+               <h1 class="text-4xl font-black uppercase text-white tracking-tighter">Campaign Lab</h1>
+               <button class="unlock-btn px-8 text-xs py-3 w-full md:w-auto" onclick="toggleCreateCampaign()">New Deployment</button>
+            </div>
+
+            <div id="createCampaignForm" class="glass-panel p-6 md:p-10 rounded-3xl hidden mb-12 border-green-500/20">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input id="newCampTitle" class="input-dark md:col-span-2" placeholder="Campaign Title (e.g. Kotak 811)">
+                    
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1 ml-1">Promoter Earns</label>
+                        <input id="newCampPayout" type="number" class="input-dark" placeholder="₹">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1 ml-1">User Cashback</label>
+                        <input id="newCampUserReward" type="number" class="input-dark" placeholder="₹">
+                    </div>
+
+                    <input id="newCampUrl" class="input-dark md:col-span-2" placeholder="Offer Destination Link">
+                    <input id="newCampImg" class="input-dark md:col-span-2" placeholder="Brand Logo URL">
+                </div>
+                <button onclick="createNewCampaign()" class="unlock-btn w-full mt-8">LAUNCH LIVE CAMPAIGN</button>
+            </div>
+
+            <div id="campaignGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+            <div class="glass-panel p-8 rounded-3xl border-white/10 w-full max-w-md shadow-2xl">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Edit Payout</h2>
+                <p id="editCampTitle" class="text-white/50 text-sm mb-6 font-medium">Campaign Name</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2 block">Promoter Rate (₹)</label>
+                        <input id="editCampPayout" type="number" class="input-dark w-full" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2 block">User Cashback (₹)</label>
+                        <input id="editCampUserReward" type="number" class="input-dark w-full" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-8">
+                    <button onclick="closeEditModal()" class="px-6 py-3 rounded-xl bg-white/5 text-white text-xs font-bold hover:bg-white/10 transition">CANCEL</button>
+                    <button onclick="saveCampaignUpdate()" class="unlock-btn py-3 text-xs">UPDATE LIVE</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="leads" class="section hidden">
+            <h1 class="text-4xl font-black text-white mb-10 uppercase tracking-tighter">Approvals Queue</h1>
+
+            <div id="noLeadsMsg" class="hidden p-10 glass-panel rounded-3xl text-center text-slate-500 font-bold uppercase tracking-widest text-xs">
+                System Synced: No Pending Leads
+            </div>
+
+            <div class="glass-panel rounded-3xl overflow-x-auto border-white/5">
+                <table class="w-full min-w-[600px]">
+                    <thead>
+                        <tr class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5">
+                            <th class="p-6 text-left">Timestamp</th>
+                            <th class="p-6 text-left">Campaign</th>
+                            <th class="p-6 text-left">Promoter</th>
+                            <th class="p-6 text-left">Identity</th>
+                            <th class="p-6 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTableBody" class="text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="payouts" class="section hidden">
+            <h1 class="text-4xl font-black text-white mb-10 uppercase tracking-tighter">Settlements</h1>
+
+            <div class="glass-panel rounded-3xl overflow-x-auto border-white/5">
+                <table class="w-full min-w-[600px]">
+                    <thead>
+                        <tr class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5">
+                            <th class="p-6 text-left">Promoter</th>
+                            <th class="p-6 text-left">Payment Identity (UPI)</th>
+                            <th class="p-6 text-right">Balance Due</th>
+                            <th class="p-6 text-center">Protocol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payoutTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="settings" class="section hidden">
+            <h1 class="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">God Config</h1>
+            <p class="text-xs uppercase tracking-widest text-slate-500 mb-10">Global System Sovereignty</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="glass-panel p-8 md:p-10 rounded-3xl border-white/5">
+                    <h3 class="text-xl font-bold mb-8 text-green-500 uppercase tracking-tighter flex items-center">
+                        <i class="fas fa-shield-alt mr-3"></i> Core Directives
+                    </h3>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Minimum Withdrawal Limit</label>
+                            <input id="cfg_min_payout" class="input-dark" placeholder="₹500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">WhatsApp Support Bridge</label>
+                            <input id="cfg_support" class="input-dark" placeholder="+91...">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Empire Operations Status</label>
+                            <select id="cfg_status" class="input-dark">
+                                <option value="LIVE">🟢 SYSTEM ONLINE</option>
+                                <option value="MAINTENANCE">🔴 SYSTEM LOCKDOWN</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="unlock-btn w-full mt-10" onclick="saveSystemConfig()">SYNC SYSTEM LAWS</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="broadcastModal" class="fixed inset-0 z-[60] hidden bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="glass-panel p-8 md:p-10 rounded-3xl w-full max-w-lg border-yellow-500/20 shadow-2xl">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-black text-white uppercase tracking-tighter flex items-center">
+                    <i class="fas fa-bullhorn mr-4 text-yellow-500 animate-pulse"></i> Broadcast
+                </h2>
+                <button onclick="closeBroadcastModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <label class="text-[10px] font-black uppercase text-slate-500 block mb-3">Target: All Promoter Dashboards</label>
+            <textarea id="broadcastMsg" rows="5" class="input-dark mb-6 font-bold text-lg" placeholder="Enter directive..."></textarea>
+            
+            <button id="sendBtn" onclick="sendBroadcast()" class="unlock-btn w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black border-none shadow-yellow-900/50">
+                BLAST MESSAGE LIVE
+            </button>
+        </div>
     </div>
-</div>
-<script src="admin.js"></script>
+
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none">
+        <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto border-white/10 shadow-2xl shadow-black bg-[#0f172a]/90 backdrop-blur-xl">
+            
+            <button onclick="showSection('dashboard')" class="nav-item active flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12">
+                <i class="fas fa-chart-pie text-lg"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest">Pulse</span>
+            </button>
+
+            <button onclick="showSection('campaigns')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12">
+                <i class="fas fa-rocket text-lg"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest">Lab</span>
+            </button>
+
+            <button onclick="showSection('leads')" class="nav-item relative flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12">
+                <i class="fas fa-check-double text-lg"></i>
+                <span id="mobilePendingBadge" class="absolute top-0 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden border border-black shadow-lg">0</span>
+                <span class="text-[8px] font-black uppercase tracking-widest">Leads</span>
+            </button>
+
+            <button onclick="showSection('payouts')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12">
+                <i class="fas fa-wallet text-lg"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest">Pay</span>
+            </button>
+
+            <button onclick="showSection('settings')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12">
+                <i class="fas fa-user-shield text-lg"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest">God</span>
+            </button>
+
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="ui-modal-overlay" class="fixed inset-0 z-[99] hidden bg-black/90 backdrop-blur-md flex items-center justify-center transition-all duration-300 opacity-0">
+        <div id="ui-modal-box" class="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl shadow-black max-w-sm w-full mx-4 transform scale-90 transition-all duration-300">
+            
+            <div id="ui-icon" class="text-5xl mb-6 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                ⚠️
+            </div>
+
+            <h3 id="ui-title" class="text-2xl font-black text-white text-center mb-2 uppercase tracking-tighter">
+                ATTENTION
+            </h3>
+            <p id="ui-msg" class="text-slate-400 text-center text-xs font-bold mb-8 leading-relaxed px-2">
+                Are you sure you want to proceed?
+            </p>
+
+            <div id="ui-actions" class="grid grid-cols-2 gap-3"></div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
 </body>
 </html>

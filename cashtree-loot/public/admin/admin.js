@@ -359,9 +359,9 @@ async function loadCampaigns() {
         }
 
         camps.forEach(c => {
-            // FIX: Your DB column is 'target_url', not 'url'
             const destLink = c.target_url || '#'; 
             const payoutVal = c.payout_amount || 0;
+            const userReward = c.user_reward || 0; // <--- NEW: Get User Cashback
             const imgUrl = c.image_url || 'https://placehold.co/50';
 
             const card = document.createElement("div");
@@ -386,12 +386,16 @@ async function loadCampaigns() {
                 </div>
 
                 <div class="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                    <div>
-                        <p class="text-[10px] text-slate-500 uppercase font-bold">Payout</p>
-                        <span class="text-green-400 font-black text-xl">₹${payoutVal}</span>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase text-slate-500 font-bold">Promoter / User</span>
+                        <div>
+                            <span class="text-green-400 font-black text-xl">₹${payoutVal}</span>
+                            <span class="text-slate-600 mx-1">/</span>
+                            <span class="text-yellow-500 font-bold text-sm">₹${userReward}</span>
+                        </div>
                     </div>
                     
-                    <button onclick="openEditModal(${c.id}, '${c.title.replace(/'/g, "\\'")}', ${payoutVal})" 
+                    <button onclick="openEditModal(${c.id}, '${c.title.replace(/'/g, "\\'")}', ${payoutVal}, ${userReward})" 
                             class="text-slate-400 hover:text-white transition p-2 hover:bg-white/10 rounded-lg">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -420,6 +424,7 @@ function toggleCreateCampaign() {
 }
 
 // 2. SOVEREIGN DEPLOYMENT FUNCTION
+// 2. SOVEREIGN DEPLOYMENT FUNCTION
 async function createNewCampaign() {
     // A. SYSTEM CHECK
     if (!db) {
@@ -430,13 +435,15 @@ async function createNewCampaign() {
     // B. SAFE ELEMENT SELECTION
     const titleInput = document.getElementById("newCampTitle");
     const payoutInput = document.getElementById("newCampPayout");
+    const userRewardInput = document.getElementById("newCampUserReward"); // <--- NEW INPUT
     const urlInput = document.getElementById("newCampUrl");
     const imgInput = document.getElementById("newCampImg");
-    const submitBtn = document.querySelector("#createCampaignForm button"); // Assumes the button is inside the form
+    const submitBtn = document.querySelector("#createCampaignForm button"); 
 
     // C. INPUT CAPTURE
     const title = titleInput?.value.trim();
     const payout = payoutInput?.value.trim();
+    const userReward = userRewardInput?.value.trim(); // <--- NEW VALUE
     const url = urlInput?.value.trim();
     const img = imgInput?.value.trim();
 
@@ -458,12 +465,12 @@ async function createNewCampaign() {
         submitBtn.innerHTML = `<i class="fas fa-rocket fa-bounce mr-2"></i> DEPLOYING...`;
     }
 
-try {
-        // FIX: Mapping 'url' input to 'target_url' database column
+    try {
         const { error } = await db.from('campaigns').insert([{ 
             title: title, 
             payout_amount: parseInt(payout), 
-            target_url: url,  // <--- CRITICAL FIX HERE
+            user_reward: parseInt(userReward) || 0, // <--- SAVING IT
+            target_url: url,  
             image_url: img || null, 
             is_active: true 
         }]);
@@ -476,13 +483,13 @@ try {
         // Reset Form
         titleInput.value = "";
         payoutInput.value = "";
+        if (userRewardInput) userRewardInput.value = ""; // Reset new input
         urlInput.value = "";
         if (imgInput) imgInput.value = "";
         
         // Close UI & Refresh Grid
         toggleCreateCampaign();
         
-        // Check if loadCampaigns exists before calling
         if (typeof loadCampaigns === 'function') {
             loadCampaigns(); 
         }
@@ -539,11 +546,12 @@ async function saveCampaignUpdate() {
     }
 
     const payoutInput = document.getElementById('editCampPayout');
-    // Using querySelector to find the save button specifically inside the modal
-    // Adjust selector if your button has a specific ID like 'saveEditBtn'
+    const userRewardInput = document.getElementById('editCampUserReward'); // <--- NEW
+    
     const saveBtn = document.querySelector("#editModal button.bg-green-600"); 
 
     const newPayout = payoutInput.value.trim();
+    const newUserReward = userRewardInput ? userRewardInput.value.trim() : "0";
 
     // 2. VALIDATION
     if (!newPayout || isNaN(newPayout) || Number(newPayout) < 0) {
@@ -564,8 +572,7 @@ async function saveCampaignUpdate() {
             .from('campaigns')
             .update({ 
                 payout_amount: parseInt(newPayout),
-                // Optional: Update title if you have a title input in the modal
-                // title: document.getElementById('editCampTitle').value 
+                user_reward: parseInt(newUserReward) // <--- SAVING IT
             })
             .eq('id', window.currentEditingId);
 
@@ -573,7 +580,7 @@ async function saveCampaignUpdate() {
 
         // 5. SUCCESS PROTOCOL
         console.log("✅ SYSTEM LAWS SYNCHRONIZED.");
-        alert("✅ Update Successful: Payout modified.");
+        alert("✅ Update Successful: Payout & Cashback modified.");
         
         closeEditModal();
         
@@ -591,32 +598,42 @@ async function saveCampaignUpdate() {
             saveBtn.disabled = false;
             saveBtn.innerText = originalText;
         }
-        // Clear the global ID for safety
         window.currentEditingId = null;
     }
 }
 
-function closeEditModal() {
+// This opens your custom Glassmorphic box
+// UPDATED: Accepts currentUserReward
+function openEditModal(id, currentTitle, currentPayout, currentUserReward) {
+    // 1. SAFETY CHECK (Prevents console errors if HTML is missing)
     const modal = document.getElementById('editModal');
-    
-    // 1. SAFETY CHECK
-    if (!modal) return;
-
-    // 2. HIDE UI (Belt and Suspenders approach)
-    // We use both class and style to ensure it absolutely disappears
-    modal.classList.add('hidden');
-    modal.style.display = 'none'; 
-
-    // 3. WIPE DATA (Security)
-    // Clear the input so the next time it opens, it's fresh
+    const titleLabel = document.getElementById('editCampTitle');
     const payoutInput = document.getElementById('editCampPayout');
-    if (payoutInput) {
-        payoutInput.value = '';
+    const userRewardInput = document.getElementById('editCampUserReward'); // <--- NEW
+
+    if (!modal || !payoutInput) {
+        console.error("❌ Edit Modal elements missing!");
+        return;
     }
 
-    // 4. RESET SYSTEM POINTER
-    // Critical: Prevent accidental edits to the wrong campaign later
-    window.currentEditingId = null;
+    // 2. SHOW MODAL
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+
+    // 3. FILL DATA
+    if (titleLabel) titleLabel.innerText = currentTitle;
+    payoutInput.value = currentPayout;
+    
+    // Fill User Reward (Default to 0 if undefined)
+    if (userRewardInput) {
+        userRewardInput.value = currentUserReward || 0;
+    }
+    
+    // Auto-focus so you can type immediately
+    payoutInput.focus();
+
+    // 4. SET GLOBAL ID
+    window.currentEditingId = id;
 }
 
 

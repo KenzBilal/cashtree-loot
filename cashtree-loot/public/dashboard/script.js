@@ -306,69 +306,132 @@ async function loadOffers(partnerCode) {
     }).join('');
 }
 
+/* =========================================
+   TEAM INTELLIGENCE 2.0 (GOD MODE)
+   ========================================= */
 async function loadTeamStats(userId) {
     try {
-        // 1. Parallel Fetching (Faster & Safer)
-        const [countResult, earningsResult, recruitsResult, leadsResult] = await Promise.allSettled([
+        // 1. Fetch EVERYTHING we need in parallel
+        const [countRes, earnRes, recruitsRes, leadsRes] = await Promise.allSettled([
             db.from('promoters').select('*', { count: 'exact', head: true }).eq('referred_by', userId),
             db.from('promoters').select('referral_earnings').eq('id', userId).single(),
-            db.from('promoters').select('username, created_at').eq('referred_by', userId).order('created_at', {ascending:false}).limit(3),
-            db.from('leads').select('phone, status').eq('user_id', userId).order('created_at', {ascending:false}).limit(3)
+            // Get Recruits with their wallet balance (to see if they are active)
+            db.from('promoters').select('username, created_at, wallet_balance').eq('referred_by', userId).order('created_at', {ascending:false}),
+            // Get recent tasks
+            db.from('leads').select('phone, status').eq('user_id', userId).order('created_at', {ascending:false}).limit(5)
         ]);
 
-        // 2. Process Team Count
-        const countEl = document.getElementById("teamCount");
-        if (countEl && countResult.status === 'fulfilled') {
-            countEl.innerText = countResult.value.count || 0;
-        }
+        // 2. Update Header Stats
+        if (countRes.status === 'fulfilled') document.getElementById("teamCount").innerText = countRes.value.count || 0;
+        if (earnRes.status === 'fulfilled') document.getElementById("teamEarnings").innerText = `₹${earnRes.value.data?.referral_earnings || 0}`;
 
-        // 3. Process Earnings
-        const earnEl = document.getElementById("teamEarnings");
-        if (earnEl && earningsResult.status === 'fulfilled' && earningsResult.value.data) {
-            earnEl.innerText = `₹${earningsResult.value.data.referral_earnings || 0}`;
-        }
-
-        // 4. Process Intelligence Feed (Recruits + Leads)
+        // 3. Process the Intelligence Feed
         const container = document.getElementById("teamIntelligence");
         if (container) {
             let html = "";
-            
-            // Recruits Section
-            const recruits = recruitsResult.status === 'fulfilled' ? recruitsResult.value.data : [];
-            if (recruits && recruits.length > 0) {
-                html += `<div style="padding:10px 15px; color:#60a5fa; font-size:10px; font-weight:800; background:rgba(59,130,246,0.1);">🔥 RECENT RECRUITS</div>`;
-                recruits.forEach(r => {
-                    html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;">
-                        <span style="color:white; font-weight:600;">${r.username}</span>
-                        <span style="color:#64748b;">Joined</span>
+            const recruits = recruitsRes.status === 'fulfilled' ? recruitsRes.value.data : [];
+            const leads = leadsRes.status === 'fulfilled' ? leadsRes.value.data : [];
+
+            // --- A. RECRUITS SECTION (Top 5 + View All) ---
+            if (recruits.length > 0) {
+                html += `<div style="padding:12px 15px; display:flex; justify-content:space-between; align-items:center; background:rgba(59,130,246,0.1); border-bottom:1px solid #1e293b;">
+                    <span style="color:#60a5fa; font-size:11px; font-weight:800; letter-spacing:1px;">MY SQUADRON (${recruits.length})</span>
+                </div>`;
+                
+                // Show only Top 5
+                const top5 = recruits.slice(0, 5);
+                top5.forEach(r => html += renderRecruitRow(r));
+
+                // "View All" Button (Only if more than 5)
+                if (recruits.length > 5) {
+                    // We store the full list in a global variable so the modal can use it later
+                    window.fullTeamData = recruits; 
+                    html += `<div onclick="openTeamModal()" style="padding:12px; text-align:center; cursor:pointer; background:rgba(255,255,255,0.02); color:#94a3b8; font-size:11px; font-weight:700; transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                        VIEW FULL ROSTER <i class="fas fa-arrow-right ml-1"></i>
                     </div>`;
-                });
+                }
             }
 
-            // Leads Section
-            const leads = leadsResult.status === 'fulfilled' ? leadsResult.value.data : [];
-            if (leads && leads.length > 0) {
-                html += `<div style="padding:10px 15px; color:#fbbf24; font-size:10px; font-weight:800; background:rgba(234,179,8,0.1); margin-top:5px;">🎯 RECENT TASKS</div>`;
+            // --- B. LEADS SECTION ---
+            if (leads.length > 0) {
+                html += `<div style="padding:12px 15px; margin-top:10px; background:rgba(234,179,8,0.1); border-bottom:1px solid #1e293b;">
+                    <span style="color:#fbbf24; font-size:11px; font-weight:800; letter-spacing:1px;">RECENT MISSION LOGS</span>
+                </div>`;
+                
                 leads.forEach(l => {
                     const statusColor = l.status === 'approved' ? '#22c55e' : (l.status === 'rejected' ? '#ef4444' : '#fbbf24');
-                    // Mask phone number for privacy (e.g. ...4321)
-                    const maskedPhone = l.phone ? `...${l.phone.slice(-4)}` : 'Unknown';
+                    const icon = l.status === 'approved' ? 'check-circle' : (l.status === 'rejected' ? 'times-circle' : 'clock');
                     
-                    html += `<div style="padding:8px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; font-size:11px;">
-                        <span style="color:white;">Task (${maskedPhone})</span>
-                        <span style="color:${statusColor}; font-weight:bold;">${l.status.toUpperCase()}</span>
+                    html += `<div style="padding:10px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:30px; height:30px; background:${statusColor}20; border-radius:8px; display:flex; align-items:center; justify-content:center; color:${statusColor};">
+                                <i class="fas fa-${icon}" style="font-size:12px;"></i>
+                            </div>
+                            <div>
+                                <div style="color:white; font-size:12px; font-weight:600;">Task Submitted</div>
+                                <div style="color:#64748b; font-size:10px;">Phone: ...${l.phone ? l.phone.slice(-4) : 'XXXX'}</div>
+                            </div>
+                        </div>
+                        <span style="color:${statusColor}; font-size:10px; font-weight:800; padding:4px 8px; background:${statusColor}10; border-radius:6px;">${l.status.toUpperCase()}</span>
                     </div>`;
                 });
             }
 
             // Empty State
-            container.innerHTML = html === "" 
-                ? `<div style="padding:30px; text-align:center; color:#475569; font-size:11px; font-style:italic;">No network activity yet. Start promoting!</div>` 
-                : html;
+            if (recruits.length === 0 && leads.length === 0) {
+                 html = `<div style="padding:40px; text-align:center; color:#475569;">
+                    <i class="fas fa-users-slash" style="font-size:24px; margin-bottom:10px; opacity:0.5;"></i><br>
+                    <span style="font-size:12px; font-weight:600;">No army yet. Share your link!</span>
+                 </div>`;
+            }
+
+            container.innerHTML = html;
         }
 
     } catch (err) {
-        console.error("Team Stats Error:", err);
+        console.error("Stats Error:", err);
+    }
+}
+
+// Helper: Generates the beautiful row HTML
+function renderRecruitRow(r) {
+    const isActive = r.wallet_balance > 0;
+    const statusColor = isActive ? '#22c55e' : '#64748b'; // Green or Gray
+    const statusText = isActive ? `Active • ₹${r.wallet_balance} Earned` : 'Sleeping • ₹0 Earned';
+    const initial = r.username.charAt(0).toUpperCase();
+    const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+    return `
+    <div style="padding:12px 15px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center; transition:0.2s; hover:bg-white/5;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:35px; height:35px; background:#0f172a; border:1px solid ${statusColor}; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:14px; box-shadow:0 0 10px ${isActive ? 'rgba(34,197,94,0.2)' : 'transparent'};">
+                ${initial}
+            </div>
+            <div>
+                <div style="color:white; font-size:13px; font-weight:700;">${r.username}</div>
+                <div style="color:${statusColor}; font-size:10px; font-weight:600; display:flex; align-items:center; gap:4px;">
+                    <div style="width:6px; height:6px; background:${statusColor}; border-radius:50%;"></div> ${statusText}
+                </div>
+            </div>
+        </div>
+        <div style="text-align:right;">
+            <div style="color:#94a3b8; font-size:10px; font-weight:600;">JOINED</div>
+            <div style="color:#cbd5e1; font-size:11px; font-weight:700;">${date}</div>
+        </div>
+    </div>`;
+}
+
+// Logic: Opens the "View All" Modal
+function openTeamModal() {
+    const modal = document.getElementById('teamModal');
+    const list = document.getElementById('fullTeamList');
+    
+    if (modal && list && window.fullTeamData) {
+        list.innerHTML = ""; // Clear old
+        window.fullTeamData.forEach(r => {
+            list.innerHTML += renderRecruitRow(r);
+        });
+        modal.style.display = 'flex';
     }
 }
 
