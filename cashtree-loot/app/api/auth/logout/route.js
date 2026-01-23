@@ -1,4 +1,5 @@
-// app/api/auth/logout/route.js
+export const dynamic = 'force-dynamic';
+
 
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
