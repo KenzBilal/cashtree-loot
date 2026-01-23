@@ -1,6 +1,5 @@
 /* ==========================================================================
-   GOD MODE LOGIN ENGINE v2.0
-   Status: 10,000/10 (High-Speed Auth)
+   GOD MODE LOGIN ENGINE v2.1 (Fixed)
    ========================================================================== */
 
 // 1. SECURITY HANDSHAKE
@@ -9,13 +8,15 @@ if (!window.env || !window.env.SUPABASE_URL) {
     alert("Security Error: Configuration file not found.");
 }
 
-const supabase = window.supabase.createClient(window.env.SUPABASE_URL, window.env.SUPABASE_KEY);
-const ADMIN_WHATSAPP = "919778430867"; // <--- REPLACE THIS WITH YOUR NUMBER
+// FIX: We use 'authClient' instead of 'supabase' to prevent naming conflicts
+const authClient = window.supabase.createClient(window.env.SUPABASE_URL, window.env.SUPABASE_KEY);
+const ADMIN_WHATSAPP = "919876543210"; // <--- REPLACE THIS WITH YOUR NUMBER
 
 /* =========================================
    2. AUTHENTICATION LOGIC
    ========================================= */
-async function handleLogin() {
+// We attach functions to 'window' to ensure HTML can see them
+window.handleLogin = async function() {
     const codeInput = document.getElementById('code');
     const passInput = document.getElementById('pass');
     const btn = document.getElementById('loginBtn');
@@ -36,12 +37,12 @@ async function handleLogin() {
     btn.disabled = true;
 
     try {
-        // C. Database Query (Check Credentials)
-        const { data, error } = await supabase
+        // C. Database Query (Using authClient)
+        const { data, error } = await authClient
             .from('promoters')
             .select('*')
             .eq('username', username)
-            .eq('password', password) // Assuming direct match for this system
+            .eq('password', password)
             .single();
 
         if (error || !data) {
@@ -53,40 +54,39 @@ async function handleLogin() {
         }
 
         // D. Success Protocol
-        // 1. Save Session
         localStorage.setItem('promoter_id', data.id);
         localStorage.setItem('promoter_name', data.name);
         
-        // 2. Show Success
         showToast("✅ ACCESS GRANTED. WELCOME PARTNER.");
         btn.innerHTML = '<i class="fas fa-check"></i> UNLOCKED';
-        btn.style.background = "#22c55e"; // Pure Green
+        btn.style.background = "#22c55e"; 
         
-        // 3. Redirect (The "New Access" Logic)
+        // Redirect
         setTimeout(() => {
             window.location.href = "index.html"; 
         }, 800);
 
     } catch (err) {
-        // E. Failure Protocol
         console.error(err);
         showToast(err.message || "Connection Failed");
         
-        // Reset Button
         btn.innerHTML = originalText;
         btn.style.opacity = "1";
         btn.disabled = false;
         
-        // Shake Animation for wrong password
-        document.querySelector('.login-box').classList.add('shake');
-        setTimeout(() => document.querySelector('.login-box').classList.remove('shake'), 500);
+        // Shake Animation
+        const box = document.querySelector('.login-box') || document.querySelector('.login-card');
+        if(box) {
+            box.classList.add('shake');
+            setTimeout(() => box.classList.remove('shake'), 500);
+        }
     }
-}
+};
 
 /* =========================================
    3. RECOVERY SYSTEM (WhatsApp)
    ========================================= */
-function handlePasswordReset() {
+window.handlePasswordReset = function() {
     const username = document.getElementById('resetUsername').value.trim();
     
     if (!username) {
@@ -98,23 +98,29 @@ function handlePasswordReset() {
     const url = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
     
     window.open(url, '_blank');
-    closeResetModal();
-}
+    if(typeof closeResetModal === 'function') closeResetModal(); // Close if modal logic exists
+    
+    // Also try removing active class if using CSS toggle
+    const modal = document.getElementById('resetModal');
+    if(modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+};
 
 /* =========================================
-   4. UTILITIES & LISTENERS
+   4. UTILITIES
    ========================================= */
-
-// Toast Notification System
 function showToast(msg) {
     const container = document.getElementById('toast-container');
+    if(!container) return;
+    
     const toast = document.createElement('div');
     toast.className = 'toast-box';
     
-    // Icon Logic
     let icon = '<i class="fas fa-info-circle"></i>';
-    if(msg.includes('✅')) icon = '<i class="fas fa-check-circle text-green-400"></i>';
-    if(msg.includes('⛔') || msg.includes('⚠️')) icon = '<i class="fas fa-exclamation-triangle text-red-400"></i>';
+    if(msg.includes('✅')) icon = '<i class="fas fa-check-circle" style="color:#4ade80"></i>';
+    if(msg.includes('⛔') || msg.includes('⚠️')) icon = '<i class="fas fa-exclamation-triangle" style="color:#f87171"></i>';
 
     toast.innerHTML = `${icon} <span>${msg}</span>`;
     container.appendChild(toast);
@@ -133,39 +139,7 @@ function showToast(msg) {
     }, 3000);
 }
 
-// Modal Logic
-window.openResetModal = function() {
-    document.getElementById('resetModal').style.display = 'flex';
-    document.getElementById('resetModal').classList.add('active');
-};
-
-window.closeResetModal = function() {
-    document.getElementById('resetModal').style.display = 'none';
-    document.getElementById('resetModal').classList.remove('active');
-};
-
-// "Enter" Key Listener (The Quality of Life Update)
-document.addEventListener("DOMContentLoaded", () => {
-    const passInput = document.getElementById('pass');
-    
-    // Trigger login when hitting Enter in password field
-    passInput?.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            document.getElementById("loginBtn").click();
-        }
-    });
-
-    // Check if user is already logged in?
-    // Optional: Uncomment below if you want auto-redirect for logged-in users
-    /*
-    if(localStorage.getItem('promoter_id')) {
-        window.location.href = "index.html";
-    }
-    */
-});
-
-/* Add CSS Shake Animation via JS */
+// Shake CSS Injector
 const style = document.createElement('style');
 style.innerHTML = `
     .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
@@ -177,3 +151,16 @@ style.innerHTML = `
     }
 `;
 document.head.appendChild(style);
+
+// Enter Key Listener
+document.addEventListener("DOMContentLoaded", () => {
+    const passInput = document.getElementById('pass');
+    if(passInput) {
+        passInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("loginBtn").click();
+            }
+        });
+    }
+});
