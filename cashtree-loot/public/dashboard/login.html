@@ -4,160 +4,241 @@
   <meta charset="UTF-8">
   <title>Partner Access | CashTree Security</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta name="robots" content="noindex, nofollow">
   
-  <script src="../config.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <script src="../admin/config.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
   <style>
-    /* 1. TOAST CONTAINER (Floats on top, doesn't move screen) */
-    #toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 10000; /* Always on top */
-        pointer-events: none;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+    /* ================= GOD MODE THEME ENGINE ================= */
+    :root {
+      --bg-void: #000000;
+      --accent: #22c55e;
+      --accent-glow: rgba(34, 197, 94, 0.4);
+      --danger: #ef4444;
+      --glass-bg: rgba(15, 23, 42, 0.6);
+      --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
     }
 
-    /* 2. THE TOAST ITSELF (Glass Style) */
-    #toast-container > div {
-        pointer-events: auto;
-        padding: 12px 20px;
-        border-radius: 12px;
-        border-left: 4px solid;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        font-weight: 700;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        width: max-content;
-        max-width: 90vw; /* Prevent overflow on phone */
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-void);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 60%),
+        radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 60%);
+      color: var(--text-main);
+      overflow: hidden;
     }
 
-    /* 3. COLORS (Manually matching the script's logic) */
-    .bg-green-500\/20 { background: rgba(34, 197, 94, 0.15); border-color: #22c55e; color: #4ade80; }
-    .bg-red-500\/20   { background: rgba(239, 68, 68, 0.15); border-color: #ef4444; color: #f87171; }
-    .bg-blue-500\/20  { background: rgba(59, 130, 246, 0.15); border-color: #3b82f6; color: #60a5fa; }
+    /* --- LOGIN CARD --- */
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 30px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: var(--glass-border);
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      position: relative;
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Ambient Glow behind card */
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: 50%;
+      transform: translateX(-50%);
+      width: 200px; height: 200px;
+      background: var(--accent);
+      filter: blur(80px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .brand {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      letter-spacing: -1px;
+    }
+    .brand span { color: var(--accent); }
+
+    .subtitle {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    /* --- INPUTS --- */
+    .input-group { text-align: left; margin-bottom: 20px; }
     
-    /* Animation classes used by script */
-    .translate-x-10 { transform: translateX(50px); opacity: 0; }
-    .opacity-0 { opacity: 0; }
-
-    /* 4. MODAL OVERLAY (Centered & Glassy) */
-    #ui-modal-overlay {
-        position: fixed;
-        inset: 0; /* Full Screen */
-        z-index: 9999;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(5px);
-        display: none; /* Hidden by default */
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
+    label {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      margin-left: 4px;
     }
-    #ui-modal-overlay:not(.hidden) { display: flex; opacity: 1; }
 
-    /* 5. MODAL BOX */
-    #ui-modal-box {
-        background: #0f172a;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 30px;
-        border-radius: 20px;
-        width: 90%;
-        max-width: 320px;
-        text-align: center;
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-        color: white;
-        font-family: 'Inter', sans-serif;
+    input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 14px 16px;
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
     }
-    #ui-modal-overlay:not(.hidden) #ui-modal-box { transform: scale(1); }
 
-    /* Buttons inside Modal */
-    #ui-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-    #ui-actions button { border: none; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer; letter-spacing: 1px; }
-    .bg-white { background: white; color: black; }
-    .bg-white\/5 { background: rgba(255,255,255,0.1); color: #94a3b8; }
+    input:focus {
+      background: rgba(0, 0, 0, 0.6);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+    }
+
+    /* --- BUTTONS --- */
+    .btn-main {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent) 0%, #15803d 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -5px var(--accent-glow);
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px var(--accent-glow); }
+    .btn-main:active { transform: scale(0.98); }
+
+    .link-text {
+      display: inline-block;
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .link-text:hover { color: white; }
+
+    /* --- TOAST --- */
+    #toast-container {
+        position: fixed; top: 20px; right: 20px; z-index: 10000;
+        display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .toast-box {
+        pointer-events: auto; padding: 12px 20px; border-radius: 12px;
+        background: rgba(2, 6, 23, 0.9); border-left: 4px solid var(--accent);
+        color: white; font-size: 12px; font-weight: 700;
+        backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* --- MODALS --- */
+    #resetModal {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    #resetModal.active { opacity: 1; pointer-events: auto; }
+
+    /* Animation Keys */
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
   </style>
 </head>
 
-<body class="login-mode">
+<body>
 
-  <div class="login-box">
-    <div style="font-size: 10px; color: var(--green); letter-spacing: 2px; font-weight: 800; margin-bottom: 15px; text-transform: uppercase;">
-      <i class="fas fa-shield-halved"></i> Encrypted Connection
-    </div>
+  <div class="login-card">
+    <div class="brand">Cash<span>Tree</span></div>
+    <div class="subtitle"><i class="fas fa-shield-alt text-green-500"></i> Partner Access</div>
 
-    <div class="login-brand">Cash<span>Tree</span></div>
-    <p class="login-desc">Secure access for verified partners.</p>
+    <form onsubmit="event.preventDefault(); handleLogin();">
+      <div class="input-group">
+        <label for="code">Agent ID</label>
+        <input type="text" id="code" placeholder="ENTER ID" autocomplete="username">
+      </div>
 
-    <div class="input-field">
-      <label for="code">Partner Code (Username)</label>
-      <input type="text" id="code" placeholder="Enter your username" autocomplete="off">
-    </div>
+      <div class="input-group">
+        <label for="pass">Passkey</label>
+        <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
 
-    <div class="input-field">
-      <label for="pass">Access Key</label>
-      <input type="password" id="pass" placeholder="••••••••">
-    </div>
-
-    <button id="loginBtn" class="login-submit-btn" onclick="handleLogin()">
-      UNLOCK DASHBOARD
-    </button>
+      <button type="submit" id="loginBtn" class="btn-main">AUTHENTICATE</button>
+    </form>
 
     <div style="margin-top: 15px;">
-        <a href="javascript:void(0)" onclick="openResetModal()" 
-           style="color: #64748b; font-size: 0.8rem; text-decoration: none; font-weight: 600; transition: 0.2s;">
-           Forgot Access Key?
+        <a href="javascript:void(0)" onclick="document.getElementById('resetModal').classList.add('active')" class="link-text">
+            Lost Access Key?
         </a>
     </div>
-
-    <div class="login-footer">
-      New here? <a href="../promoter/index.html">Apply for Access →</a>
+    
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+        <p style="font-size: 10px; color: #64748b; font-weight: 700;">
+            NEW PARTNER? <a href="apply.html" style="color: var(--accent); text-decoration: none;">APPLY HERE</a>
+        </p>
     </div>
   </div>
 
-  <div id="resetModal" class="hidden" style="position: fixed; inset: 0; z-index: 100; background: rgba(2, 5, 10, 0.9); display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px);">
-      <div class="login-box" style="border: 1px solid var(--green); max-width: 380px;">
-          <h3 style="color: white; font-weight: 800; margin-bottom: 10px;">Account Recovery</h3>
-          <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 25px;">Enter your username to verify your identity via WhatsApp Support.</p>
+  <div id="resetModal">
+      <div class="login-card" style="max-width: 350px;">
+          <h3 style="font-size: 18px; font-weight: 900; color: white; margin-bottom: 10px;">Identity Verify</h3>
+          <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">
+              Enter your Agent ID. We will redirect you to WhatsApp Support for manual verification.
+          </p>
           
-          <div class="input-field" style="text-align: left;">
-              <label>Partner Code</label>
-              <input type="text" id="resetUsername" placeholder="e.g. CT-8821" style="background: rgba(0,0,0,0.5);">
+          <div class="input-group">
+              <input type="text" id="resetUsername" placeholder="AGENT ID" style="text-align: center; letter-spacing: 1px;">
           </div>
           
-          <button onclick="handlePasswordReset()" class="login-submit-btn" style="padding: 14px;">VERIFY IDENTITY</button>
+          <button onclick="handlePasswordReset()" class="btn-main">START RECOVERY</button>
           
-          <button onclick="closeResetModal()" style="background: transparent; color: #ef4444; border: none; margin-top: 15px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
-            CANCEL
+          <button onclick="document.getElementById('resetModal').classList.remove('active')" 
+                  style="background: transparent; border: none; color: var(--danger); font-size: 10px; font-weight: 800; margin-top: 20px; cursor: pointer; letter-spacing: 1px;">
+              CANCEL OPERATION
           </button>
       </div>
   </div>
 
   <div id="toast-container"></div>
 
-  <div id="ui-modal-overlay" class="hidden">
-    <div id="ui-modal-box">
-        <div id="ui-icon" style="font-size: 40px; margin-bottom: 10px;">✨</div>
-        <h3 id="ui-title" style="margin-bottom: 5px; text-transform: uppercase;">Notice</h3>
-        <p id="ui-msg" style="color: #94a3b8; margin-bottom: 20px; font-size: 12px;">Message goes here...</p>
-        <div id="ui-actions"></div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js"></script>
+  
+  <script src="promoter.js"></script>
 
 </body>
 </html>
