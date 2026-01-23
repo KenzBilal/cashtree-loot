@@ -4,68 +4,63 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="robots" content="noindex, nofollow">
-    
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https:; font-src https://cdnjs.cloudflare.com https://fonts.gstatic.com;">
-
     <title>Admin Command | CashTree</title>
 
+    <script src="config.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <link rel="stylesheet" href="style.css"> 
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#020617">
-    <link rel="icon" type="image/webp" href="../logo.webp"><link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/webp" href="logo.webp">
+    <link rel="manifest" href="manifest.json">
 
     <style>
         body { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
         body.admin-unlocked { opacity: 1; pointer-events: auto; }
         
-        /* When locked, hide everything except the login modal */
+        /* Hide UI until unlocked */
         body:not(.admin-unlocked) aside, 
         body:not(.admin-unlocked) main, 
         body:not(.admin-unlocked) .md\:hidden { display: none !important; }
         
-        body:not(.admin-unlocked) #loginModal { 
-            display: flex !important; 
-            opacity: 1 !important; 
-            pointer-events: auto !important; 
-            background: #020617; /* Matches your --bg-deep */
-        }
+        /* Show Login Modal when locked */
+        body:not(.admin-unlocked) #loginModal { display: flex !important; opacity: 1 !important; pointer-events: auto !important; }
     </style>
 </head>
 
 <body>
 
-    <div class="md:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/5 flex items-center justify-between px-5 bg-[#020617]/90 backdrop-blur-xl shadow-2xl transition-all">
-    <div class="flex items-center gap-3">
-        <img src="../logo.webp" class="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
-        <span class="text-sm font-black text-white tracking-widest uppercase">Admin Panel</span>
+    <div class="md:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/5 flex items-center justify-between px-5 bg-[#000000]/80 backdrop-blur-xl transition-all">
+        <div class="flex items-center gap-3">
+            <img src="logo.webp" class="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+            <span class="text-sm font-black text-white tracking-widest uppercase">Admin Panel</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 active:scale-95 transition">
+                <i class="fas fa-bullhorn text-xs"></i>
+            </button>
+            <button onclick="location.reload()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 active:scale-95 transition">
+                <i class="fas fa-sync-alt text-xs"></i>
+            </button>
+        </div>
     </div>
-    <div class="flex items-center gap-3">
-        <button onclick="openBroadcastModal()" class="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 active:scale-95 transition">
-            <i class="fas fa-bullhorn text-xs"></i>
-        </button>
-        <button onclick="location.reload()" class="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 active:scale-95 transition">
-            <i class="fas fa-sync-alt text-xs"></i>
-        </button>
-    </div>
-</div>
 
 
-    <div id="loginModal" class="fixed inset-0 z-[99999] flex items-center justify-center">
-        <div class="login-card-fixed">
-            <div class="mb-8 relative text-center">
-                <img src="../logo.webp" class="w-20 h-20 mx-auto mb-4 drop-shadow-2xl">
+    <div id="loginModal" class="fixed inset-0 z-[99999] flex items-center justify-center bg-[#000000]">
+        <div class="login-card-fixed relative overflow-hidden">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-green-500/20 rounded-full blur-[50px] pointer-events-none"></div>
+            
+            <div class="mb-8 text-center relative z-10">
+                <img src="logo.webp" class="w-20 h-20 mx-auto mb-4 drop-shadow-2xl">
                 <h2 class="text-2xl font-black text-white tracking-tight">SOVEREIGN ELITE</h2>
                 <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Access Restricted</p>
             </div>
-
-            <form onsubmit="event.preventDefault(); handleLogin();">
+            
+            <form onsubmit="event.preventDefault(); handleLogin();" class="relative z-10">
                 <input id="email" type="email" placeholder="ADMIN ID" autocomplete="username" class="input-dark text-center mb-4" required />
                 <input id="password" type="password" placeholder="PASSPHRASE" autocomplete="current-password" class="input-dark text-center mb-6" required />
                 <button type="submit" class="unlock-btn">AUTHENTICATE</button>
@@ -74,113 +69,95 @@
     </div>
 
 
-    <aside>
+    <aside class="hidden md:flex">
         <div class="p-8 border-b border-white/5 flex items-center gap-4">
-            <img src="../logo.webp" class="w-10 h-10 object-contain">
+            <img src="logo.webp" class="w-10 h-10 object-contain">
             <div>
-                <div class="text-lg font-bold text-white tracking-tight">CashTree</div>
-                <div class="text-[9px] text-green-500 font-bold uppercase tracking-widest">Administrator</div>
+                <div class="text-lg font-bold text-white">CashTree</div>
+                <div class="text-[9px] text-green-500 font-bold uppercase">Administrator</div>
             </div>
         </div>
-
+        
         <nav class="flex-1 flex flex-col p-2 overflow-y-auto">
             <div class="px-6 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Overview</div>
-
+            
             <div id="nav-dashboard" onclick="showSection('dashboard')" class="nav-item active">
                 <i class="fas fa-chart-line"></i> <span>Dashboard</span>
             </div>
-
             <div id="nav-campaigns" onclick="showSection('campaigns')" class="nav-item">
                 <i class="fas fa-briefcase"></i> <span>Campaigns</span>
             </div>
-
+            
             <div class="px-6 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Management</div>
 
             <div id="nav-leads" onclick="showSection('leads')" class="nav-item flex justify-between">
                 <div class="flex items-center gap-4"><i class="fas fa-user-check"></i> <span>Approvals</span></div>
                 <span id="navPendingBadge" class="hidden bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">0</span>
             </div>
-
             <div id="nav-payouts" onclick="showSection('payouts')" class="nav-item">
                 <i class="fas fa-credit-card"></i> <span>Settlements</span>
             </div>
-
+            
             <div class="px-6 pb-2 pt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">System</div>
 
             <div onclick="openBroadcastModal()" class="nav-item group cursor-pointer hover:bg-yellow-500/10">
                 <i class="fas fa-bullhorn group-hover:text-yellow-500 transition-colors"></i> 
                 <span class="group-hover:text-yellow-100 transition-colors">Announcements</span>
             </div>
-
+            
             <div id="nav-settings" onclick="showSection('settings')" class="nav-item">
                 <i class="fas fa-sliders-h"></i> <span>Settings</span>
             </div>
-
-            <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
-                <div onclick="logout()" class="nav-item" style="color: #ef4444;">
-                    <i class="fas fa-power-off"></i> <span>Secure Logout</span>
-                </div>
+            
+            <div onclick="logout()" class="nav-item mt-auto text-red-500">
+                <i class="fas fa-power-off"></i> <span>Secure Logout</span>
             </div>
         </nav>
     </aside>
 
 
     <main class="flex-1 w-full h-full overflow-y-auto p-6 md:p-12 pt-24 pb-32 md:pt-10 md:pb-10 relative scroll-smooth">
-        <div id="dashboard" class="section pt-20 md:pt-10 px-6 md:px-12">
-            <h1 class="text-3xl md:text-4xl font-black text-white mb-2">System Overview</h1>
-            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-10">Live Analytics</p>
 
+        <div id="dashboard" class="section">
+            <h1 class="text-3xl font-black text-white mb-6">Overview</h1>
+            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="stat-card border-green-500">
-                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Approved Leads</div>
+                    <div class="text-slate-400 text-xs font-bold uppercase">Leads</div>
                     <div id="statLeads" class="text-4xl font-black text-white mt-4">--</div>
                 </div>
-
                 <div class="stat-card border-red-500">
-                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Liability</div>
+                    <div class="text-slate-400 text-xs font-bold uppercase">Liability</div>
                     <div class="text-4xl font-black text-white mt-4">₹<span id="statLiability">--</span></div>
                 </div>
-
                 <div class="stat-card border-blue-500">
-                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Promoters</div>
+                    <div class="text-slate-400 text-xs font-bold uppercase">Promoters</div>
                     <div id="statPromoters" class="text-4xl font-black text-white mt-4">--</div>
                 </div>
             </div>
         </div>
 
-        <div id="campaigns" class="section hidden pt-20 md:pt-10 px-6 md:px-12">
+        <div id="campaigns" class="section hidden">
             <div class="flex justify-between items-center mb-10">
                <h1 class="text-3xl font-black text-white">Campaigns</h1>
-               <button class="unlock-btn" style="width: auto; padding: 0.8rem 1.5rem;" onclick="toggleCreateCampaign()">
-                   <i class="fas fa-plus mr-2"></i> New
-               </button>
+               <button class="unlock-btn w-auto px-6" onclick="document.getElementById('createCampaignForm').classList.toggle('hidden')">New</button>
             </div>
-
+            
             <div id="createCampaignForm" class="glass-panel p-6 rounded-2xl hidden mb-12">
-                <h3 class="text-lg font-bold text-white mb-6">Deploy New Campaign</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <input id="newCampTitle" class="input-dark md:col-span-2" placeholder="Campaign Name">
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Promoter Earns (₹)</label>
-                        <input id="newCampPayout" type="number" class="input-dark">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">User Cashback (₹)</label>
-                        <input id="newCampUserReward" type="number" class="input-dark">
-                    </div>
-                    <input id="newCampUrl" type="url" class="input-dark md:col-span-2" placeholder="Target URL">
-                    <div class="md:col-span-2">
-                        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Logo</label>
-                        <input type="file" id="newCampFile" accept="image/*" class="input-dark pt-3">
-                    </div>
+                    <input id="newCampTitle" class="input-dark md:col-span-2" placeholder="Title">
+                    <input id="newCampPayout" type="number" class="input-dark" placeholder="Payout">
+                    <input id="newCampUserReward" type="number" class="input-dark" placeholder="Reward">
+                    <input id="newCampUrl" type="url" class="input-dark md:col-span-2" placeholder="URL">
+                    <input type="file" id="newCampFile" class="input-dark md:col-span-2">
                 </div>
-                <button onclick="createNewCampaign()" class="unlock-btn mt-8">PUBLISH</button>
+                <button onclick="createNewCampaign()" class="unlock-btn mt-6">PUBLISH</button>
             </div>
-
-            <div id="campaignGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            
+            <div id="campaignGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </div>
 
-        <div id="leads" class="section hidden pt-20 md:pt-10 px-6 md:px-12">
+        <div id="leads" class="section hidden">
             <h1 class="text-3xl font-black text-white mb-10">Approvals</h1>
             
             <div id="noLeadsMsg" class="hidden p-12 glass-panel rounded-2xl text-center text-slate-500 font-bold uppercase text-xs">
@@ -203,7 +180,7 @@
             </div>
         </div>
 
-        <div id="payouts" class="section hidden pt-20 md:pt-10 px-6 md:px-12">
+        <div id="payouts" class="section hidden">
             <h1 class="text-3xl font-black text-white mb-10">Settlements</h1>
             <div class="glass-panel overflow-x-auto rounded-2xl">
                 <table>
@@ -220,117 +197,103 @@
             </div>
         </div>
 
-        <div id="settings" class="section hidden pt-20 md:pt-10 px-6 md:px-12">
-            <h1 class="text-3xl font-black text-white mb-2">Settings</h1>
-            <p class="text-xs uppercase tracking-widest text-slate-500 mb-10">Global Config</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div class="glass-panel p-8 rounded-2xl">
-                    <h3 class="text-xl font-bold mb-8 text-green-500 uppercase flex items-center">
-                        <i class="fas fa-shield-alt mr-3"></i> Directives
-                    </h3>
-                    <div class="space-y-6">
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Min Withdrawal (₹)</label>
-                            <input id="cfg_min_payout" type="number" class="input-dark">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Support WhatsApp</label>
-                            <input id="cfg_support" type="tel" class="input-dark">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2">Status</label>
-                            <select id="cfg_status" class="input-dark">
-                                <option value="LIVE">🟢 SYSTEM ONLINE</option>
-                                <option value="MAINTENANCE">🔴 MAINTENANCE MODE</option>
-                            </select>
-                        </div>
+        <div id="settings" class="section hidden">
+            <h1 class="text-3xl font-black text-white mb-10">Settings</h1>
+            <div class="glass-panel p-8 rounded-2xl max-w-xl">
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-2">MIN WITHDRAWAL</label>
+                        <input id="cfg_min_payout" type="number" class="input-dark">
                     </div>
-                    <button class="unlock-btn mt-10" onclick="saveSystemConfig()">SAVE CONFIG</button>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-2">SUPPORT NUMBER</label>
+                        <input id="cfg_support" type="tel" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-2">STATUS</label>
+                        <select id="cfg_status" class="input-dark">
+                            <option value="LIVE">LIVE</option>
+                            <option value="MAINTENANCE">MAINTENANCE</option>
+                        </select>
+                    </div>
                 </div>
+                <button onclick="saveSystemConfig()" class="unlock-btn mt-8">SAVE CONFIG</button>
             </div>
         </div>
+
     </main>
 
 
-    <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-md">
-            <h2 class="text-xl font-black text-white uppercase mb-2">Edit Campaign</h2>
-            <p id="editCampTitle" class="text-slate-500 text-sm mb-6 font-mono">ID: --</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] uppercase text-slate-500 font-bold mb-2 block">Promoter Rate</label>
-                    <input id="editCampPayout" type="number" class="input-dark">
-                </div>
-                <div>
-                    <label class="text-[10px] uppercase text-slate-500 font-bold mb-2 block">User Cashback</label>
-                    <input id="editCampUserReward" type="number" class="input-dark">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 mt-8">
-                <button onclick="closeEditModal()" class="input-dark text-center cursor-pointer hover:bg-white/10">CANCEL</button>
-                <button onclick="saveCampaignUpdate()" class="unlock-btn">UPDATE</button>
-            </div>
-        </div>
-    </div>
+    <div id="toast-container" class="fixed top-24 right-6 z-[150] flex flex-col gap-3 pointer-events-none"></div>
 
     <div id="broadcastModal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="glass-panel p-8 rounded-2xl w-full max-w-lg">
             <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-black text-white uppercase flex items-center">
-                    <i class="fas fa-bullhorn mr-4 text-yellow-500"></i> Alert
-                </h2>
+                <h2 class="text-2xl font-black text-white uppercase"><i class="fas fa-bullhorn mr-4 text-yellow-500"></i> Alert</h2>
                 <button onclick="closeBroadcastModal()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
             <textarea id="broadcastMsg" rows="5" class="input-dark mb-6" placeholder="Message to all promoters..."></textarea>
             <button id="sendBtn" onclick="sendBroadcast()" class="unlock-btn">SEND</button>
         </div>
     </div>
+    
+    <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md">
+            <h2 class="text-xl font-black text-white uppercase mb-2">Edit Campaign</h2>
+            <p id="editCampTitle" class="text-slate-500 text-sm mb-6 font-mono">--</p>
+            <div class="space-y-4">
+                <input id="editCampPayout" type="number" class="input-dark" placeholder="Payout">
+                <input id="editCampUserReward" type="number" class="input-dark" placeholder="Reward">
+            </div>
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button onclick="closeEditModal()" class="input-dark cursor-pointer hover:bg-white/10">CANCEL</button>
+                <button onclick="saveCampaignUpdate()" class="unlock-btn">UPDATE</button>
+            </div>
+        </div>
+    </div>
 
     <div id="ui-modal-overlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/90 backdrop-blur-sm opacity-0">
-        <div id="ui-modal-box" class="glass-panel p-8 rounded-2xl w-full max-w-sm text-center">
-            <div id="ui-icon" class="text-5xl mb-6">⚠️</div>
-            <h3 id="ui-title" class="text-xl font-black text-white mb-2 uppercase">CONFIRM</h3>
-            <p id="ui-msg" class="text-slate-400 text-sm font-bold mb-8"></p>
+        <div id="ui-modal-box" class="glass-panel p-8 rounded-2xl text-center">
+            <h3 id="ui-title" class="text-xl font-bold text-white mb-2"></h3>
+            <p id="ui-msg" class="text-slate-400 mb-6"></p>
             <div id="ui-actions" class="grid grid-cols-2 gap-3"></div>
         </div>
     </div>
 
 
     <div class="md:hidden fixed bottom-0 left-0 right-0 z-[100] p-4 pointer-events-none pb-6">
-    <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto bg-[#020617]/80 backdrop-blur-xl shadow-2xl border border-white/10">
-        
-        <button onclick="showSection('dashboard')" class="nav-item active flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
-            <i class="fas fa-chart-line text-lg group-[.active]:text-green-400 mb-0.5"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Pulse</span>
-        </button>
+        <div class="glass-panel mx-auto max-w-md h-16 rounded-2xl flex items-center justify-around pointer-events-auto bg-[#020617]/80 backdrop-blur-xl shadow-2xl border border-white/10">
+            
+            <button onclick="showSection('dashboard')" class="nav-item active flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+                <i class="fas fa-chart-line text-lg group-[.active]:text-green-400 mb-0.5"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Pulse</span>
+            </button>
 
-        <button onclick="showSection('campaigns')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
-            <i class="fas fa-briefcase text-lg group-[.active]:text-green-400 mb-0.5"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Apps</span>
-        </button>
+            <button onclick="showSection('campaigns')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+                <i class="fas fa-briefcase text-lg group-[.active]:text-green-400 mb-0.5"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Apps</span>
+            </button>
 
-        <button onclick="showSection('leads')" class="nav-item relative flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
-            <i class="fas fa-user-check text-lg group-[.active]:text-green-400 mb-0.5"></i>
-            <span id="mobilePendingBadge" class="absolute -top-1 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden border border-black shadow-lg animate-pulse">0</span>
-            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Leads</span>
-        </button>
+            <button onclick="showSection('leads')" class="nav-item relative flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+                <i class="fas fa-user-check text-lg group-[.active]:text-green-400 mb-0.5"></i>
+                <span id="mobilePendingBadge" class="absolute -top-1 right-2 bg-red-600 text-white text-[8px] font-black px-1.5 rounded-full hidden border border-black shadow-lg animate-pulse">0</span>
+                <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Leads</span>
+            </button>
 
-        <button onclick="showSection('payouts')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
-            <i class="fas fa-credit-card text-lg group-[.active]:text-green-400 mb-0.5"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Pay</span>
-        </button>
+            <button onclick="showSection('payouts')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+                <i class="fas fa-credit-card text-lg group-[.active]:text-green-400 mb-0.5"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Pay</span>
+            </button>
 
-        <button onclick="showSection('settings')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
-            <i class="fas fa-sliders-h text-lg group-[.active]:text-green-400 mb-0.5"></i>
-            <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Settings</span>
-        </button>
+            <button onclick="showSection('settings')" class="nav-item flex flex-col items-center gap-1 text-slate-500 focus:text-green-500 transition w-12 group p-0 m-0 border-0 bg-transparent">
+                <i class="fas fa-sliders-h text-lg group-[.active]:text-green-400 mb-0.5"></i>
+                <span class="text-[8px] font-black uppercase tracking-widest group-[.active]:text-white">Settings</span>
+            </button>
 
+        </div>
     </div>
-</div>
 
-    <div id="toast-container" class="fixed top-24 right-6 z-[150] flex flex-col gap-3 pointer-events-none"></div>
-    <script src="config.js"></script>
+
     <script src="auth.js"></script>
     <script src="admin.js"></script>
 

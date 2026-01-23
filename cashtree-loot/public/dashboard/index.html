@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sovereign | Partner Dashboard</title>
+    <meta name="robots" content="noindex, nofollow">
+    <title>Sovereign | Partner Command</title>
     
     <script src="../admin/config.js"></script> 
     
@@ -11,223 +12,222 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <meta name="theme-color" content="#020617">
-    <link rel="icon" type="image/webp" href="../logo.webp"> <link rel="manifest" href="manifest.json">
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
-
-        :root {
-            --bg-deep: #020617;
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-surface: rgba(15, 23, 42, 0.6);
-            --accent: #22c55e;
-            --accent-glow: rgba(34, 197, 94, 0.4);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-deep);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.05) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding-bottom: 40px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Glass Panel */
-        .glass-panel {
-            background: var(--glass-surface);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-            border-radius: 1.5rem;
-        }
-
-        /* Header */
-        .header-glass {
-            background: rgba(2, 6, 23, 0.85);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        /* Buttons */
-        .btn-action {
-            background: linear-gradient(135deg, var(--accent) 0%, #15803d 100%);
-            color: white;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            border: none;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-            transition: transform 0.2s, filter 0.2s;
-        }
-        .btn-action:active { transform: scale(0.98); }
-
-        /* Inputs */
-        .input-glass {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border);
-            color: white;
-            border-radius: 0.75rem;
-            outline: none;
-            transition: 0.3s;
-        }
-        .input-glass:focus { border-color: var(--accent); }
-
-        /* Animations */
-        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .slide-in { animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    </style>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="icon" type="image/webp" href="logo.webp">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
 </head>
 
-<body class="antialiased">
+<body class="antialiased opacity-0 transition-opacity duration-700" onload="document.body.classList.remove('opacity-0')">
 
-    <div id="maintenanceScreen" class="fixed inset-0 z-[9999] bg-[#020617] hidden flex-col items-center justify-center text-center p-6">
-        <div class="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20 animate-pulse">
-            <i class="fas fa-tools text-4xl text-red-500"></i>
+    <div id="maintenanceScreen" class="fixed inset-0 z-[9999] bg-black hidden flex-col items-center justify-center text-center p-6 backdrop-blur-xl">
+        <div class="relative mb-8">
+            <div class="absolute inset-0 bg-red-500 blur-[40px] opacity-20 animate-pulse"></div>
+            <div class="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/30 relative z-10">
+                <i class="fas fa-biohazard text-4xl text-red-500 animate-pulse"></i>
+            </div>
         </div>
-        <h1 class="text-3xl font-black text-white tracking-tighter mb-2">SYSTEM LOCKDOWN</h1>
-        <p class="text-slate-500 text-sm font-bold uppercase tracking-widest mb-8">Upgrading Protocols</p>
-        <div class="text-blue-500 text-xs font-mono font-bold flex items-center gap-2 bg-blue-500/10 px-4 py-2 rounded-full">
-            <i class="fas fa-sync fa-spin"></i> AUTO-RECONNECTING...
+        <h1 class="text-4xl font-black text-white tracking-tighter mb-2 glitch-text">SYSTEM LOCKDOWN</h1>
+        <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mb-10">Protocols Updating</p>
+        <div class="glass-panel px-6 py-3 rounded-full flex items-center gap-3">
+            <div class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+            <span class="text-blue-500 text-xs font-mono font-bold">AUTO-RECONNECTING...</span>
         </div>
     </div>
 
-    <header class="header-glass fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-5">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center shadow-lg shadow-green-900/50 text-white font-black text-sm" id="userInitial">
-                P
+
+    <header class="fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-6 bg-[#000000]/80 backdrop-blur-2xl border-b border-white/5 transition-all duration-300">
+        <div class="flex items-center gap-4">
+            <div class="relative group">
+                <div class="absolute inset-0 bg-green-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-green-900 flex items-center justify-center border border-green-400/30 text-white font-black text-sm relative z-10 shadow-2xl" id="userInitial">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
             </div>
+            
             <div>
-                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Verified Partner</div>
-                <div class="text-sm font-black text-white leading-none flex items-center gap-1">
-                    <span id="partnerName">Loading...</span>
-                    <i class="fas fa-check-circle text-blue-400 text-[10px]"></i>
+                <div class="flex items-center gap-2">
+                    <div class="text-[9px] text-green-400 font-bold uppercase tracking-[0.2em]">Operative</div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                </div>
+                <div class="text-base font-black text-white leading-none tracking-tight flex items-center gap-2 mt-1">
+                    <span id="partnerName" class="truncate max-w-[150px]">Authenticating...</span>
+                    <i class="fas fa-certificate text-blue-500 text-[10px]" title="Verified"></i>
                 </div>
             </div>
         </div>
-        <button onclick="logout()" class="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">
-            <i class="fas fa-power-off mr-1"></i> LOGOUT
+
+        <button onclick="logout()" class="w-10 h-10 rounded-full bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500/20 active:scale-95 transition-all duration-200">
+            <i class="fas fa-power-off"></i>
         </button>
     </header>
 
-    <main class="pt-24 px-5 pb-10 max-w-md mx-auto">
 
-        <div id="broadcastContainer" class="hidden slide-in mb-6">
-            <div class="glass-panel p-4 border-l-4 border-yellow-500 flex gap-4 items-start relative overflow-hidden">
-                <div class="absolute inset-0 bg-yellow-500/5 pointer-events-none"></div>
-                <div class="text-yellow-500 text-xl pt-1"><i class="fas fa-bullhorn animate-pulse"></i></div>
+    <main class="pt-28 px-5 pb-20 max-w-lg mx-auto space-y-6">
+
+        <div id="broadcastContainer" class="hidden transform transition-all duration-500 hover:scale-[1.02]">
+            <div class="glass-panel p-5 border-l-4 border-yellow-500 flex gap-4 items-start relative overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="text-yellow-500 text-xl pt-1"><i class="fas fa-bullhorn animate-bounce"></i></div>
                 <div class="flex-1 relative z-10">
-                    <div class="text-[9px] font-black text-yellow-500 uppercase tracking-[0.2em] mb-1">Official Directive</div>
-                    <div id="broadcastText" class="text-sm font-bold text-slate-200 leading-relaxed">
-                        --
-                    </div>
+                    <div class="text-[9px] font-black text-yellow-500 uppercase tracking-[0.25em] mb-1">Official Directive</div>
+                    <div id="broadcastText" class="text-sm font-medium text-slate-200 leading-relaxed font-sans">--</div>
                 </div>
-                <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-slate-500 hover:text-white relative z-10"><i class="fas fa-times"></i></button>
+                <button onclick="this.closest('#broadcastContainer').classList.add('hidden')" class="text-slate-500 hover:text-white relative z-10 transition-colors"><i class="fas fa-times"></i></button>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="glass-panel p-5 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-500/20 rounded-full blur-xl"></div>
-                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Wallet Balance</div>
-                <div id="balanceDisplay" class="text-3xl font-black text-white tracking-tight">₹0</div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="glass-panel p-5 relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-colors duration-500"></div>
+                <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Total Balance</div>
+                <div id="balanceDisplay" class="text-3xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]">₹0</div>
             </div>
             
-            <div class="glass-panel p-5 relative border-green-500/20">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min. Payout</div>
-                    <div id="display_min_payout" class="text-xs font-bold text-green-400">₹...</div>
+            <div class="glass-panel p-5 relative flex flex-col justify-between border-t border-green-500/20">
+                <div class="flex justify-between items-start">
+                    <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Min Payout</div>
+                    <div id="display_min_payout" class="text-xs font-bold text-green-400 font-mono">Loading...</div>
                 </div>
-                <button id="withdrawBtn" onclick="handleWithdraw()" disabled class="w-full py-2 rounded-lg bg-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-wider transition-all">
-                    LOCKED
+                <button id="withdrawBtn" onclick="handleWithdraw()" disabled class="w-full py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-slate-500 text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 mt-2">
+                    <i class="fas fa-lock text-[10px]"></i> LOCKED
                 </button>
             </div>
         </div>
 
-        <div class="glass-panel p-6 mb-8 border-blue-500/20 shadow-lg shadow-blue-900/10">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400"><i class="fas fa-users text-lg"></i></div>
+        <div class="glass-panel p-6 relative overflow-hidden border-t border-blue-500/30 shadow-[0_10px_40px_-10px_rgba(59,130,246,0.15)]">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+                    <i class="fas fa-globe-asia text-sm"></i>
+                </div>
                 <div>
-                    <h3 class="text-sm font-black text-white uppercase">Recruitment Center</h3>
-                    <p class="text-[10px] text-blue-400 font-bold">EARN ACTIVATION BONUSES</p>
+                    <h3 class="text-sm font-black text-white uppercase tracking-tight">Intelligence Center</h3>
+                    <p class="text-[10px] text-blue-400 font-bold tracking-wide opacity-80">EXPAND NETWORK REVENUE</p>
                 </div>
             </div>
 
-            <div class="flex gap-2 mb-4">
-                <input type="text" id="referralLinkInput" readonly class="input-glass flex-1 px-4 py-3 text-xs font-mono text-slate-300" value="...">
-                <button onclick="copyReferralLink()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 rounded-xl font-bold text-xs shadow-lg shadow-blue-900/30 transition">
+            <div class="flex gap-2 mb-4 bg-black/40 p-1.5 rounded-xl border border-white/5">
+                <input type="text" id="referralLinkInput" readonly class="bg-transparent flex-1 px-3 text-xs font-mono text-slate-300 outline-none" value="Generating secure link...">
+                <button onclick="copyReferralLink()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 rounded-lg font-bold text-xs shadow-lg shadow-blue-900/40 transition-all active:scale-95">
                     COPY
                 </button>
             </div>
 
-            <button onclick="copyShareMessage()" class="w-full py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-black uppercase tracking-wide hover:bg-green-500/20 transition mb-6 flex items-center justify-center gap-2">
-                <i class="fab fa-whatsapp text-lg"></i> Copy Viral Message
+            <button onclick="copyShareMessage()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-green-900/20 to-green-800/20 border border-green-500/30 text-green-400 text-xs font-black uppercase tracking-widest hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.1)] transition-all active:scale-[0.98] mb-6 flex items-center justify-center gap-2">
+                <i class="fab fa-whatsapp text-lg"></i> Copy Viral Asset
             </button>
 
             <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
-                <div onclick="document.getElementById('teamModal').style.display='flex'" class="cursor-pointer hover:opacity-80 transition">
-                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">Network Size <i class="fas fa-chevron-right text-[8px] ml-1"></i></div>
-                    <div id="teamCount" class="text-xl font-black text-white">0</div>
+                <div onclick="openTeamModal()" class="cursor-pointer group">
+                    <div class="flex items-center gap-1 text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1 group-hover:text-blue-400 transition-colors">
+                        Agents <i class="fas fa-external-link-alt text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                    <div id="teamCount" class="text-2xl font-black text-white group-hover:text-blue-200 transition-colors">0</div>
                 </div>
+                
                 <div class="text-right">
-                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">Royalty Earned</div>
-                    <div id="teamEarnings" class="text-xl font-black text-green-400">₹0</div>
+                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">Royalties</div>
+                    <div id="teamEarnings" class="text-2xl font-black text-green-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]">₹0</div>
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center justify-between mb-4 px-1">
-            <h3 class="text-sm font-black text-white uppercase tracking-wide">Active Missions</h3>
-            <span class="text-[9px] font-bold bg-green-500/10 text-green-400 px-2 py-1 rounded-full animate-pulse">LIVE FEED</span>
-        </div>
+        <div>
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h3 class="text-xs font-black text-slate-300 uppercase tracking-[0.15em] flex items-center gap-2">
+                    <i class="fas fa-crosshairs text-green-500"></i> Active Missions
+                </h3>
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-[9px] font-bold text-green-500 uppercase">Live Feed</span>
+                </div>
+            </div>
 
-        <div id="offersContainer" class="space-y-4 min-h-[100px]">
-            <div class="text-center py-8 opacity-50">
-                <i class="fas fa-circle-notch fa-spin text-blue-500"></i>
-                <p class="text-[10px] font-bold mt-2 text-slate-500 uppercase">Syncing Server...</p>
+            <div id="offersContainer" class="space-y-4 min-h-[150px]">
+                <div class="glass-panel p-6 text-center opacity-60">
+                    <i class="fas fa-circle-notch fa-spin text-2xl text-blue-500 mb-3"></i>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Establishing Uplink...</p>
+                </div>
             </div>
         </div>
 
-        <div class="mt-10 pt-8 border-t border-white/5">
-            <div class="glass-panel p-5">
+        <div class="mt-8 border-t border-white/5 pt-8">
+            <div class="glass-panel p-5 bg-red-900/5 border-red-500/10">
                 <div class="flex items-center gap-3 mb-4 text-slate-400">
-                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-shield-alt text-red-400"></i>
                     <span class="text-[10px] font-black uppercase tracking-widest">Security Protocol</span>
                 </div>
                 <form onsubmit="event.preventDefault(); updatePassword();" class="flex gap-2">
-                    <input type="password" id="newPass" placeholder="New Access Key" class="input-glass flex-1 px-4 py-2 text-xs">
-                    <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white px-4 rounded-lg font-bold text-[10px] uppercase">
+                    <input type="password" id="newPass" placeholder="Update Access Key" class="bg-black/40 border border-white/10 text-white rounded-lg flex-1 px-4 py-2 text-xs outline-none focus:border-red-500/50 transition-colors">
+                    <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white px-5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition-all">
                         Update
                     </button>
                 </form>
             </div>
         </div>
 
-        <footer class="mt-10 text-center">
-            <p class="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">
-                Sovereign System v2.0
+        <footer class="mt-10 text-center pb-8 opacity-40">
+            <img src="../logo.webp" class="w-5 h-5 mx-auto mb-2 grayscale invert opacity-50">
+            <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                Sovereign System v2.1 // Secure
             </p>
         </footer>
 
     </main>
 
-    <div id="toast" class="fixed top-20 right-5 z-[9999] pointer-events-none flex flex-col gap-2"></div>
 
-    <div id="teamModal" class="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-md hidden flex-col">
-        <div class="p-5 border-b border-white/10 bg-[#020617] flex justify-between items-center">
-            <h3 class="text-sm font-black text-white uppercase tracking-wide">Global Roster</h3>
-            <button onclick="document.getElementById('teamModal').style.display='none'" class="text-slate-500 text-xl hover:text-white">&times;</button>
+    <div id="toast" class="fixed top-24 right-5 z-[10000] pointer-events-none flex flex-col gap-2 transition-all"></div>
+
+    <div id="teamModal" class="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-md hidden flex-col transition-opacity duration-300 opacity-0" style="transition: opacity 0.3s ease;">
+        
+        <div class="p-5 border-b border-white/10 bg-[#020617] flex justify-between items-center sticky top-0 z-20">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fas fa-network-wired text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white uppercase tracking-wide">Global Roster</h3>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase">Downline Data</p>
+                </div>
+            </div>
+            <button onclick="closeTeamModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <div id="fullTeamList" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+
+        <div id="fullTeamList" class="flex-1 overflow-y-auto p-5 space-y-3">
+            <div class="text-center py-10 opacity-50">
+                <i class="fas fa-search text-slate-600 mb-2"></i>
+                <p class="text-xs text-slate-500">Scanning Database...</p>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-white/10 bg-[#020617] text-center">
+            <p class="text-[8px] text-slate-600 uppercase tracking-widest">Encrypted Connection</p>
+        </div>
     </div>
 
-    <script src="script.js"></script>
+
+    <script>
+        function openTeamModal() {
+            const modal = document.getElementById('teamModal');
+            modal.classList.remove('hidden');
+            // Small delay to allow display:flex to apply before opacity transition
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+            });
+        }
+
+        function closeTeamModal() {
+            const modal = document.getElementById('teamModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    </script>
+
+    <script src="promoter.js"></script>
 
 </body>
 </html>
