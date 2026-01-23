@@ -1,242 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Join CashTree | Elite Partner</title>
-  
+  <!-- =========================
+       META
+  ========================== -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>Become a Promoter | CashTree</title>
+
+  <!-- =========================
+       FONTS & ICONS
+  ========================== -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- =========================
+       THEME
+  ========================== -->
   <style>
     :root {
-      --bg-dark: #02050a;
-      --glass: rgba(15, 23, 42, 0.6);
-      --border: rgba(255, 255, 255, 0.1);
-      --primary: #22c55e; /* Green */
-      --accent: #4ade80;
-      --text-main: #ffffff;
-      --text-muted: #94a3b8;
+      --bg1:#04060a; --bg2:#07101a;
+      --card:rgba(255,255,255,0.04);
+      --border:rgba(255,255,255,0.08);
+      --text:#eaf2f8; --muted:#8aa0b3;
+      --green:#22c55e; --green-glow:rgba(34,197,94,0.35);
+      --yellow:#facc15;
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-dark);
-      background-image: radial-gradient(circle at 50% 0%, #1a2c38 0%, #02050a 80%);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-x: hidden;
+    *{box-sizing:border-box}
+
+    body{
+      margin:0; min-height:100vh; padding:24px;
+      font-family:'Inter',sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(36,54,60,.15), transparent 60%),
+        linear-gradient(180deg,var(--bg1),var(--bg2) 85%);
+      display:flex; align-items:center; justify-content:center;
     }
 
-    /* GLASS CARD */
-    .glass-card {
-      background: var(--glass);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 30px;
-      width: 90%;
-      max-width: 420px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    .wrap{width:100%;max-width:540px}
+
+    /* =========================
+       TOP DETAILS / RULES
+    ========================== */
+    .info{
+      background:linear-gradient(180deg,rgba(34,197,94,.12),rgba(0,0,0,.45));
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:22px 24px;
+      margin-bottom:18px;
+      backdrop-filter:blur(14px);
+      box-shadow:0 10px 30px rgba(0,0,0,.4);
     }
 
-    @keyframes floatUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .info h3{
+      margin:0 0 12px;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:.5px;
+      color:var(--green);
+      display:flex; gap:8px; align-items:center;
+    }
 
-    /* INPUTS */
-    .input-wrapper { margin-bottom: 18px; position: relative; }
-    .input-label {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-      display: block;
+    .info ul{
+      margin:0; padding-left:18px;
+      font-size:12px; color:var(--muted);
+      line-height:1.65;
     }
-    .custom-input {
-      width: 100%;
-      padding: 14px 16px;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      outline: none;
-    }
-    .custom-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
-      background: rgba(0,0,0,0.5);
-    }
-    .custom-input::placeholder { color: #475569; }
 
-    /* BUTTONS */
-    .action-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, var(--primary), #16a34a);
-      color: #02050a;
-      border: none;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-      position: relative;
-      overflow: hidden;
+    .bonus{
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:16px;
+      background:rgba(250,204,21,.12);
+      border:1px dashed rgba(250,204,21,.45);
+      font-size:12px;
+      color:#fde68a;
+      display:flex; gap:10px;
     }
-    .action-btn:active { transform: scale(0.98); }
-    .action-btn:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(1); }
 
-    /* PERKS BOX */
-    .perk-box {
-      background: rgba(34, 197, 94, 0.05);
-      border: 1px dashed rgba(34, 197, 94, 0.3);
-      border-radius: 16px;
-      padding: 15px;
-      font-size: 12px;
-      line-height: 1.6;
-      color: #cbd5e1;
-      margin-bottom: 25px;
+    /* =========================
+       SIGNUP CARD
+    ========================== */
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:36px 32px;
+      backdrop-filter:blur(16px);
+      box-shadow:0 20px 50px rgba(0,0,0,.55);
     }
-    .perk-highlight { color: var(--accent); font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
 
-    /* TOAST NOTIFICATIONS (Mobile Optimized) */
-    #toast-container {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      width: 90%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      pointer-events: none;
+    .badge{
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:var(--green);
+      margin-bottom:18px;
     }
-    .toast-msg {
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(10px);
-      border-left: 4px solid var(--primary);
-      color: white;
-      padding: 14px 20px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    h1{
+      font-size:28px;
+      font-weight:800;
+      margin:0 0 6px;
+      letter-spacing:-0.5px;
     }
-    .toast-msg.error { border-color: #ef4444; }
-    .toast-msg.success { border-color: #22c55e; }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    h1 span{color:var(--green)}
 
-    /* PRELOADER */
-    #app-loader { position: fixed; inset: 0; z-index: 99999; background: #02050a; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-    .loader-icon { font-size: 40px; animation: pulse 1.5s infinite; margin-bottom: 15px; }
-    .loader-text { color: var(--primary); font-family: monospace; font-size: 12px; letter-spacing: 3px; }
-    @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.9); opacity: 0.6; } 100% { transform: scale(1); opacity: 1; } }
+    .sub{
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:26px;
+    }
 
-    /* MAINTENANCE OVERLAY */
-    #maintenanceScreen { position: fixed; inset: 0; z-index: 9999; background: #0f172a; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 20px; }
+    .field{margin-bottom:16px}
+    .field label{
+      display:block;
+      font-size:11px;
+      font-weight:700;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      margin-bottom:8px;
+    }
+    .field input{
+      width:100%;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.4);
+      color:white;
+      font-size:14px;
+      outline:none;
+    }
+    .field input:focus{
+      border-color:var(--green);
+      background:rgba(0,0,0,.55);
+    }
+
+    .btn{
+      width:100%;
+      margin-top:10px;
+      padding:16px;
+      border-radius:14px;
+      border:none;
+      background:linear-gradient(180deg,var(--green),#16a34a);
+      color:#022c22;
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:1px;
+      cursor:pointer;
+      box-shadow:0 6px 20px var(--green-glow);
+    }
+    .btn:active{transform:scale(.97)}
+
+    .note{
+      margin-top:18px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:center;
+    }
+    .note a{
+      color:var(--green);
+      font-weight:700;
+      text-decoration:none;
+    }
+
+    .footer{
+      margin-top:26px;
+      padding-top:18px;
+      border-top:1px solid var(--border);
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+    }
   </style>
 </head>
 
 <body>
 
-  <div id="app-loader">
-      <div class="loader-icon">🌱</div>
-      <div class="loader-text">ESTABLISHING SECURE LINK...</div>
-  </div>
+<div class="wrap">
 
-  <div id="maintenanceScreen">
-      <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 25px; border-radius: 50%; margin-bottom: 20px;">
-          <i class="fas fa-server" style="font-size: 40px;"></i>
+  <!-- =========================
+       IMPORTANT DETAILS (MUST READ)
+  ========================== -->
+  <div class="info">
+    <h3><i class="fas fa-circle-info"></i> Important Information</h3>
+    <ul>
+      <li>This is a <b>promoter-only earning program</b>.</li>
+      <li>You earn money when users complete tasks and get <b>approved</b>.</li>
+      <li>Fake leads, self-referrals, or misuse will result in account ban.</li>
+      <li>Withdrawals are allowed only after reaching the minimum payout limit.</li>
+    </ul>
+
+    <div class="bonus">
+      <i class="fas fa-gift"></i>
+      <div>
+        <b>₹20 Referral Bonus:</b><br>
+        If you join using a valid promoter referral code,
+        <b>₹20 will be added to your wallet immediately</b>.
+        This amount becomes withdrawable only after you complete
+        <b>your first approved task</b>.
+        <br><br>
+        The promoter who referred you will also receive
+        <b>₹20</b> after your first approved task (one-time).
       </div>
-      <h1 style="font-size: 24px; font-weight: 900; margin-bottom: 10px;">SYSTEM UPDATE</h1>
-      <p style="color: #94a3b8; font-size: 14px; max-width: 300px; line-height: 1.5;">The CashTree Network is undergoing critical upgrades. Access will be restored shortly.</p>
+    </div>
   </div>
 
-  <div id="toast-container"></div>
+  <!-- =========================
+       SIGNUP CARD
+  ========================== -->
+  <div class="card">
 
-  <div class="glass-card login-card">
-    
-    <div style="text-align: center; margin-bottom: 30px;">
-        <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">
-            🌱 Cash<span style="color: var(--primary);">Tree</span>
-        </div>
-        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; margin-top: 5px;">
-            OFFICIAL PARTNER GATEWAY
-        </div>
+    <div class="badge">
+      <i class="fas fa-leaf"></i> CashTree Network
     </div>
 
-    <div class="perk-box">
-      <div class="perk-highlight"><i class="fas fa-shield-alt"></i> VERIFIED ACCESS</div>
-      • Instant <b>₹20 Bonus</b> upon activation<br>
-      • Access to Premium Campaigns<br>
-      • Daily Payouts via UPI
+    <h1>Become a <span>Promoter</span></h1>
+    <div class="sub">
+      Create your partner account and start earning with CashTree.
     </div>
 
-    <div class="input-wrapper">
-      <label class="input-label">Legal Name</label>
-      <input type="text" id="newName" class="custom-input" placeholder="e.g. Rahul Kumar" autocomplete="name">
+    <form id="promoterForm" autocomplete="off">
+
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="full_name" placeholder="Your name" required />
+      </div>
+
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Choose a unique username" required />
+      </div>
+
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="phone" placeholder="Mobile number" />
+      </div>
+
+      <div class="field">
+        <label>UPI ID</label>
+        <input type="text" id="upi_id" placeholder="example@bank" />
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Minimum 6 characters" required />
+      </div>
+
+      <div class="field">
+        <label>Referral Code (optional)</label>
+        <input type="text" id="ref" placeholder="Promoter username" />
+      </div>
+
+      <button class="btn" type="submit">
+        CREATE PROMOTER ACCOUNT
+      </button>
+
+    </form>
+
+    <div class="note">
+      Already a promoter?
+      <a href="/login">Login here</a>
     </div>
 
-    <div class="input-wrapper">
-      <label class="input-label">Create Username (Login ID)</label>
-      <input type="text" id="newCode" class="custom-input" placeholder="e.g. RAHUL99" style="text-transform: uppercase;">
-    </div>
-
-    <div class="input-wrapper">
-      <label class="input-label">WhatsApp Number</label>
-      <input type="tel" id="newPhone" class="custom-input" placeholder="10-digit number" maxlength="10">
-    </div>
-
-    <div class="input-wrapper">
-      <label class="input-label">UPI ID (For Payments)</label>
-      <input type="text" id="newUpi" class="custom-input" placeholder="e.g. 9876543210@ybl">
-    </div>
-
-    <div class="input-wrapper">
-      <label class="input-label">Set Access Key (Password)</label>
-      <input type="password" id="newPass" class="custom-input" placeholder="Min 6 characters">
-    </div>
-
-    <div class="input-wrapper" style="margin-top: 25px;">
-      <label class="input-label" style="color: var(--primary);"><i class="fas fa-gift"></i> Referral Code</label>
-      <input type="text" id="referCode" class="custom-input" placeholder="Enter code for Bonus" style="border-color: rgba(34,197,94,0.3); text-transform: uppercase;">
-    </div>
-
-    <button id="signupBtn" class="action-btn" onclick="attemptSignup()">
-      Initialize Account <i class="fas fa-arrow-right" style="margin-left: 8px; opacity: 0.8;"></i>
-    </button>
-
-    <div style="text-align: center; margin-top: 25px; font-size: 13px; color: var(--text-muted);">
-      Already verified? 
-      <a href="../dashboard/login.html" style="color: var(--primary); text-decoration: none; font-weight: 800; margin-left: 5px;">Login</a>
+    <div class="footer">
+      CashTree © Secure Partner System
     </div>
 
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js"></script>
+</div>
+
+<!-- UI CONTROLLER -->
+<script src="promoter-ui.js"></script>
 
 </body>
 </html>
