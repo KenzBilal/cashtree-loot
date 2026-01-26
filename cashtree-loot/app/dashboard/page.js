@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 export default async function DashboardPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
 
   // --- SAFETY CHECK 1: Is there a session? ---
