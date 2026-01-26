@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import Link from 'next/link'; // Keep this if you use Links
 
-// Force dynamic so we always get fresh stats
+// 1. Force the page to always be fresh (Fixes stale data)
 export const revalidate = 0;
 
 const supabase = createClient(
@@ -13,18 +14,46 @@ const supabase = createClient(
 export default async function DashboardPage() {
   const cookieStore = cookies();
   const token = cookieStore.get('ct_session')?.value;
+
+  // --- SAFETY CHECK 1: Is there a session? ---
+  if (!token) {
+    redirect('/login'); 
+  }
+
+  // --- SAFETY CHECK 2: Is the session valid? ---
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   
-  // 1. Get User
-  const { data: { user } } = await supabase.auth.getUser(token);
-  
-  // 2. Get Account Data (Wallet)
-  const { data: account } = await supabase
+  if (authError || !user) {
+    redirect('/login');
+  }
+
+  // --- SAFETY CHECK 3: Does the profile exist in the database? ---
+  const { data: account, error: dbError } = await supabase
     .from('accounts')
     .select('*')
     .eq('id', user.id)
     .single();
 
-  // 3. Get Recent Tasks (Active Campaigns)
+  // If the account is missing (Ghost User), show a clean error instead of crashing
+  if (dbError || !account) {
+    return (
+      <div style={{minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#04060a', color: '#ef4444', flexDirection: 'column', gap: '20px'}}>
+        <h2 style={{fontSize: '24px', fontWeight: 'bold'}}>Profile Error</h2>
+        <p>We found your login, but your Dashboard Profile is missing.</p>
+        <div style={{background: '#111', padding: '15px', borderRadius: '10px', fontFamily: 'monospace'}}>
+          Error: {dbError ? dbError.message : "Row not found in 'accounts' table"}
+        </div>
+        <p style={{color: '#888'}}>Solution: Delete your user from Supabase Auth and Sign Up again.</p>
+        <form action={async () => { 'use server'; redirect('/login'); }}>
+           <button style={{padding: '10px 20px', background: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
+             Back to Login
+           </button>
+        </form>
+      </div>
+    );
+  }
+
+  // 4. GET CAMPAIGNS (Only if user exists)
   const { data: campaigns } = await supabase
     .from('campaigns')
     .select('*')
