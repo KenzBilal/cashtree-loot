@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default async function AdminLayout({ children }) {
   // 1. GATEKEEPER LOGIC (Your Code)
-  const cookieStore = awaitcookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
 
   if (!token) redirect('/login');
