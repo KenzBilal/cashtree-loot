@@ -52,7 +52,9 @@ export default function LoginPage() {
       }
 
       // 3. Cookie & Redirect
-      document.cookie = `ct_session=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+      // ✅ NEW LINE (Works on both Localhost and Server)
+      const isLocalhost = window.location.hostname === 'localhost';
+      document.cookie = `ct_session=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
 
       if (account.role === 'admin') {
         router.push('/admin');
