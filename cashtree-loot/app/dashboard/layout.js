@@ -10,7 +10,7 @@ const supabase = createClient(
 );
 
 export default async function DashboardLayout({ children }) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
 
   // 1. AUTH CHECK
