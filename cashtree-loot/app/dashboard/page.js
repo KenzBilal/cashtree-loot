@@ -53,12 +53,15 @@ export default async function DashboardPage() {
     );
   }
 
-  // 4. GET CAMPAIGNS (Only if user exists)
-  const { data: campaigns } = await supabase
+  // 4. GET CAMPAIGNS (Safe Version)
+  const { data: campaignsRaw } = await supabase
     .from('campaigns')
     .select('*')
     .eq('status', 'active')
     .limit(5);
+
+  // If data is null (error/empty), use an empty array [] to prevent crash
+  const campaigns = campaignsRaw || [];
 
   // --- STYLES ---
   const headerStyle = {
