@@ -1,62 +1,69 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import WithdrawalRow from './withdrawal-row';
+import { createClient } from '@supabase/supabase-js';
+import PayoutRow from './payout-row';
 
-export const revalidate = 0;
+export const revalidate = 0; // Always fresh
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export default async function FinancePage() {
-  // 1. FETCH PENDING REQUESTS
-  const { data: requests, error } = await supabaseAdmin
-    .from('withdraw_requests')
+  // FETCH WITHDRAWALS
+  const { data: withdrawals, error } = await supabaseAdmin
+    .from('withdrawals')
     .select(`
-      id, amount, status, created_at,
-      accounts ( username, full_name, upi_id, phone )
+      *,
+      accounts ( id, username, phone )
     `)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false });
 
   if (error) {
-    return <div className="text-red-500 p-10">Error loading finance data.</div>;
+    return <div style={{padding:'40px', color:'#ef4444'}}>Error loading finance data: {error.message}</div>;
   }
 
-  // 2. CALCULATE TOTAL PENDING
-  const totalPending = requests?.reduce((sum, r) => sum + Number(r.amount), 0) || 0;
+  // --- STYLES ---
+  const headerStyle = { marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'end' };
+  const h1Style = { fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px', margin: '0 0 5px 0' };
+  const subtextStyle = { color: '#888', fontSize: '14px' };
+  
+  const tableContainerStyle = { background: '#0a0a0a', border: '1px solid #222', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' };
+  const tableStyle = { width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' };
+  const thStyle = { padding: '16px 24px', background: '#111', color: '#666', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222' };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
+    <div>
+      {/* HEADER */}
+      <div style={headerStyle}>
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Finance Control</h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-            Authorize Payouts
-          </p>
+          <h1 style={h1Style}>Payout Requests</h1>
+          <p style={subtextStyle}>Approve withdrawals and send money.</p>
         </div>
-        <div className="text-right">
-          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Total Pending</div>
-          <div className="text-2xl font-mono font-bold text-amber-500">₹{totalPending.toFixed(2)}</div>
+        <div style={{background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', color: '#facc15', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold'}}>
+          PENDING: {withdrawals?.filter(w => w.status === 'pending').length || 0}
         </div>
       </div>
 
       {/* DATA GRID */}
-      <div className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-        <table className="w-full text-left border-collapse">
+      <div style={tableContainerStyle}>
+        <table style={tableStyle}>
           <thead>
-            <tr className="bg-white/5 border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-400">
-              <th className="p-4 font-bold">Request Date</th>
-              <th className="p-4 font-bold">Promoter</th>
-              <th className="p-4 font-bold">Banking Details</th>
-              <th className="p-4 font-bold text-right">Amount</th>
-              <th className="p-4 font-bold text-center">Action</th>
+            <tr>
+              <th style={thStyle}>Date</th>
+              <th style={thStyle}>Promoter</th>
+              <th style={thStyle}>Amount & UPI</th>
+              <th style={thStyle}>Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
-            {requests?.length === 0 ? (
+          <tbody>
+            {withdrawals && withdrawals.length > 0 ? (
+              withdrawals.map((item) => <PayoutRow key={item.id} item={item} />)
+            ) : (
               <tr>
-                <td colSpan="5" className="p-8 text-center text-slate-500 text-sm font-medium">
-                  No pending withdrawals.
+                <td colSpan="4" style={{padding: '60px', textAlign: 'center', color: '#666'}}>
+                  No payout requests found.
                 </td>
               </tr>
-            ) : (
-              requests.map((req) => <WithdrawalRow key={req.id} request={req} />)
             )}
           </tbody>
         </table>

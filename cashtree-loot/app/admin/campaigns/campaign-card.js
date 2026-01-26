@@ -9,80 +9,72 @@ const supabase = createClient(
 );
 
 export default function CampaignCard({ campaign }) {
-  const [isActive, setIsActive] = useState(campaign.is_active);
+  const [status, setStatus] = useState(campaign.status || 'active');
   const [loading, setLoading] = useState(false);
 
-  // --- TOGGLE STATUS ---
   const toggleStatus = async () => {
+    const newStatus = status === 'active' ? 'paused' : 'active';
     setLoading(true);
-    try {
-      const newState = !isActive;
-      
-      const { error } = await supabase
-        .from('campaigns')
-        .update({ is_active: newState })
-        .eq('id', campaign.id);
 
-      if (error) throw error;
-      setIsActive(newState);
+    const { error } = await supabase
+      .from('campaigns')
+      .update({ status: newStatus })
+      .eq('id', campaign.id);
 
-    } catch (err) {
-      alert("Error updating status");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    if (!error) setStatus(newStatus);
+    setLoading(false);
   };
 
-  // Safe lead count access
-  const leadCount = campaign.leads?.[0]?.count || 0;
+  // --- STYLES ---
+  const cardStyle = {
+    background: '#0a0a0a', border: '1px solid #222', borderRadius: '20px', 
+    padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative'
+  };
+  const badgeStyle = {
+    position: 'absolute', top: '20px', right: '20px', padding: '4px 10px', 
+    borderRadius: '8px', fontSize: '10px', fontWeight: '900',
+    background: status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+    color: status === 'active' ? '#4ade80' : '#f87171',
+    border: status === 'active' ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
+  };
 
   return (
-    <div className={`relative group p-6 rounded-2xl border transition-all duration-300 ${isActive ? 'bg-[#0a0a0a] border-green-500/30 shadow-[0_0_20px_rgba(34,197,94,0.05)]' : 'bg-black border-white/5 opacity-75'}`}>
+    <div style={cardStyle}>
+      <div style={badgeStyle}>{status.toUpperCase()}</div>
       
-      {/* HEADER & TOGGLE */}
-      <div className="flex justify-between items-start mb-4">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shadow-inner ${isActive ? 'bg-green-500 text-black' : 'bg-slate-800 text-slate-500'}`}>
-          <i className="fas fa-bullhorn"></i>
+      <div>
+        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: '800', pr: '60px' }}>{campaign.title}</h3>
+        <div style={{ fontSize: '11px', color: '#444', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {campaign.landing_url}
         </div>
-        
-        {/* SWITCH */}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#000', padding: '12px', borderRadius: '12px' }}>
+        <div>
+          <div style={{ fontSize: '10px', color: '#555', fontWeight: '800' }}>PAYOUT</div>
+          <div style={{ color: '#22c55e', fontWeight: '900' }}>₹{campaign.payout_amount}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', color: '#555', fontWeight: '800' }}>REWARD</div>
+          <div style={{ color: '#60a5fa', fontWeight: '900' }}>₹{campaign.user_reward}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '10px' }}>
+        <div style={{ fontSize: '13px', color: '#888' }}>
+          <b>{campaign.leads?.[0]?.count || 0}</b> Total Leads
+        </div>
         <button 
-          onClick={toggleStatus}
+          onClick={toggleStatus} 
           disabled={loading}
-          className={`w-12 h-6 rounded-full p-1 transition-colors ${isActive ? 'bg-green-600' : 'bg-slate-700'}`}
+          style={{
+            background: 'transparent', border: '1px solid #333', color: '#fff', 
+            padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer'
+          }}
         >
-          <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${isActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+          {loading ? '...' : (status === 'active' ? 'Pause' : 'Activate')}
         </button>
       </div>
-
-      {/* TITLE */}
-      <h3 className="text-lg font-black text-white mb-1 truncate">{campaign.title}</h3>
-      <div className="text-xs text-slate-500 font-mono mb-6 truncate">{campaign.landing_url}</div>
-
-      {/* STATS GRID */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-          <div className="text-[9px] uppercase text-slate-400 font-bold tracking-wider">You Pay</div>
-          <div className="text-lg font-bold text-green-400">₹{campaign.payout_amount}</div>
-        </div>
-        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-          <div className="text-[9px] uppercase text-slate-400 font-bold tracking-wider">User Gets</div>
-          <div className="text-lg font-bold text-blue-400">₹{campaign.user_reward}</div>
-        </div>
-      </div>
-
-      {/* FOOTER */}
-      <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-        <div className="text-xs font-bold text-slate-400">
-          <i className="fas fa-users mr-2 text-slate-600"></i>
-          {leadCount} Leads
-        </div>
-        <div className={`text-[10px] uppercase font-black tracking-widest px-2 py-1 rounded ${isActive ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
-          {isActive ? 'ACTIVE' : 'PAUSED'}
-        </div>
-      </div>
-
     </div>
   );
 }
