@@ -30,7 +30,6 @@ function SignupForm() {
   // Form State
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
     username: '',
     phone: '',
     password: '',
@@ -47,10 +46,14 @@ function SignupForm() {
     setLoading(true);
     setError(null);
 
+    const cleanUsername = formData.username.trim().toUpperCase();
+    const generatedEmail = `${cleanUsername}@cashttree.internal`;
+
     try {
-      if (formData.username.includes(' ')) throw new Error("Username cannot contain spaces.");
+      if (cleanUsername.includes(' ')) throw new Error("Username cannot contain spaces.");
       if (formData.password.length < 6) throw new Error("Password must be at least 6 chars.");
 
+      // 1. CHECK REFERRER
       let referrerId = null;
       if (refCode) {
         const { data: referrer } = await supabase
@@ -61,34 +64,44 @@ function SignupForm() {
         if (referrer) referrerId = referrer.id;
       }
 
+      // 2. CREATE AUTH USER
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
+        email: generatedEmail,
         password: formData.password,
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("Signup failed.");
 
+      // 3. CREATE PROFILE (The part that was failing)
       const { error: dbError } = await supabase
         .from('accounts')
         .insert({
           id: authData.user.id,
           role: 'promoter',
-          username: formData.username,
+          username: cleanUsername,
           full_name: formData.fullName,
-          phone: formData.phone,
+          phone: formData.phone, // Ensure this is a string in DB
           upi_id: formData.upiId || null,
           referred_by: referrerId,
           is_frozen: false
         });
 
-      if (dbError) throw new Error("Could not create profile. Username might be taken.");
+      if (dbError) {
+        // 🚨 THIS IS THE FIX: Alert the specific error
+        console.error("DATABASE ERROR:", dbError);
+        alert(`Database Error: ${dbError.message} \nHint: Check RLS Policies!`);
+        throw new Error(dbError.message);
+      }
 
-      alert("Account Created! Redirecting to Login...");
+      alert("Account Created Successfully!");
       router.push('/login');
 
     } catch (err) {
       setError(err.message);
+      // If user already exists in Auth but not DB, tell them
+      if (err.message.includes("already registered")) {
+        setError("Username is taken (Check Auth list to delete if needed).");
+      }
     } finally {
       setLoading(false);
     }
@@ -172,11 +185,6 @@ function SignupForm() {
           <div>
             <label style={labelStyle}>Full Name</label>
             <input type="text" style={inputStyle} required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="John Doe" />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Email Address</label>
-            <input type="email" style={inputStyle} required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="john@example.com" />
           </div>
 
           <div>

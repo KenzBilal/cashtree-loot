@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
 
@@ -25,12 +25,16 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    let loginEmail = formData.username.trim(); // Make sure your state is 'username', not 'email'
+  if (!loginEmail.includes('@')) {
+    loginEmail = `${loginEmail.toUpperCase()}@cashttree.internal`;
+  }
+
     try {
-      // 1. Authenticate
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: formData.password,
+    });
 
       if (authError) throw new Error("Invalid credentials. Please try again.");
 
@@ -128,16 +132,16 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin}>
           <div style={{marginBottom: '5px'}}>
-            <label style={{fontSize:'11px', fontWeight:'700', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'1px', marginLeft:'4px'}}>Email / ID</label>
-          </div>
-          <input 
-            type="email" 
-            required
-            style={inputStyle}
-            placeholder="name@example.com"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-          />
+  <label style={{fontSize:'11px', fontWeight:'700', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'1px', marginLeft:'4px'}}>Username</label>
+</div>
+<input 
+  type="text" 
+  required
+  style={inputStyle}
+  placeholder="Enter Username"
+  value={formData.username}
+  onChange={(e) => setFormData({...formData, username: e.target.value})}
+/>
 
           <div style={{marginBottom: '5px'}}>
             <label style={{fontSize:'11px', fontWeight:'700', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'1px', marginLeft:'4px'}}>Password</label>
