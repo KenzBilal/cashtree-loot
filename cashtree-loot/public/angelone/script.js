@@ -1,20 +1,21 @@
-// --- 1. CONFIGURATION (Defined at the top to prevent ReferenceErrors) ---
+// 1. CONFIGURATION
+// Replace with your keys from .env.local
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA';
 
-// Initialize Supabase Client
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-// Update with your actual Angel One tracking link
+// UPDATE THIS FOR EACH NEW CAMPAIGN
+const CAMPAIGN_TITLE = 'Angel One'; 
 const OFFER_LINK = "https://trkkcoin.com/ITC65034934/JAM0MN?ln=English";
 
-// --- 2. THE MAIN LOGIC ---
+// 2. MAIN LOGIC
 document.getElementById("submitBtn").addEventListener("click", async function() {
     const btn = document.getElementById("submitBtn");
     const phone = document.getElementById("phone").value.trim();
     const upi = document.getElementById("upi").value.trim();
     
-    // Capture the ?ref= code from URL
+    // Get Ref Code from URL
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref'); 
 
@@ -28,63 +29,58 @@ document.getElementById("submitBtn").addEventListener("click", async function() 
     btn.disabled = true;
 
     try {
-        // A. Find Campaign UUID for "Angel One"
+        // A. FIND CAMPAIGN ID
+        // We use 'ilike' for case-insensitive matching
         const { data: campaignData, error: campErr } = await supabaseClient
             .from('campaigns')
             .select('id')
-            .eq('title', 'Angel One') 
+            .ilike('title', `%${CAMPAIGN_TITLE}%`) 
             .maybeSingle();
         
-        if (campErr) throw campErr;
+        if (campErr || !campaignData) throw new Error("Campaign not found");
 
-        // B. Find Promoter UUID for the ref code (e.g., JANNAH123)
+        // B. FIND PROMOTER ID
         let promoterUuid = null;
-        if (refCode && refCode !== "DIRECT") {
-            const { data: pData } = await supabaseClient
-                .from('promoters')
+        if (refCode) {
+            const { data: acc } = await supabaseClient
+                .from('accounts')
                 .select('id')
-                .eq('username', refCode)
+                .eq('username', refCode.toUpperCase()) // Usernames are stored uppercase
+                .eq('role', 'promoter')
                 .maybeSingle();
             
-            if (pData) {
-                promoterUuid = pData.id;
-                console.log("✅ Promoter Found:", promoterUuid);
+            if (acc) {
+                promoterUuid = acc.id;
             }
         }
 
-        // C. Prepare the Lead Data
-        const leadData = {
-            phone: phone,
-            upi_id: upi,
-            campaign_id: campaignData ? campaignData.id : null,
-            status: 'pending'
-        };
-
-        // Attach user_id ONLY if we found a valid matching UUID in the database
-        if (promoterUuid) {
-            leadData.user_id = promoterUuid;
-        }
-
-        // D. Insert into 'leads' table
+        // C. INSERT LEAD
         const { error: insertError } = await supabaseClient
             .from('leads')
-            .insert([leadData]);
+            .insert({
+                campaign_id: campaignData.id,
+                referred_by: promoterUuid, // Can be null if no ref code
+                status: 'pending',
+                // Store PII in metadata to keep table clean
+                metadata: {
+                    user_phone: phone,
+                    user_upi: upi
+                }
+            });
 
         if (insertError) throw insertError;
 
-        // E. Success Flow
+        // D. SUCCESS
         document.getElementById("statusMsg").style.display = "block";
-        btn.innerText = "Success! Redirecting...";
+        btn.innerText = "Redirecting...";
         
         setTimeout(() => { 
             window.location.href = OFFER_LINK; 
         }, 1500);
 
     } catch (err) {
-        console.error("Catch Block Error:", err);
-        // Fail-safe: Redirect to offer anyway so the user experience isn't broken
-        setTimeout(() => { 
-            window.location.href = OFFER_LINK; 
-        }, 2000);
+        console.error("Tracking Error:", err);
+        // Fallback: Redirect anyway so user doesn't get stuck
+        window.location.href = OFFER_LINK; 
     }
 });

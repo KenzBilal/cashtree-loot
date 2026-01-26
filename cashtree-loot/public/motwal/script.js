@@ -1,68 +1,82 @@
+// 1. CONFIGURATION
+// Replace these with your actual URL and Anon Key from .env.local
 const supabaseUrl = 'https://qzjvratinjirrcmgzjlx.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6anZyYXRpbmppcnJjbWd6amx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzAxMDksImV4cCI6MjA4MzgwNjEwOX0.W01Pmbokf20stTgkUsmI3TZahXYK4PPbU0v_2Ziy9YA'; 
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-const OFFER_LINK = "https://trkkcoin.com/IT3779ZXP1/JAM0MN?ln=English";
 
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+const OFFER_LINK = "https://trkkcoin.com/IT3779ZXP1/JAM0MN?ln=English"; // Your Motwal Link
+
+// 2. MAIN LOGIC
 document.getElementById("submitBtn").addEventListener("click", async function() {
     const btn = this;
     const phone = document.getElementById("phone").value.trim();
     const upi = document.getElementById("upi").value.trim();
+    
+    // Get 'ref' from URL (e.g. ?ref=USER123)
     const refCode = new URLSearchParams(window.location.search).get('ref'); 
 
-    btn.innerText = "Step 1: Checking...";
+    // Basic Validation
+    if(phone.length < 10) { alert("Please enter a valid phone number."); return; }
+
+    btn.innerText = "Processing...";
     btn.disabled = true;
 
     try {
-        // --- STEP 1: CAMPAIGN ---
+        // --- A. FIND CAMPAIGN ID ---
+        // We look for the campaign named 'Motwal' to get its ID
         const { data: camp, error: e1 } = await supabaseClient
-            .from('campaigns').select('id').eq('title', 'Motwal').maybeSingle();
+            .from('campaigns')
+            .select('id')
+            .ilike('title', '%Motwal%') // Case-insensitive search
+            .maybeSingle();
         
-        if (!camp) { alert("❌ Error: Could not find 'Motwal' in Campaigns table!"); return; }
-        btn.innerText = "Step 2: Promoter...";
+        if (!camp) { throw new Error("Campaign 'Motwal' not found in Admin panel."); }
 
-        // --- STEP 2: PROMOTER ---
-        let promoterId = null;
+        // --- B. FIND PROMOTER ID ---
+        let promoterUuid = null;
         if (refCode) {
-            const { data: prom, error: e2 } = await supabaseClient
-                .from('promoters').select('id').eq('username', refCode).maybeSingle();
+            // We search the 'accounts' table now (not promoters)
+            const { data: acc, error: e2 } = await supabaseClient
+                .from('accounts')
+                .select('id')
+                .eq('username', refCode.toUpperCase()) // Usernames are uppercase in DB
+                .eq('role', 'promoter')
+                .maybeSingle();
             
-            if (prom) {
-                promoterId = prom.id;
-                console.log("Found Promoter:", promoterId);
+            if (acc) {
+                promoterUuid = acc.id;
+                console.log("Referral valid:", refCode);
             } else {
-                alert("⚠️ Warning: Promoter '" + refCode + "' not found. Saving as direct lead.");
+                console.warn("Invalid referral code:", refCode);
             }
         }
-        btn.innerText = "Step 3: Saving...";
 
-        // --- STEP 3: INSERT ---
-        const leadData = {
-            phone: String(phone), // Ensure it's a string
-            upi_id: String(upi),
-            campaign_id: camp.id,
-            status: 'pending'
-        };
+        // --- C. SAVE LEAD ---
+        const { error: e3 } = await supabaseClient
+            .from('leads')
+            .insert({
+                campaign_id: camp.id,
+                referred_by: promoterUuid, // This can be null if no ref found
+                status: 'pending',
+                // We save the user details in metadata to keep the table clean
+                metadata: { 
+                    user_phone: phone, 
+                    user_upi: upi 
+                }
+            });
 
-        // Only attach user_id if we have a valid UUID
-        // If promoterId is null, we don't send the key at all
-        if (promoterId) {
-            leadData.user_id = promoterId;
-        }
+        if (e3) throw e3;
 
-        const { error: e3 } = await supabaseClient.from('leads').insert([leadData]);
-
-        if (e3) {
-            alert("❌ Database Error: " + e3.message);
-            console.error(e3);
-        } else {
-            alert("✅ SUCCESS! Lead saved. Redirecting now...");
+        // --- D. SUCCESS ---
+        document.getElementById("statusMsg").style.display = "block";
+        setTimeout(() => {
             window.location.href = OFFER_LINK;
-        }
+        }, 1500);
 
     } catch (err) {
-        alert("❌ Script Crashed: " + err.message);
-    } finally {
+        console.error(err);
+        alert("Error: " + err.message);
         btn.disabled = false;
-        btn.innerText = "Submit & Download";
+        btn.innerText = "Submit & Download App";
     }
 });
