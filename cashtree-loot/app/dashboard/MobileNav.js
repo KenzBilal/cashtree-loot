@@ -16,7 +16,7 @@ export default function MobileNav() {
   // Haptic Feedback Helper
   const handleTap = () => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(10); // Tiny vibration tick
+      navigator.vibrate(15); // Stronger tick for premium feel
     }
   };
 
@@ -26,17 +26,18 @@ export default function MobileNav() {
     bottom: 0,
     left: 0,
     width: '100%',
-    height: '80px', // Slightly taller for better touch area
-    background: 'rgba(5, 5, 5, 0.85)', // Translucent Black
-    backdropFilter: 'blur(12px)', // iOS Glass Effect
-    WebkitBackdropFilter: 'blur(12px)',
-    borderTop: '1px solid rgba(255,255,255,0.08)',
+    height: '85px', // Tall & Premium
+    background: 'rgba(5, 5, 5, 0.9)', // Deep Black Glass
+    backdropFilter: 'blur(20px)', // Heavy Blur
+    WebkitBackdropFilter: 'blur(20px)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
     display: 'flex',
     justifyContent: 'space-around',
-    alignItems: 'flex-start', // Align to top to give space for home bar
-    paddingTop: '12px',
+    alignItems: 'flex-start',
+    paddingTop: '16px',
     zIndex: 9999,
-    paddingBottom: 'env(safe-area-inset-bottom, 20px)'
+    paddingBottom: 'env(safe-area-inset-bottom, 20px)',
+    boxShadow: '0 -10px 40px rgba(0,0,0,0.8)' // Shadow depth
   };
 
   return (
@@ -55,32 +56,48 @@ export default function MobileNav() {
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none',
-              width: '25%', // Equal spacing
+              width: '25%', 
               position: 'relative',
-              WebkitTapHighlightColor: 'transparent', // Removes blue flash on click
+              WebkitTapHighlightColor: 'transparent',
             }}
           >
             
-            {/* ACTIVE GLOW INDICATOR */}
+            {/* ACTIVE GLOW BEAM (Top) */}
             {isActive && (
               <div style={{
                 position: 'absolute',
-                top: '-12px', // Hugs the top border
+                top: '-16px', 
                 width: '40px',
-                height: '2px',
-                background: '#22c55e',
-                boxShadow: '0 0 10px #22c55e', // Glowing effect
+                height: '4px',
+                background: '#00ff88', // Matching Dashboard Green
+                boxShadow: '0 0 15px #00ff88', // Stronger Neon Glow
                 borderRadius: '0 0 4px 4px'
               }} />
             )}
 
-            {/* ICON (Bounces when active) */}
+            {/* BACKGROUND HIGHLIGHT (Subtle active state) */}
+             {isActive && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '50px',
+                height: '50px',
+                background: 'radial-gradient(circle, rgba(0, 255, 136, 0.15) 0%, rgba(0,0,0,0) 70%)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+              }} />
+            )}
+
+            {/* ICON  */}
             <div style={{
-              fontSize: '22px',
+              fontSize: '24px',
               marginBottom: '6px',
-              filter: isActive ? 'drop-shadow(0 0 5px rgba(34,197,94,0.5))' : 'none', // Glow
-              transform: isActive ? 'translateY(-2px) scale(1.1)' : 'translateY(0) scale(1)',
-              transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', // Spring animation
+              color: isActive ? '#00ff88' : '#666', // Green vs Grey
+              filter: isActive ? 'drop-shadow(0 0 8px rgba(0,255,136,0.6))' : 'none',
+              transform: isActive ? 'translateY(-4px) scale(1.15)' : 'translateY(0) scale(1)',
+              transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', // Spring Physics
             }}>
               {item.icon}
             </div>
@@ -88,10 +105,11 @@ export default function MobileNav() {
             {/* LABEL */}
             <div style={{
               fontSize: '10px',
-              fontWeight: isActive ? '700' : '500',
-              color: isActive ? '#fff' : '#666',
-              letterSpacing: '0.5px',
-              transition: 'color 0.2s'
+              fontWeight: isActive ? '800' : '500',
+              color: isActive ? '#fff' : '#555',
+              letterSpacing: isActive ? '0.5px' : '0',
+              transition: 'all 0.3s',
+              textTransform: 'uppercase'
             }}>
               {item.name}
             </div>

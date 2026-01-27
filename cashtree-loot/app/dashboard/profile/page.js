@@ -30,49 +30,107 @@ export default async function ProfilePage() {
     supabase.from('accounts').select('*', { count: 'exact', head: true }).eq('referred_by', user.id)
   ]);
 
-  if (!account) return <div>Loading...</div>;
+  if (!account) return <div style={{padding:'20px', color:'#fff'}}>Loading Profile...</div>;
 
-  // --- STYLES ---
-  const headerStyle = { marginBottom: '30px' };
-  const cardStyle = {
-    background: '#0a0a0a', border: '1px solid #222', borderRadius: '24px', padding: '24px',
-    display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px'
+  // --- PREMIUM GLASS STYLES ---
+  const headerStyle = { 
+    marginBottom: '30px',
+    textAlign: 'center'
   };
+
+  const neonTitle = {
+    fontSize: '24px', 
+    fontWeight: '900', 
+    color: '#fff', 
+    marginBottom: '8px',
+    textShadow: '0 0 15px rgba(255,255,255,0.2)'
+  };
+
+  const glassCard = {
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '24px',
+    padding: '30px',
+    marginBottom: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
+    position: 'relative',
+    overflow: 'hidden'
+  };
+
   const avatarStyle = {
-    width: '70px', height: '70px', borderRadius: '50%', 
-    background: 'linear-gradient(135deg, #22c55e, #3b82f6)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '28px', fontWeight: '900', color: '#fff', textTransform: 'uppercase'
+    width: '90px', 
+    height: '90px', 
+    borderRadius: '50%', 
+    background: 'linear-gradient(135deg, #00ff88, #007acc)',
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    fontSize: '36px', 
+    fontWeight: '900', 
+    color: '#000', 
+    textTransform: 'uppercase',
+    marginBottom: '16px',
+    boxShadow: '0 0 25px rgba(0, 255, 136, 0.4)',
+    border: '2px solid rgba(255,255,255,0.2)'
   };
 
-  const statGrid = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' };
-  const statBox = { background: '#0a0a0a', border: '1px solid #222', borderRadius: '16px', padding: '16px' };
+  const statGrid = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '30px' };
+  
+  const statBox = { 
+    background: 'rgba(255, 255, 255, 0.02)', 
+    border: '1px solid rgba(255, 255, 255, 0.05)', 
+    borderRadius: '20px', 
+    padding: '20px',
+    textAlign: 'center'
+  };
 
   return (
-    <div>
+    <div className="fade-in" style={{paddingBottom: '100px'}}>
       
       {/* HEADER */}
       <div style={headerStyle}>
-        <h1 style={{fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '8px'}}>My Profile</h1>
-        <p style={{color: '#666', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px'}}>
-          Account Settings & Preferences
+        <h1 style={neonTitle}>My Profile</h1>
+        <p style={{
+          color: '#888', 
+          fontSize: '11px', 
+          fontWeight: '700', 
+          textTransform: 'uppercase', 
+          letterSpacing: '1px',
+          background: 'rgba(255,255,255,0.05)',
+          display: 'inline-block',
+          padding: '6px 12px',
+          borderRadius: '20px',
+          border: '1px solid rgba(255,255,255,0.05)'
+        }}>
+          Account Settings
         </p>
       </div>
 
       {/* IDENTITY CARD */}
-      <div style={cardStyle}>
+      <div style={glassCard}>
+        {/* Glowing Background Blob */}
+        <div style={{position: 'absolute', top: '-50%', left: '50%', transform: 'translateX(-50%)', width: '150px', height: '150px', background: '#00ff88', filter: 'blur(80px)', opacity: 0.15}}></div>
+
         <div style={avatarStyle}>
           {account.username?.[0] || 'U'}
         </div>
+        
         <div>
-          <h2 style={{fontSize: '20px', fontWeight: '800', color: '#fff', marginBottom: '4px'}}>
+          <h2 style={{fontSize: '22px', fontWeight: '900', color: '#fff', marginBottom: '6px', textShadow: '0 0 10px rgba(0,0,0,0.5)'}}>
             @{account.username}
           </h2>
-          <div style={{color: '#888', fontSize: '13px', marginBottom: '8px'}}>{account.full_name || 'No Name Set'}</div>
+          <div style={{color: '#aaa', fontSize: '13px', marginBottom: '12px'}}>{account.full_name || 'No Name Set'}</div>
+          
           <div style={{
-             display: 'inline-block', padding: '4px 8px', borderRadius: '6px', 
-             background: 'rgba(255,255,255,0.05)', border: '1px solid #333', 
-             fontSize: '11px', fontFamily: 'monospace', color: '#aaa'
+             display: 'inline-block', padding: '6px 12px', borderRadius: '8px', 
+             background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', 
+             fontSize: '11px', fontFamily: 'monospace', color: '#888', letterSpacing: '1px'
           }}>
             {account.phone || 'No Phone'}
           </div>
@@ -84,19 +142,22 @@ export default async function ProfilePage() {
         <div style={statBox}>
           <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px'}}>Team Size</div>
           <div style={{fontSize: '24px', fontWeight: '900', color: '#fff'}}>
-            {referralCount || 0} <span style={{fontSize: '12px', fontWeight: '500', color: '#555'}}>Promoters</span>
+            {referralCount || 0}
           </div>
         </div>
-        <div style={statBox}>
-          <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px'}}>Account Status</div>
-          <div style={{fontSize: '18px', fontWeight: '900', color: account.is_frozen ? '#ef4444' : '#22c55e'}}>
-            {account.is_frozen ? 'SUSPENDED' : 'ACTIVE ✅'}
+        <div style={{...statBox, borderColor: account.is_frozen ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.2)'}}>
+          <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px'}}>Status</div>
+          <div style={{fontSize: '16px', fontWeight: '900', color: account.is_frozen ? '#ef4444' : '#00ff88', textShadow: account.is_frozen ? '0 0 10px rgba(239,68,68,0.4)' : '0 0 10px rgba(0,255,136,0.4)'}}>
+            {account.is_frozen ? 'FROZEN' : 'ACTIVE'}
           </div>
         </div>
       </div>
 
       {/* EDIT FORM */}
-      <ProfileForm account={account} />
+      <div style={{padding: '0 10px'}}>
+        <div style={{marginBottom: '15px', fontSize: '12px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px'}}>Edit Details</div>
+        <ProfileForm account={account} />
+      </div>
 
     </div>
   );

@@ -13,6 +13,7 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [focusedField, setFocusedField] = useState(null); // For Neon Glow
   
   const [amount, setAmount] = useState('');
   const [upi, setUpi] = useState(defaultUpi || '');
@@ -48,8 +49,6 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
 
     try {
       // 2. INSERT REQUEST
-      // We insert into 'withdrawals'. The server logic in page.js 
-      // will subtract this from the balance automatically next time it loads.
       const { error } = await supabase
         .from('withdrawals')
         .insert({
@@ -63,8 +62,8 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
 
       // Success
       setMessage({ type: 'success', text: '✅ Request sent! Money on the way.' });
-      setAmount(''); // Reset form
-      router.refresh(); // Update balance on screen immediately
+      setAmount(''); 
+      router.refresh(); 
 
     } catch (err) {
       setMessage({ type: 'error', text: 'Server Error: Could not process request.' });
@@ -73,11 +72,59 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
     }
   };
 
-  // --- STYLES ---
-  const containerStyle = { background: '#0a0a0a', border: '1px solid #222', borderRadius: '20px', padding: '24px', marginBottom: '30px' };
-  const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '800', color: '#666', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' };
-  const inputStyle = { width: '100%', padding: '16px', background: '#000', border: '1px solid #333', borderRadius: '12px', color: '#fff', fontSize: '18px', fontWeight: 'bold', outline: 'none', marginBottom: '20px' };
-  const btnStyle = { width: '100%', padding: '18px', background: 'linear-gradient(135deg, #22c55e, #166534)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: '800', fontSize: '16px', cursor: loading ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '1px', opacity: loading ? 0.7 : 1 };
+  // --- PREMIUM GLASS STYLES ---
+  const containerStyle = { 
+    background: 'rgba(255, 255, 255, 0.03)', 
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)', 
+    borderRadius: '24px', 
+    padding: '30px', 
+    marginBottom: '30px',
+    boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+  };
+
+  const labelStyle = { 
+    display: 'block', 
+    fontSize: '11px', 
+    fontWeight: '800', 
+    color: '#888', 
+    textTransform: 'uppercase', 
+    marginBottom: '8px', 
+    letterSpacing: '1px',
+    paddingLeft: '4px'
+  };
+
+  const getInputStyle = (fieldName) => ({
+    width: '100%', 
+    padding: '18px', 
+    background: 'rgba(0, 0, 0, 0.3)', // Dark Glass
+    border: focusedField === fieldName ? '1px solid #00ff88' : '1px solid rgba(255, 255, 255, 0.1)', // Neon Focus
+    borderRadius: '16px', 
+    color: '#fff', 
+    fontSize: '18px', 
+    fontWeight: 'bold', 
+    outline: 'none', 
+    marginBottom: '24px',
+    transition: 'all 0.3s ease',
+    boxShadow: focusedField === fieldName ? '0 0 15px rgba(0, 255, 136, 0.1)' : 'none'
+  });
+
+  const btnStyle = { 
+    width: '100%', 
+    padding: '20px', 
+    background: 'linear-gradient(135deg, #00ff88, #00b36b)', // Neon Gradient
+    color: '#000', 
+    border: 'none', 
+    borderRadius: '16px', 
+    fontWeight: '900', 
+    fontSize: '16px', 
+    cursor: loading ? 'wait' : 'pointer', 
+    textTransform: 'uppercase', 
+    letterSpacing: '1px', 
+    opacity: loading ? 0.7 : 1,
+    boxShadow: '0 0 25px rgba(0, 255, 136, 0.3)', // Button Glow
+    transition: 'transform 0.2s'
+  };
 
   return (
     <div style={containerStyle}>
@@ -85,9 +132,10 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
       {/* MESSAGE BOX */}
       {message && (
         <div style={{
-          padding: '12px', marginBottom: '20px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center',
-          background: message.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-          color: message.type === 'success' ? '#4ade80' : '#f87171'
+          padding: '16px', marginBottom: '24px', borderRadius: '16px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center',
+          background: message.type === 'success' ? 'rgba(0, 255, 136, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          color: message.type === 'success' ? '#00ff88' : '#f87171',
+          border: message.type === 'success' ? '1px solid rgba(0, 255, 136, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
         }}>
           {message.text}
         </div>
@@ -101,8 +149,10 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
             type="number" 
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            onFocus={() => setFocusedField('amount')}
+            onBlur={() => setFocusedField(null)}
             placeholder={`Min: ₹${minLimit}`}
-            style={inputStyle}
+            style={getInputStyle('amount')}
           />
         </div>
 
@@ -113,8 +163,10 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
             type="text" 
             value={upi}
             onChange={(e) => setUpi(e.target.value)}
+            onFocus={() => setFocusedField('upi')}
+            onBlur={() => setFocusedField(null)}
             placeholder="example@upi"
-            style={inputStyle}
+            style={getInputStyle('upi')}
           />
         </div>
 
@@ -123,8 +175,8 @@ export default function WithdrawForm({ maxAmount, defaultUpi, userId, minLimit }
         </button>
       </form>
       
-      <div style={{textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#555'}}>
-        Payments are usually processed within 24 hours.
+      <div style={{textAlign: 'center', marginTop: '20px', fontSize: '11px', color: '#666', fontWeight: '500'}}>
+        Payments are processed within <span style={{color: '#fff'}}>24 hours</span>.
       </div>
     </div>
   );

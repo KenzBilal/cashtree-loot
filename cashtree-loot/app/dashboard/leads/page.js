@@ -20,9 +20,7 @@ export default async function LeadsPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect('/login');
 
-  // 2. FETCH LEADS (My Referrals)
-  // We join 'campaigns' to get the Task Name and 'users' (the lead) to get their phone.
-  // Note: 'promoter_id' is the column in 'leads' table that links to the promoter.
+  // 2. FETCH LEADS (Robust)
   const { data: leads, error } = await supabase
     .from('leads')
     .select(`
@@ -30,7 +28,7 @@ export default async function LeadsPage() {
       campaigns ( title ),
       users ( phone )
     `)
-    .eq('promoter_id', user.id) // Ensure we filter by promoter_id
+    .eq('promoter_id', user.id)
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -39,33 +37,55 @@ export default async function LeadsPage() {
   }
 
   // --- STYLES ---
-  const headerStyle = { marginBottom: '30px' };
+  const headerStyle = { 
+    marginBottom: '30px',
+    textAlign: 'center'
+  };
+
+  const neonTitle = {
+    fontSize: '24px', 
+    fontWeight: '900', 
+    color: '#fff', 
+    marginBottom: '8px',
+    textShadow: '0 0 15px rgba(255,255,255,0.2)'
+  };
   
   return (
-    <div>
+    <div className="fade-in" style={{paddingBottom: '100px'}}>
       {/* HEADER */}
       <div style={headerStyle}>
-        <h1 style={{fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '8px'}}>Activity Log</h1>
-        <p style={{color: '#666', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px'}}>
+        <h1 style={neonTitle}>Activity Log</h1>
+        <p style={{
+          color: '#888', 
+          fontSize: '11px', 
+          fontWeight: '700', 
+          textTransform: 'uppercase', 
+          letterSpacing: '1px',
+          background: 'rgba(255,255,255,0.05)',
+          display: 'inline-block',
+          padding: '6px 12px',
+          borderRadius: '20px',
+          border: '1px solid rgba(255,255,255,0.05)'
+        }}>
           Track your referrals & payouts
         </p>
       </div>
 
       {/* LEAD LIST */}
-      <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+      <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
         {leads && leads.length > 0 ? (
           leads.map((lead) => <LeadItem key={lead.id} lead={lead} />)
         ) : (
           <div style={{
-            padding: '40px', 
+            padding: '60px 20px', 
             textAlign: 'center', 
-            border: '1px dashed #333', 
-            borderRadius: '16px', 
-            background: '#0a0a0a'
+            border: '1px dashed rgba(255,255,255,0.1)', 
+            borderRadius: '24px', 
+            background: 'rgba(255,255,255,0.02)'
           }}>
-            <div style={{fontSize: '30px', marginBottom: '10px'}}>📂</div>
-            <div style={{color: '#fff', fontWeight: 'bold', fontSize: '14px'}}>No activity found</div>
-            <div style={{color: '#666', fontSize: '12px', marginTop: '4px'}}>Share a campaign to get your first lead!</div>
+            <div style={{fontSize: '40px', marginBottom: '10px', filter: 'grayscale(100%) opacity(0.5)'}}>📂</div>
+            <div style={{color: '#fff', fontWeight: 'bold', fontSize: '16px', marginBottom: '6px'}}>No activity yet</div>
+            <div style={{color: '#666', fontSize: '12px'}}>Share a campaign to get your first lead!</div>
           </div>
         )}
       </div>
@@ -74,21 +94,44 @@ export default async function LeadsPage() {
 }
 
 // ---------------------------------------------------------
-// COMPONENT: SINGLE LEAD ITEM
+// COMPONENT: SINGLE LEAD ITEM (GLASS EDITION)
 // ---------------------------------------------------------
 function LeadItem({ lead }) {
-  // 1. CONFIG: Colors based on status
+  // 1. CONFIG: Colors & Shadows
   const statusConfig = {
-    paid:     { icon: '✓', color: '#4ade80', bg: 'rgba(34, 197, 94, 0.1)', border: '#14532d' }, // approved/paid
-    approved: { icon: '✓', color: '#4ade80', bg: 'rgba(34, 197, 94, 0.1)', border: '#14532d' },
-    pending:  { icon: '◷', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', border: '#78350f' },
-    rejected: { icon: '✕', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', border: '#7f1d1d' }
+    paid:     { 
+      icon: '✓', 
+      color: '#00ff88', // Neon Green
+      bg: 'rgba(0, 255, 136, 0.1)', 
+      border: 'rgba(0, 255, 136, 0.3)',
+      shadow: '0 0 15px rgba(0, 255, 136, 0.1)'
+    }, 
+    approved: { 
+      icon: '✓', 
+      color: '#00ff88', 
+      bg: 'rgba(0, 255, 136, 0.1)', 
+      border: 'rgba(0, 255, 136, 0.3)',
+      shadow: '0 0 15px rgba(0, 255, 136, 0.1)'
+    },
+    pending:  { 
+      icon: '◷', 
+      color: '#facc15', // Neon Yellow
+      bg: 'rgba(250, 204, 21, 0.1)', 
+      border: 'rgba(250, 204, 21, 0.3)',
+      shadow: '0 0 15px rgba(250, 204, 21, 0.1)'
+    },
+    rejected: { 
+      icon: '✕', 
+      color: '#f87171', // Neon Red
+      bg: 'rgba(248, 113, 113, 0.1)', 
+      border: 'rgba(248, 113, 113, 0.3)',
+      shadow: 'none'
+    }
   };
 
   const config = statusConfig[lead.status] || statusConfig.pending;
 
-  // 2. MASK PHONE (Privacy)
-  // Turns "9876543210" into "987****210"
+  // 2. MASK PHONE
   const rawPhone = lead.users?.phone || 'Unknown';
   const maskedPhone = rawPhone.length > 6 
     ? rawPhone.slice(0, 3) + '****' + rawPhone.slice(-3) 
@@ -105,41 +148,58 @@ function LeadItem({ lead }) {
       alignItems: 'center',
       gap: '16px',
       padding: '16px',
-      borderRadius: '16px',
-      background: '#0a0a0a',
-      border: `1px solid ${config.border}` // Dynamic border color
+      borderRadius: '20px',
+      background: 'rgba(255, 255, 255, 0.03)', // Glass
+      backdropFilter: 'blur(10px)',
+      border: `1px solid ${config.border}`,
+      boxShadow: config.shadow,
+      transition: 'transform 0.2s',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
       
+      {/* GLOW EFFECT BEHIND ICON */}
+      <div style={{
+        position: 'absolute', top: '20px', left: '20px', 
+        width: '30px', height: '30px', 
+        background: config.color, filter: 'blur(20px)', opacity: 0.2
+      }}></div>
+
       {/* ICON BADGE */}
       <div style={{
-        width: '40px', height: '40px', borderRadius: '50%', 
+        width: '42px', height: '42px', borderRadius: '50%', 
         background: config.bg, color: config.color,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '18px', fontWeight: 'bold', flexShrink: 0
+        fontSize: '18px', fontWeight: '900', flexShrink: 0,
+        zIndex: 2, border: `1px solid ${config.border}`
       }}>
         {config.icon}
       </div>
 
       {/* INFO */}
-      <div style={{flex: 1, minWidth: 0}}>
-        <div style={{fontSize: '14px', fontWeight: '700', color: '#fff', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+      <div style={{flex: 1, minWidth: 0, zIndex: 2}}>
+        <div style={{
+          fontSize: '15px', fontWeight: '800', color: '#fff', 
+          marginBottom: '4px', whiteSpace: 'nowrap', 
+          overflow: 'hidden', textOverflow: 'ellipsis'
+        }}>
           {lead.campaigns?.title || 'Unknown Campaign'}
         </div>
-        <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#666'}}>
-          <span style={{fontFamily: 'monospace', color: '#888'}}>{maskedPhone}</span>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#888'}}>
+          <span style={{fontFamily: 'monospace', color: '#aaa', background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px'}}>{maskedPhone}</span>
           <span>•</span>
           <span>{dateStr}</span>
         </div>
       </div>
 
       {/* PAYOUT / STATUS */}
-      <div style={{textAlign: 'right'}}>
-        <div style={{color: '#fff', fontWeight: '800', fontSize: '14px'}}>
+      <div style={{textAlign: 'right', zIndex: 2}}>
+        <div style={{color: '#fff', fontWeight: '900', fontSize: '15px', textShadow: '0 0 10px rgba(0,0,0,0.5)'}}>
           {lead.payout > 0 ? `+₹${lead.payout}` : '₹0'}
         </div>
         <div style={{
           fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', 
-          color: config.color, marginTop: '2px', letterSpacing: '0.5px'
+          color: config.color, marginTop: '4px', letterSpacing: '1px'
         }}>
           {lead.status}
         </div>

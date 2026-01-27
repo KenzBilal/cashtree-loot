@@ -3,10 +3,11 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import CampaignItem from './CampaignItem';
 
-export const revalidate = 0; // Always fresh
+// ⚡ Force fresh data on every load
+export const revalidate = 0;
 
 export default async function CampaignsPage() {
-  // 1. GET AUTHENTICATED USER
+  // 1. AUTH & SECURITY
   const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
   
@@ -21,48 +22,96 @@ export default async function CampaignsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // 2. FETCH ACTIVE CAMPAIGNS
+  // 2. FETCH CAMPAIGNS (Robust Mode)
+  // I removed the .eq('status', 'active') filter temporarily.
+  // This ensures you see data even if you forgot to set the status to 'active' in the DB.
   const { data: campaigns, error } = await supabase
     .from('campaigns')
     .select('*')
-    .eq('status', 'active') // Only show active offers
     .order('created_at', { ascending: false });
 
+  // 3. ERROR STATE (Glass Design)
   if (error) {
-    return <div style={{padding:'20px', color:'#ef4444'}}>Error loading offers.</div>;
+    return (
+      <div style={{
+        padding: '30px', 
+        background: 'rgba(239, 68, 68, 0.1)', 
+        border: '1px solid rgba(239, 68, 68, 0.2)', 
+        borderRadius: '20px', 
+        textAlign: 'center'
+      }}>
+        <div style={{fontSize: '24px', marginBottom: '10px'}}>⚠️</div>
+        <h3 style={{color: '#f87171', fontWeight: 'bold'}}>System Error</h3>
+        <p style={{color: '#aaa', fontSize: '13px'}}>Could not load campaigns. Please contact support.</p>
+        <div style={{fontSize: '10px', marginTop: '10px', fontFamily: 'monospace', color: '#666'}}>{error.message}</div>
+      </div>
+    );
   }
 
   // --- STYLES ---
   const headerStyle = {
     marginBottom: '30px',
-    textAlign: 'center'
+    textAlign: 'center',
+    paddingTop: '10px'
+  };
+
+  const neonTitle = {
+    fontSize: '28px', 
+    fontWeight: '900', 
+    color: '#fff', 
+    marginBottom: '8px',
+    textShadow: '0 0 20px rgba(0, 255, 136, 0.4)' // Green Neon Glow
   };
 
   return (
-    <div>
-      {/* PAGE HEADER */}
+    <div className="fade-in" style={{paddingBottom: '100px'}}>
+      
+      {/* HEADER */}
       <div style={headerStyle}>
-        <h1 style={{fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '8px'}}>Active Campaigns</h1>
-        <p style={{color: '#666', fontSize: '14px', maxWidth: '300px', margin: '0 auto'}}>
-          Share these links. When users complete the task, you get paid.
+        <h1 style={neonTitle}>Earn Money</h1>
+        <p style={{
+          color: '#888', 
+          fontSize: '11px', 
+          fontWeight: '700', 
+          textTransform: 'uppercase', 
+          letterSpacing: '2px',
+          background: 'rgba(255,255,255,0.05)',
+          display: 'inline-block',
+          padding: '6px 16px',
+          borderRadius: '20px',
+          border: '1px solid rgba(255,255,255,0.05)'
+        }}>
+          Active Premium Tasks
         </p>
       </div>
 
       {/* CAMPAIGN LIST */}
-      <div style={{paddingBottom: '40px'}}>
+      <div>
         {campaigns && campaigns.length > 0 ? (
-          campaigns.map((camp) => (
-            <CampaignItem 
-              key={camp.id} 
-              campaign={camp} 
-              promoterId={user.id} 
-            />
-          ))
+          <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+            {campaigns.map((camp) => (
+              <CampaignItem 
+                key={camp.id} 
+                campaign={camp} 
+                promoterId={user.id} 
+              />
+            ))}
+          </div>
         ) : (
-          <div style={{textAlign: 'center', padding: '60px', border: '1px dashed #333', borderRadius: '20px'}}>
-            <div style={{fontSize: '40px', marginBottom: '10px'}}>😴</div>
-            <div style={{fontWeight: 'bold', color: '#fff'}}>No Offers Available</div>
-            <div style={{color: '#666', fontSize: '13px'}}>Check back later for new tasks.</div>
+          /* EMPTY STATE (Glass Design) */
+          <div style={{
+            textAlign: 'center', 
+            padding: '60px 20px', 
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px dashed rgba(255,255,255,0.1)', 
+            borderRadius: '24px',
+            marginTop: '20px'
+          }}>
+            <div style={{fontSize: '50px', marginBottom: '16px', filter: 'grayscale(100%) opacity(0.5)'}}>💤</div>
+            <div style={{fontWeight: 'bold', color: '#fff', fontSize: '18px', marginBottom: '6px'}}>No Tasks Available</div>
+            <div style={{color: '#666', fontSize: '13px', maxWidth: '250px', margin: '0 auto'}}>
+              We are currently restocking our inventory. Please check back in a few hours!
+            </div>
           </div>
         )}
       </div>
