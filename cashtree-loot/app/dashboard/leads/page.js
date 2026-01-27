@@ -28,7 +28,7 @@ export default async function LeadsPage() {
       campaigns ( title ),
       users ( phone )
     `)
-    .eq('promoter_id', user.id)
+    .eq('referred_by', user.id)
     .order('created_at', { ascending: false })
     .limit(50);
 

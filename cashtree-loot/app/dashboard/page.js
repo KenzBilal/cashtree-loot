@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   // We fire all 3 requests at the exact same millisecond
   const accountReq = supabase.from('accounts').select('username, ledger(amount)').eq('id', user.id).single();
   const configReq = supabase.from('system_config').select('notice_board').eq('id', 1).single();
-  const leadsReq = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('promoter_id', user.id);
+  const leadsReq = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
 
   const [accountRes, configRes, leadsRes] = await Promise.all([accountReq, configReq, leadsReq]);
 
