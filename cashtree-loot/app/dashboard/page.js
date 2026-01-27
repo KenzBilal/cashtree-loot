@@ -1,130 +1,131 @@
-import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
+// ⚡ Force fresh data every time
 export const revalidate = 0;
 
-// 1. PUBLIC CLIENT (For checking if the token is valid)
-const supabasePublic = createClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// 2. ADMIN CLIENT (The "Master Key" - bypasses RLS permissions)
-// We use this to fetch data without getting blocked
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('ct_session')?.value;
+  // 1. GET USER
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // --- CHECK 1: Token Exists? ---
-  if (!token) {
-    redirect('/login');
+  if (!user) {
+    return <div style={{padding: '20px', color: '#fff'}}>Loading profile...</div>;
   }
 
-  // --- CHECK 2: Is Token Valid? (Use Public Client) ---
-  const { data: { user }, error: authError } = await supabasePublic.auth.getUser(token);
-  
-  if (authError || !user) {
-    redirect('/login');
-  }
+  // 2. FETCH DATA PARALLEL (Fast)
+  const [
+    { data: account },
+    { data: config },
+    { count: leadCount }
+  ] = await Promise.all([
+    // A. Get Wallet Balance
+    supabase.from('accounts').select('username, ledger(amount)').eq('id', user.id).single(),
+    
+    // B. Get Notice Board
+    supabase.from('system_config').select('notice_board').eq('id', 1).single(),
+    
+    // C. Count Leads
+    supabase.from('leads').select('*', { count: 'exact', head: true }).eq('promoter_id', user.id)
+  ]);
 
-  // --- CHECK 3: Fetch Profile (Use ADMIN Client to avoid permission errors) ---
-  const { data: account, error: dbError } = await supabaseAdmin
-    .from('accounts')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  // Handle Missing Profile
-  if (dbError || !account) {
-    return (
-      <div style={{minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#04060a', color: '#ef4444', flexDirection: 'column', gap: '20px'}}>
-        <h2>Profile Error</h2>
-        <p>We found your login, but could not load your profile.</p>
-        <p style={{fontSize:'12px', fontFamily:'monospace'}}>Error: {dbError?.message || "No Account Row"}</p>
-        <form action={async () => { 'use server'; redirect('/login'); }}>
-           <button style={{padding: '10px 20px', background: '#333', color: 'white', border: 'none', borderRadius: '5px'}}>Back to Login</button>
-        </form>
-      </div>
-    );
-  }
-
-  // 4. GET CAMPAIGNS (Use ADMIN Client)
-  const { data: campaignsRaw } = await supabaseAdmin
-    .from('campaigns')
-    .select('*')
-    .eq('status', 'active')
-    .limit(5);
-
-  const campaigns = campaignsRaw || [];
+  // Calculate Balance safely
+  const balance = account?.ledger?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+  const username = account?.username || 'Promoter';
 
   // --- STYLES ---
-  const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' };
-  const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' };
-  const cardStyle = { background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px' };
-  const statLabelStyle = { fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' };
-  const statValueStyle = { fontSize: '24px', fontWeight: '900', color: 'var(--text)' };
-  const listContainerStyle = { ...cardStyle, padding: '0' };
-  const listItemStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)', textDecoration: 'none' };
+  const headerStyle = { marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+  const balanceCard = {
+    background: 'linear-gradient(135deg, #22c55e, #14532d)',
+    borderRadius: '20px',
+    padding: '24px',
+    color: '#fff',
+    boxShadow: '0 10px 20px rgba(34, 197, 94, 0.2)',
+    marginBottom: '24px'
+  };
+  const noticeStyle = {
+    background: '#1a1a1a',
+    borderLeft: '4px solid #eab308',
+    padding: '16px',
+    borderRadius: '12px',
+    marginBottom: '24px',
+    fontSize: '13px',
+    color: '#ccc',
+    lineHeight: '1.5'
+  };
+  const statGrid = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' };
+  const statBox = { background: '#0a0a0a', border: '1px solid #222', borderRadius: '16px', padding: '16px', textAlign: 'center' };
 
   return (
-    <div style={{paddingBottom: '80px'}}>
-      
+    <div>
       {/* HEADER */}
       <div style={headerStyle}>
         <div>
-          <h1 style={{fontSize: '20px', fontWeight: '800', margin: 0}}>Overview</h1>
-          <p style={{fontSize: '13px', color: 'var(--muted)', margin: 0}}>Welcome back, {account.username}</p>
+          <div style={{fontSize: '11px', color: '#888', fontWeight: '800', letterSpacing: '1px'}}>DASHBOARD</div>
+          <div style={{fontSize: '20px', fontWeight: '900', color: '#fff'}}>{username}</div>
         </div>
-        <div style={{background: 'rgba(34, 197, 94, 0.1)', color: 'var(--accent)', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', border: '1px solid rgba(34, 197, 94, 0.2)'}}>
-          {account.role === 'admin' ? 'ADMIN' : 'PROMOTER'}
+        <div style={{width: '40px', height: '40px', borderRadius: '50%', background: '#222', border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'}}>
+          👤
         </div>
       </div>
 
-      {/* STATS GRID */}
-      <div style={gridStyle}>
-        <div style={cardStyle}>
-          <div style={statLabelStyle}>Wallet Balance</div>
-          <div style={statValueStyle}>₹{account.wallet_balance || 0}</div>
+      {/* BALANCE CARD */}
+      <div style={balanceCard}>
+        <div style={{fontSize: '12px', fontWeight: '700', opacity: 0.8, marginBottom: '4px', textTransform: 'uppercase'}}>Wallet Balance</div>
+        <div style={{fontSize: '36px', fontWeight: '900', letterSpacing: '-1px'}}>₹{balance.toLocaleString()}</div>
+        <div style={{marginTop: '16px'}}>
+          <Link href="/dashboard/wallet" style={{background: '#fff', color: '#166534', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', textDecoration: 'none', display: 'inline-block'}}>
+            Withdraw Money
+          </Link>
         </div>
-        <div style={cardStyle}>
-          <div style={statLabelStyle}>Status</div>
-          <div style={{...statValueStyle, color: account.is_frozen ? '#ef4444' : '#22c55e', fontSize: '18px'}}>
-            {account.is_frozen ? 'FROZEN' : 'ACTIVE'}
+      </div>
+
+      {/* ADMIN NOTICE */}
+      {config?.notice_board && (
+        <div style={noticeStyle}>
+          <div style={{fontSize: '11px', fontWeight: '800', color: '#eab308', marginBottom: '4px', textTransform: 'uppercase'}}>📢 Updates</div>
+          {config.notice_board}
+        </div>
+      )}
+
+      {/* QUICK STATS */}
+      <div style={statGrid}>
+        <div style={statBox}>
+          <div style={{fontSize: '24px', fontWeight: '800', color: '#fff'}}>{leadCount || 0}</div>
+          <div style={{fontSize: '10px', color: '#666', fontWeight: '700', textTransform: 'uppercase', marginTop: '4px'}}>Total Leads</div>
+        </div>
+        <div style={statBox}>
+          <div style={{fontSize: '24px', fontWeight: '800', color: '#60a5fa'}}>0</div>
+          <div style={{fontSize: '10px', color: '#666', fontWeight: '700', textTransform: 'uppercase', marginTop: '4px'}}>Clicks Today</div>
+        </div>
+      </div>
+
+      {/* ACTION BUTTON */}
+      <Link href="/dashboard/campaigns" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: '#0a0a0a',
+        border: '1px solid #222',
+        borderRadius: '16px',
+        padding: '20px',
+        textDecoration: 'none',
+        color: '#fff',
+        transition: 'border-color 0.2s'
+      }}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+          <div style={{fontSize: '24px'}}>🔥</div>
+          <div>
+            <div style={{fontWeight: 'bold'}}>Start Earning</div>
+            <div style={{fontSize: '12px', color: '#666'}}>View active tasks</div>
           </div>
         </div>
-      </div>
-
-      {/* QUICK TASKS */}
-      <h3 style={{fontSize: '16px', fontWeight: '700', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-        Active Tasks 
-        <Link href="/dashboard/tasks" style={{fontSize: '12px', color: 'var(--accent)'}}>View All →</Link>
-      </h3>
-
-      <div style={listContainerStyle}>
-        {campaigns.length > 0 ? campaigns.map(camp => (
-          <Link href={`/dashboard/tasks/${camp.id}`} key={camp.id} style={listItemStyle}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-              <div style={{width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'}}>🔥</div>
-              <div>
-                <div style={{fontWeight: '700', fontSize: '14px'}}>{camp.title}</div>
-                <div style={{fontSize: '12px', color: 'var(--muted)'}}>Get ₹{camp.payout_amount}</div>
-              </div>
-            </div>
-            <div style={{background: 'var(--bg-1)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold'}}>
-              START
-            </div>
-          </Link>
-        )) : (
-           <div style={{padding: '30px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px'}}>No active campaigns right now.</div>
-        )}
-      </div>
+        <div style={{color: '#444'}}>→</div>
+      </Link>
 
     </div>
   );
