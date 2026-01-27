@@ -3,42 +3,50 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
+  const router = useRouter();
+
   // --- STATE ---
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [showMobileCta, setShowMobileCta] = useState(false);
-  const [dashboardUrl, setDashboardUrl] = useState('/login'); // Default to login
+  const [dashboardUrl, setDashboardUrl] = useState('/login');
 
-  // --- LOGIC: REPLICATING SCRIPT.JS ---
+  // --- MAIN LOGIC (THE BRAIN) ---
   useEffect(() => {
-    // 1. DASHBOARD REDIRECT LOGIC (From your script.js Section D)
-    // Checks if user is already a partner stored in local browser
+    // 1. CAPTURE REFERRAL CODE (The Fix 🛠️)
+    // This looks at the URL for ?ref=... and saves it immediately
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get('ref');
+
+      if (refCode) {
+        localStorage.setItem("cashttree_referral", refCode);
+        console.log("Referral Captured:", refCode);
+      }
+    }
+
+    // 2. DASHBOARD REDIRECT LOGIC
+    // If they are already a partner, send them straight to dashboard
     const partnerId = localStorage.getItem("p_id");
-    const oldCode = localStorage.getItem("cashttree_referral");
     
     if (partnerId) {
       setDashboardUrl('/dashboard');
-    } else if (oldCode) {
-      // If migrating old users, we can handle params later, 
-      // but for now send them to dashboard/login
-      setDashboardUrl('/dashboard'); 
     }
 
-    // 2. SMART CTA SCROLL LOGIC (From your script.js Section C)
+    // 3. SCROLL CTA LOGIC
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
     
     const handleScroll = () => {
       const mobileCta = document.getElementById("mobileCta");
       if (!mobileCta) return;
 
-      // Check cooldown
       const lastClosed = localStorage.getItem("ctaClosedTime");
       const now = new Date().getTime();
       if (lastClosed && (now - lastClosed < ONE_DAY_MS)) return;
 
-      // Check 50% Scroll
       const scrollPercentage = ((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight) * 100;
       
       if (scrollPercentage > 50) {
@@ -67,7 +75,7 @@ export default function LandingPage() {
     localStorage.setItem("ctaClosedTime", new Date().getTime());
   };
 
-  // --- JSON-LD SCHEMA ---
+  // --- JSON-LD SCHEMA (SEO) ---
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -85,19 +93,11 @@ export default function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       
-      <div className="ad-sandbox">
-        <Script 
-          src="https://nap5k.com/tag.min.js" 
-          strategy="lazyOnload" 
-          data-zone="10337480"
-        />
-      </div>
-
       {/* HEADER */}
       <header className="nav" role="banner">
         <div className="nav-inner">
           <Link href="/" className="brand">
-            <img src="/logo.webp" alt="CashTree Logo" className="brand-logo" />
+            <span style={{fontSize:'24px'}}>⚡</span>
             <span className="brand-text">Cash<span>Tree</span></span>
           </Link>
 
@@ -110,11 +110,9 @@ export default function LandingPage() {
             ☰
           </button>
 
-          {/* Mobile Menu Logic */}
           <div id="navLinks" className={`nav-links ${isNavOpen ? 'nav-open' : ''}`}>
             <a href="#how-it-works" onClick={closeMenu}>How it Works</a>
             <a href="#faq" onClick={closeMenu}>FAQ</a>
-            {/* DYNAMIC DASHBOARD LINK */}
             <Link href={dashboardUrl} id="menuDashboardLink" className="dashboard-link"> 
                📊 Dashboard
             </Link>
@@ -122,13 +120,12 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main onClick={() => isNavOpen && closeMenu()}> {/* Close menu when clicking outside */}
+      <main onClick={() => isNavOpen && closeMenu()}>
         
         {/* HERO */}
         <section className="hero" id="hero">
           <div className="container hero-inner">
-            <div className="hero-left">
-              <h1>
+             <h1>
                 Fast, verified referral offers<br />
                 <span className="hero-highlight">that actually work</span>
               </h1>
@@ -142,14 +139,13 @@ export default function LandingPage() {
                 <a href="#faq" className="hero-btn">FAQ</a>
               </div>
               <div className="cta-center">
-                <a className="create-link-cta" href="#create-link">
+                <Link className="create-link-cta" href="/dashboard/campaigns">
                   🚀 Create your own referral link
-                </a>
+                </Link>
               </div>
               <p className="hero-trust">
                 ✔ One-time access • ✔ No income guarantee • ✔ Telegram support
               </p>
-            </div>
           </div>
         </section>
 
@@ -163,8 +159,7 @@ export default function LandingPage() {
 
             <div className="offer-grid">
               
-              {/* COPY-PASTE YOUR OFFER CARDS HERE EXACTLY FROM HTML */}
-              {/* Example Card 1 */}
+              {/* Card 1: Airtel */}
               <article className="offer-card">
                 <div className="offer-head">  
                   <h3>Airtel Thanks – App Task Offer</h3>
@@ -177,29 +172,26 @@ export default function LandingPage() {
                 </ul>
                 <div className="offer-footer">
                   <div className="earn">Earn <strong>₹100</strong></div>
-                  <a className="btn primary full-width" href="https://lootcampaign.in?camp=Atl&ref=VMIZAvSI" target="_blank" rel="noopener">Get ₹100 →</a>
+                  <a className="btn primary" href="https://lootcampaign.in?camp=Atl&ref=VMIZAvSI" target="_blank" rel="noopener">Get ₹100 →</a>
                 </div>
               </article>
 
-               {/* Example Card 2 */}
-               <article className="offer-card verified">
+               {/* Card 2: Upstox */}
+               <article className="offer-card">
                 <div className="offer-head">
                   <h3>Upstox – Free Demat Account</h3>
                   <span className="tag success">CashTree Verified</span>
                 </div>
-                <div className="payout">Earn <strong>₹200</strong></div>
                 <ul className="offer-points">
                   <li>Install & sign up via referral</li>
                   <li>Complete KYC (no deposit)</li>
                   <li>Reward after approval</li>
                 </ul>
-                <div className="offer-meta">⚡ Payout: 24–48 hrs &nbsp;|&nbsp; 👤 New users only</div>
                 <div className="offer-footer">
-                  <a className="btn primary full-width" href="https://campguruji.in/camp/hw52jghh" target="_blank" rel="noopener">Get ₹200 →</a>
+                   <div className="earn">Earn <strong>₹200</strong></div>
+                  <a className="btn primary" href="https://campguruji.in/camp/hw52jghh" target="_blank" rel="noopener">Get ₹200 →</a>
                 </div>
               </article>
-
-              {/* ... PASTE ALL OTHER CARDS HERE ... */}
 
             </div>
           </div>
@@ -243,63 +235,18 @@ export default function LandingPage() {
                 isOpen={openFaqIndex === 1}
                 onClick={() => toggleFaq(1)}
               />
-              {/* Add other FAQs... */}
             </div>
           </div>
         </section>
 
-        {/* CREATE LINK / PAYMENT */}
-        <section id="create-link" className="section">
-          <div className="container">
-            <h2 className="section-title">Create Your Own Referral Link</h2>
-            <div className="center-stack">
-              <a href="https://razorpay.me/@cashttree?amount=rZC5NMufSVtgb9QV3szYxw%3D%3D" className="pay-btn" target="_blank" rel="noopener">
-                <span className="price">
-                  <span className="price-old"><s>₹99</s></span>
-                  <span className="price-new">₹49</span>
-                  <span className="label">Unlock Access</span>
-                </span>
-               
-              </a>
-            </div>
-            <div className="center-stack">
-              <a className="telegram-btn" href="https://t.me/CashtTree_bot" target="_blank" rel="noopener">
-                Open Telegram Bot
-              </a>
-            </div>
-            <div className="steps-box">
-              <h3>How access works</h3>
-              <ol>
-                <li>Pay ₹49</li>
-                <li>Open Bot</li>
-                <li>Submit Payment ID</li>
-                <li>Get Access</li>
-              </ol>
-            </div>
-          </div>
-        </section>
-
-        {/* FOOTER */}
-        <footer className="footer">
-          <div className="container footer-inner">
-            <div>© CashTree Loot</div>
-            <div className="footer-links">
-              <a href="#offers">Offers</a>
-              <a href="#how-it-works">How it works</a>
-              <a href="#faq">FAQ</a>
-              <Link href="/tools">Tools</Link>
-            </div>
-          </div>
-        </footer>
-
-        {/* MOBILE CTA (Condition matches script.js) */}
+        {/* MOBILE CTA */}
         <div 
           id="mobileCta" 
           className={`mobile-cta ${showMobileCta ? 'visible' : ''}`} 
           role="dialog"
         >
-          <a href="https://t.me/CashtTree_bot" target="_blank" rel="noopener" className="cta-main">
-            🚀 Join Telegram & Unlock Access
+          <a href="/dashboard" className="cta-main">
+            🚀 Go to Dashboard
           </a>
           <button className="cta-close" type="button" onClick={closeMobileCta}>✕</button>
         </div>

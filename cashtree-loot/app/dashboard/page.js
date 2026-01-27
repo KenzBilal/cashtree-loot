@@ -1,170 +1,194 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { cookies } from 'next/headers'; // <--- REQUIRED
-import { redirect } from 'next/navigation'; // <--- REQUIRED
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import DashboardClient from './DashboardClient'; 
 
-// ⚡ Force fresh data on every load
 export const revalidate = 0;
 
 export default async function DashboardPage() {
-  // 1. GET AUTH TOKEN (Crucial Step)
+  // 1. AUTH & DATA
   const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
-
-  // If no token, kick them out
   if (!token) redirect('/login');
 
-  // 2. CONNECT TO SUPABASE WITH TOKEN
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
-  // 3. AUTH CHECK
   const { data: { user } } = await supabase.auth.getUser();
-
-  // If token is invalid, redirect
   if (!user) redirect('/login');
 
-  // 4. PARALLEL DATA FETCHING (Authenticated)
-  const accountReq = supabase.from('accounts').select('username, ledger(amount)').eq('id', user.id).single();
-  const configReq = supabase.from('system_config').select('notice_board').eq('id', 1).single();
-  // Fixed: Changed 'promoter_id' to 'referred_by' to match your DB
-  const leadsReq = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
+  const [accountRes, configRes, leadsRes] = await Promise.all([
+    supabase.from('accounts').select('username, ledger(amount, created_at)').eq('id', user.id).single(),
+    supabase.from('system_config').select('notice_board').eq('id', 1).single(),
+    supabase.from('leads').select('payout', { count: 'exact' }).eq('referred_by', user.id)
+  ]);
 
-  const [accountRes, configRes, leadsRes] = await Promise.all([accountReq, configReq, leadsReq]);
-
-  // 5. SAFE DATA PARSING
   const account = accountRes.data || { username: 'Promoter', ledger: [] };
   const config = configRes.data || {};
   const leadCount = leadsRes.count || 0;
   
-  // Calculate Balance safely
-  const balance = account.ledger?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+  // 2. LOGIC ENGINE
+  const totalBalance = account.ledger?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+  
+  const today = new Date().toISOString().split('T')[0];
+  const earnedToday = account.ledger
+    ?.filter(l => l.created_at.startsWith(today) && l.amount > 0)
+    .reduce((acc, curr) => acc + curr.amount, 0) || 0;
 
-  // --- PREMIUM GLASS STYLES ---
-  const glassCard = {
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+  // RANK LOGIC (Gamification)
+  let rank = { name: 'INITIATE', next: 1000, progress: 0 };
+  if (totalBalance > 10000) rank = { name: 'KINGPIN', next: 0, progress: 100 };
+  else if (totalBalance > 5000) rank = { name: 'SYNDICATE', next: 10000, progress: (totalBalance/10000)*100 };
+  else if (totalBalance > 1000) rank = { name: 'OPERATOR', next: 5000, progress: (totalBalance/5000)*100 };
+  else rank.progress = (totalBalance/1000)*100;
+
+  // CHANGE: Use account.username instead of user.id
+const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/?ref=${account.username}`;
+
+  // --- STYLES ---
+  const containerStyle = { paddingBottom: '120px', animation: 'fadeIn 0.6s ease-out' };
+  const neonGreen = '#00ff88';
+
+  const glassPanel = {
+    background: 'rgba(5, 5, 5, 0.7)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     borderRadius: '24px',
     padding: '24px',
-    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
-  };
-
-  const neonText = {
-    color: '#fff',
-    textShadow: '0 0 20px rgba(34, 197, 94, 0.6)', // Green Glow
-    fontWeight: '900'
+    position: 'relative',
+    overflow: 'hidden',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)'
   };
 
   return (
-    <div className="fade-in" style={{paddingBottom: '20px'}}>
+    <div style={containerStyle}>
       
-      {/* HEADER */}
-      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
-        <div>
-          <div style={{fontSize: '11px', color: '#00ff88', letterSpacing: '2px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '6px'}}>Dashboard</div>
-          <div style={{fontSize: '24px', fontWeight: 'bold', color: '#fff'}}>Hi, {account.username}</div>
+      {/* 1. HEADER */}
+      <DashboardClient account={account} referralLink={referralLink} />
+
+      {/* 2. THE VAULT (Balance Card) */}
+      <div style={{...glassPanel, background: 'linear-gradient(160deg, #0a0a0a 0%, #000 100%)', marginBottom: '24px'}}>
+        <div style={{position:'absolute', top:'-50%', right:'-50%', width:'300px', height:'300px', background:`radial-gradient(circle, ${neonGreen} 0%, transparent 70%)`, opacity:0.15, filter:'blur(80px)'}}></div>
+        
+        <div style={{position: 'relative', zIndex: 2}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+             <div style={{
+               fontSize: '10px', color: '#000', background: neonGreen, 
+               padding: '4px 8px', borderRadius: '4px', fontWeight: '900', letterSpacing: '1px',
+               boxShadow: `0 0 10px ${neonGreen}66`
+             }}>
+               RANK: {rank.name}
+             </div>
+             <div style={{fontSize: '10px', color: '#fff', fontWeight: '700', opacity: 0.7}}>
+               LIFETIME EARNINGS
+             </div>
+          </div>
+          
+          <div style={{
+            fontSize: '52px', fontWeight: '900', color: '#fff', 
+            margin: '10px 0', textShadow: `0 0 30px ${neonGreen}33`, letterSpacing: '-2px', lineHeight: '1'
+          }}>
+            ₹{totalBalance.toLocaleString()}
+          </div>
+          
+          {/* Progress Bar */}
+          {rank.next > 0 && (
+            <div style={{marginTop: '20px', marginBottom: '24px'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#666', marginBottom: '4px', fontWeight: '700'}}>
+                <span>PROGRESS TO NEXT LEVEL</span>
+                <span>{Math.round(rank.progress)}%</span>
+              </div>
+              <div style={{height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden'}}>
+                <div style={{width: `${rank.progress}%`, height: '100%', background: neonGreen, boxShadow: `0 0 10px ${neonGreen}`}}></div>
+              </div>
+            </div>
+          )}
+
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+            <Link href="/dashboard/wallet" style={{
+              background: '#fff', color: '#000', padding: '14px', borderRadius: '14px',
+              textAlign: 'center', fontWeight: '900', fontSize: '13px', textDecoration: 'none',
+              textTransform: 'uppercase', border: '1px solid #fff'
+            }}>
+              Withdraw
+            </Link>
+            <Link href="/dashboard/leads" style={{
+              background: 'transparent', color: '#fff', padding: '14px', borderRadius: '14px',
+              textAlign: 'center', fontWeight: '700', fontSize: '13px', textDecoration: 'none',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}>
+              History
+            </Link>
+          </div>
         </div>
-        <div style={{
-          width: '45px', height: '45px', borderRadius: '50%', 
-          background: 'linear-gradient(135deg, #00ff88, #00b36b)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 20px rgba(0, 255, 136, 0.4)', 
-          color: '#000', fontSize: '20px', border: '2px solid #fff'
-        }}>👤</div>
       </div>
 
-      {/* BALANCE CARD (HERO) */}
-      <div style={{
-        ...glassCard, 
-        background: 'linear-gradient(145deg, rgba(20,20,20,0.8) 0%, rgba(0,0,0,0.9) 100%)', 
-        border: '1px solid rgba(0, 255, 136, 0.2)', 
-        marginBottom: '24px', position: 'relative', overflow: 'hidden'
-      }}>
-        {/* Abstract Glow Background */}
-        <div style={{position: 'absolute', top: '-50%', right: '-50%', width: '250px', height: '250px', background: '#00ff88', filter: 'blur(120px)', opacity: 0.15}}></div>
-        
-        <div style={{fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700'}}>Total Balance</div>
-        <div style={{fontSize: '46px', ...neonText, margin: '12px 0', fontFamily: 'sans-serif'}}>
-          ₹{balance.toLocaleString()}
+      {/* 3. PERFORMANCE HUD */}
+      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '30px'}}>
+        {/* Leads */}
+        <div style={{...glassPanel, padding: '20px', textAlign: 'center'}}>
+          <div style={{fontSize: '32px', fontWeight: '900', color: '#fff'}}>{leadCount}</div>
+          <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase', marginTop: '4px'}}>Total Leads</div>
         </div>
-        
-        <div style={{display: 'flex', gap: '12px', marginTop: '24px'}}>
-          <Link href="/dashboard/wallet" style={{
-            flex: 1, padding: '14px', background: '#00ff88', color: '#000', 
-            borderRadius: '14px', textAlign: 'center', fontWeight: '800', textDecoration: 'none', fontSize: '14px',
-            boxShadow: '0 0 15px rgba(0,255,136,0.3)'
-          }}>
-            Withdraw Money
-          </Link>
-          <Link href="/dashboard/leads" style={{
-            flex: 1, padding: '14px', background: 'rgba(255,255,255,0.05)', color: '#fff', 
-            borderRadius: '14px', textAlign: 'center', fontWeight: '700', textDecoration: 'none', fontSize: '14px',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            History
-          </Link>
+        {/* Today's Gain */}
+        <div style={{...glassPanel, padding: '20px', textAlign: 'center'}}>
+           <div style={{fontSize: '32px', fontWeight: '900', color: neonGreen, textShadow: `0 0 15px ${neonGreen}44`}}>
+             +₹{earnedToday}
+           </div>
+           <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase', marginTop: '4px'}}>Earned Today</div>
         </div>
       </div>
 
-      {/* NOTICE BOARD */}
+      {/* 4. NOTICE BOARD (If Active) */}
       {config.notice_board && (
-        <div style={{...glassCard, borderLeft: '3px solid #eab308', padding: '20px', marginBottom: '24px', background: 'rgba(234, 179, 8, 0.05)'}}>
-          <div style={{color: '#eab308', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '1px'}}>📢 Announcement</div>
-          <p style={{color: '#ddd', fontSize: '14px', lineHeight: '1.6'}}>{config.notice_board}</p>
+        <div style={{
+          padding: '16px', marginBottom: '24px', borderRadius: '16px',
+          background: 'rgba(234, 179, 8, 0.05)', border: '1px solid rgba(234, 179, 8, 0.15)',
+          display: 'flex', gap: '12px', alignItems: 'center'
+        }}>
+          <span style={{fontSize: '18px'}}>⚠️</span>
+          <div>
+            <div style={{fontSize: '10px', color: '#fbbf24', fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px'}}>Announcement</div>
+            <div style={{fontSize: '13px', color: '#ccc', lineHeight: '1.4'}}>{config.notice_board}</div>
+          </div>
         </div>
       )}
 
-      {/* STATS GRID */}
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
-        <div style={{...glassCard, padding: '24px', textAlign: 'center'}}>
-          <div style={{fontSize: '32px', fontWeight: '800', color: '#fff'}}>{leadCount}</div>
-          <div style={{fontSize: '10px', color: '#666', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '6px', letterSpacing: '0.5px'}}>Total Leads</div>
-        </div>
-        <div style={{...glassCard, padding: '24px', textAlign: 'center'}}>
-          <div style={{fontSize: '32px', fontWeight: '800', color: '#00ff88'}}>Active</div>
-          <div style={{fontSize: '10px', color: '#666', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '6px', letterSpacing: '0.5px'}}>Account Status</div>
+      {/* 5. QUICK ACCESS (Restored Horizontal Scroll) */}
+      <div>
+        <h3 style={{fontSize: '11px', color: '#666', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', paddingLeft: '6px', marginBottom: '12px'}}>
+          Quick Actions
+        </h3>
+        
+        <div style={{display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px'}}>
+           <QuickAction icon="🔥" label="Start Earning" link="/dashboard/campaigns" />
+           <QuickAction icon="👑" label="My Empire" link="/dashboard/team" />
+           <QuickAction icon="💳" label="Wallet" link="/dashboard/wallet" />
+           <QuickAction icon="⚙️" label="Settings" link="/dashboard/profile" />
         </div>
       </div>
+
     </div>
   );
 }
 
-// ------------------------------------------------------------------
-// PREMIUM SKELETON LOADER
-// ------------------------------------------------------------------
-function DashboardSkeleton() {
-  const shimmer = {
-    background: 'linear-gradient(90deg, #111 0%, #222 50%, #111 100%)',
-    backgroundSize: '200% 100%',
-    animation: 'shimmer 1.5s infinite',
-    borderRadius: '12px'
-  };
-
+// --- RESTORED HORIZONTAL BUTTON ---
+function QuickAction({ icon, label, link }) {
   return (
-    <div style={{paddingBottom: '20px'}}>
-      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px'}}>
-        <div>
-          <div style={{...shimmer, width: '80px', height: '14px', marginBottom: '8px'}}></div>
-          <div style={{...shimmer, width: '150px', height: '28px'}}></div>
-        </div>
-        <div style={{...shimmer, width: '45px', height: '45px', borderRadius: '50%'}}></div>
-      </div>
-      <div style={{...shimmer, width: '100%', height: '220px', borderRadius: '24px', marginBottom: '24px'}}></div>
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
-        <div style={{...shimmer, height: '120px', borderRadius: '24px'}}></div>
-        <div style={{...shimmer, height: '120px', borderRadius: '24px'}}></div>
-      </div>
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-    </div>
+    <Link href={link} style={{
+      minWidth: '100px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+      padding: '16px', borderRadius: '20px',
+      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+      textDecoration: 'none', backdropFilter: 'blur(10px)'
+    }}>
+      <div style={{fontSize: '26px'}}>{icon}</div>
+      <span style={{fontSize: '11px', color: '#aaa', fontWeight: '700'}}>{label}</span>
+    </Link>
   );
 }
