@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import "./globals.css"; 
 
 export const metadata = {
