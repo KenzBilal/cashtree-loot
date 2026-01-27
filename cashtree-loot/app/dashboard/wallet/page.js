@@ -1,79 +1,119 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import WithdrawForm from './withdraw-form';
+import { redirect } from 'next/navigation';
+import WithdrawForm from './WithdrawForm';
 
-export const revalidate = 0;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+export const revalidate = 0; // Always fetch fresh balance
 
 export default async function WalletPage() {
-  // 1. GET USER
-  const cookieStore = cookies();
+  // 1. AUTHENTICATE
+  const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
-  const { data: { user } } = await supabase.auth.getUser(token);
 
-  // 2. FETCH ACCOUNT (For UPI ID)
-  const { data: account } = await supabase
-    .from('accounts')
-    .select('upi_id')
-    .eq('id', user.id)
-    .single();
+  if (!token) redirect('/login');
 
-  // 3. CALCULATE BALANCE (Live from Ledger)
-  const { data: ledger } = await supabase
-    .from('ledger')
-    .select('amount')
-    .eq('account_id', user.id);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
 
-  const balance = ledger?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect('/login');
 
-  // 4. FETCH HISTORY
-  const { data: history } = await supabase
-    .from('withdraw_requests')
-    .select('*')
-    .eq('promoter_id', user.id)
-    .order('created_at', { ascending: false });
+  // 2. FETCH EVERYTHING (Parallel Fetch for Speed)
+  const [
+    { data: account },
+    { data: ledger },
+    { data: withdrawals },
+    { data: config }
+  ] = await Promise.all([
+    // A. Account for UPI ID
+    supabase.from('accounts').select('upi_id').eq('id', user.id).single(),
+    
+    // B. Ledger for Total Earnings
+    supabase.from('ledger').select('amount').eq('account_id', user.id),
+    
+    // C. Withdrawals for Total Spent
+    // We fetch ALL requests to subtract them from the balance
+    supabase.from('withdrawals')
+      .select('id, amount, status, created_at')
+      .eq('account_id', user.id)
+      .order('created_at', { ascending: false }),
+
+    // D. System Config for Min Limit
+    supabase.from('system_config').select('min_withdrawal').eq('id', 1).single()
+  ]);
+
+  // 3. DO THE MATH
+  // Formula: Available = (Total Ledger Income) - (Total Pending + Paid Withdrawals)
+  
+  // A. Total Earnings from Ledger
+  const totalEarnings = ledger?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
+
+  // B. Total "Locked" Money (Pending or Paid Requests)
+  const totalWithdrawn = withdrawals?.reduce((sum, tx) => {
+    // We count Pending AND Paid. We don't count Rejected (money returns to wallet).
+    if (['pending', 'paid'].includes(tx.status)) {
+      return sum + Number(tx.amount);
+    }
+    return sum;
+  }, 0) || 0;
+
+  // C. Final Available Balance
+  const availableBalance = totalEarnings - totalWithdrawn;
+  const minLimit = config?.min_withdrawal || 500;
+
+  // --- STYLES ---
+  const headerStyle = { marginBottom: '30px' };
+  const cardStyle = {
+    background: 'linear-gradient(135deg, #166534, #064e3b)', borderRadius: '24px', padding: '30px', 
+    color: '#fff', boxShadow: '0 10px 30px rgba(22, 101, 52, 0.3)', marginBottom: '30px', textAlign: 'center'
+  };
 
   return (
-    <div className="space-y-8 pb-24">
+    <div style={{paddingBottom: '60px'}}>
       
       {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-black text-white">Your Wallet</h1>
-        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-          Withdraw your earnings
+      <div style={headerStyle}>
+        <h1 style={{fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '8px'}}>My Wallet</h1>
+        <p style={{color: '#666', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px'}}>
+          Manage your earnings
         </p>
       </div>
 
-      {/* WITHDRAWAL FORM (Client Component) */}
+      {/* BALANCE CARD */}
+      <div style={cardStyle}>
+        <div style={{fontSize: '12px', fontWeight: '800', opacity: 0.8, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '2px'}}>Available Balance</div>
+        <div style={{fontSize: '48px', fontWeight: '900', letterSpacing: '-2px'}}>
+          ₹{availableBalance.toLocaleString()}
+        </div>
+        <div style={{fontSize: '12px', marginTop: '10px', opacity: 0.7}}>
+          Total Earnings: ₹{totalEarnings.toLocaleString()}
+        </div>
+      </div>
+
+      {/* WITHDRAWAL FORM */}
+      <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#fff', marginBottom: '15px', paddingLeft: '10px'}}>Request Payout</h3>
       <WithdrawForm 
-        balance={balance} 
-        upiId={account?.upi_id} 
+        maxAmount={availableBalance} 
+        defaultUpi={account?.upi_id} 
         userId={user.id} 
+        minLimit={minLimit}
       />
 
-      {/* HISTORY LIST */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-white border-b border-white/10 pb-2">Transaction History</h3>
-        
-        {history?.length === 0 ? (
-          <div className="text-center text-slate-500 text-xs py-4">No transactions yet.</div>
+      {/* HISTORY */}
+      <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#fff', marginBottom: '15px', paddingLeft: '10px', borderTop: '1px solid #222', paddingTop: '30px'}}>
+        Transaction History
+      </h3>
+      
+      <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+        {withdrawals && withdrawals.length > 0 ? (
+          withdrawals.map((tx) => <TransactionItem key={tx.id} tx={tx} />)
         ) : (
-          history.map((tx) => (
-            <div key={tx.id} className="flex justify-between items-center p-4 rounded-xl bg-[#0a0a0a] border border-white/5">
-              <div>
-                <div className="text-white font-bold text-sm">Withdrawal Request</div>
-                <div className="text-[10px] text-slate-500">{new Date(tx.created_at).toLocaleDateString()}</div>
-              </div>
-              <div className="text-right">
-                <div className="font-mono font-bold text-white">₹{tx.amount}</div>
-                <StatusBadge status={tx.status} />
-              </div>
-            </div>
-          ))
+          <div style={{padding: '30px', textAlign: 'center', color: '#555', fontSize: '13px', border: '1px dashed #222', borderRadius: '16px'}}>
+            No transactions yet.
+          </div>
         )}
       </div>
 
@@ -81,12 +121,48 @@ export default async function WalletPage() {
   );
 }
 
-// Helper Badge
-function StatusBadge({ status }) {
-  const styles = {
-    pending: 'text-amber-500',
-    approved: 'text-green-500',
-    rejected: 'text-red-500'
+// ---------------------------------------------------------
+// COMPONENT: TRANSACTION ITEM
+// ---------------------------------------------------------
+function TransactionItem({ tx }) {
+  // Config Status Colors
+  const statusConfig = {
+    approved: { color: '#4ade80', label: 'PAID' }, // 'approved' or 'paid'
+    paid:     { color: '#4ade80', label: 'PAID' },
+    pending:  { color: '#f59e0b', label: 'PENDING' },
+    rejected: { color: '#ef4444', label: 'REJECTED' }
   };
-  return <div className={`text-[10px] uppercase font-black tracking-widest ${styles[status] || 'text-slate-500'}`}>{status}</div>;
+
+  const config = statusConfig[tx.status] || statusConfig.pending;
+  const dateStr = new Date(tx.created_at).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+  });
+
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '16px 20px', borderRadius: '16px', background: '#0a0a0a', border: '1px solid #1a1a1a'
+    }}>
+      <div>
+        <div style={{fontSize: '14px', fontWeight: 'bold', color: '#fff', marginBottom: '4px'}}>
+          Withdrawal Request
+        </div>
+        <div style={{fontSize: '11px', color: '#666', fontFamily: 'monospace'}}>
+          {dateStr}
+        </div>
+      </div>
+
+      <div style={{textAlign: 'right'}}>
+        <div style={{fontSize: '16px', fontWeight: '900', color: '#fff'}}>
+          ₹{tx.amount}
+        </div>
+        <div style={{
+          fontSize: '10px', fontWeight: '900', color: config.color, 
+          marginTop: '4px', letterSpacing: '1px'
+        }}>
+          {config.label}
+        </div>
+      </div>
+    </div>
+  );
 }
