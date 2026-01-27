@@ -16,10 +16,18 @@ export default async function TeamPage() {
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
+  // 1. Get Auth User
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // FETCH UP TO 1000 RECRUITS
+  // 2. FETCH YOUR OWN ACCOUNT (This was missing!)
+  const { data: account } = await supabase
+    .from('accounts')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  // 3. FETCH YOUR TEAM
   const { data: team } = await supabase
     .from('accounts')
     .select('id, username, created_at, is_frozen')
@@ -27,8 +35,9 @@ export default async function TeamPage() {
     .order('created_at', { ascending: false })
     .limit(1000);
 
-  // CHANGE: Use account.username instead of user.id
-const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/?ref=${account.username}`;
+  // CHANGE: Point directly to /promoter page
+const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cashttree.online'}/promoter?ref=${account?.username || user.id}`;
+  
 
   return (
     <div style={{paddingBottom: '100px', animation: 'fadeIn 0.6s ease-out'}}>

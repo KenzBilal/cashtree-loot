@@ -1,116 +1,122 @@
 'use client';
 
 import { useState } from 'react';
-import { updateLeadStatus } from './actions';
+import { processLead } from './actions'; // Import Server Action
 
 export default function LeadRow({ lead }) {
   const [loading, setLoading] = useState(false);
 
-  // Helper to handle click
-  const handleAction = async (status) => {
-    if (!confirm(`Are you sure you want to mark this as ${status.toUpperCase()}?`)) return;
-    
+  const handleValidation = async (status) => {
+    // Confirm Intent
+    const payout = lead.campaigns?.payout_amount || 0;
+    const msg = status === 'approved' 
+      ? `Approve this lead? \nPromoter will be credited ₹${payout} immediately.`
+      : `Reject this lead? \nPromoter will earn ₹0.`;
+      
+    if (!confirm(msg)) return;
+
     setLoading(true);
     try {
-      // Pass necessary info to server action
-      await updateLeadStatus(
-        lead.id, 
-        status, 
-        lead.campaigns?.payout_amount || 0, 
-        lead.accounts?.id
-      );
+      // Call Server Action
+      await processLead(lead.id, status, payout, lead.account_id, lead.campaigns?.title);
     } catch (err) {
-      alert("Error: " + err.message);
+      alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- STYLES ---
-  const tdStyle = { padding: '16px 24px', borderBottom: '1px solid #1a1a1a', color: '#e5e5e5', verticalAlign: 'middle' };
-  
-  // Dynamic Badge Color
-  const getStatusColor = (s) => {
-    if (s === 'approved') return { bg: 'rgba(34, 197, 94, 0.1)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.2)' };
-    if (s === 'rejected') return { bg: 'rgba(239, 68, 68, 0.1)', text: '#f87171', border: 'rgba(239, 68, 68, 0.2)' };
-    return { bg: 'rgba(234, 179, 8, 0.1)', text: '#facc15', border: 'rgba(234, 179, 8, 0.2)' };
-  };
-  const statusColors = getStatusColor(lead.status);
-
-  const badgeStyle = {
-    padding: '4px 10px',
-    borderRadius: '20px',
-    fontSize: '11px',
-    fontWeight: '800',
-    background: statusColors.bg,
-    color: statusColors.text,
-    border: `1px solid ${statusColors.border}`,
-    textTransform: 'uppercase'
-  };
-
-  const btnBase = { padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', marginRight: '8px' };
-  const approveBtn = { ...btnBase, background: '#14532d', color: '#4ade80', border: '1px solid #166534' };
-  const rejectBtn = { ...btnBase, background: '#450a0a', color: '#f87171', border: '1px solid #7f1d1d' };
+  // Styles
+  const isPending = lead.status === 'pending';
+  const statusColors = { pending: '#facc15', approved: '#00ff88', rejected: '#ef4444' };
+  const color = statusColors[lead.status] || '#888';
 
   return (
-    <tr style={{background: 'transparent', transition: 'background 0.2s'}}>
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr 2fr 1.5fr', 
+      padding: '16px 24px', borderBottom: '1px solid #1a1a1a', alignItems: 'center',
+      background: 'transparent', transition: 'background 0.2s', fontSize: '13px'
+    }}
+    onMouseOver={(e) => e.currentTarget.style.background = '#0e0e12'}
+    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+    >
       
-      {/* 1. DATE & ID */}
-      <td style={tdStyle}>
-        <div style={{fontFamily: 'monospace', color: '#888', fontSize: '12px'}}>#{lead.id.slice(0,6)}</div>
-        <div style={{fontSize: '12px', color: '#555', marginTop: '4px'}}>
+      {/* 1. TIMESTAMP */}
+      <div>
+        <div style={{color: '#fff', fontWeight: '600'}}>
           {new Date(lead.created_at).toLocaleDateString()}
         </div>
-      </td>
+        <div style={{color: '#555', fontSize: '11px'}}>
+          {new Date(lead.created_at).toLocaleTimeString()}
+        </div>
+      </div>
 
-      {/* 2. CAMPAIGN DETAILS */}
-      <td style={tdStyle}>
-        <div style={{fontWeight: '700', color: '#fff'}}>{lead.campaigns?.title || 'Unknown'}</div>
-        <div style={{fontSize: '12px', color: '#22c55e', fontWeight: 'bold'}}>
+      {/* 2. CAMPAIGN */}
+      <div>
+        <div style={{color: '#fff', fontWeight: '700'}}>{lead.campaigns?.title}</div>
+        <div style={{color: '#00ff88', fontSize: '11px', fontWeight: '600'}}>
           Payout: ₹{lead.campaigns?.payout_amount}
         </div>
-      </td>
+      </div>
 
-      {/* 3. PROMOTER INFO */}
-      <td style={tdStyle}>
-        <div style={{color: '#fff'}}>{lead.accounts?.username}</div>
-        <div style={{fontSize: '12px', color: '#666'}}>{lead.accounts?.phone || 'No Phone'}</div>
-      </td>
-
-      {/* 4. CUSTOMER DATA (METADATA) */}
-      <td style={tdStyle}>
-        <div style={{background: '#111', padding: '8px', borderRadius: '6px', fontSize: '12px', fontFamily: 'monospace', border: '1px solid #222'}}>
-          {Object.entries(lead.metadata || {}).map(([key, value]) => (
-            <div key={key}>
-              <span style={{color: '#666'}}>{key}:</span> <span style={{color: '#ddd'}}>{value}</span>
-            </div>
-          ))}
+      {/* 3. PROMOTER */}
+      <div>
+        <div style={{color: '#ddd', fontWeight: '600'}}>
+          {lead.accounts?.username || 'Unknown'}
         </div>
-      </td>
+        <div style={{color: '#444', fontSize: '11px', fontFamily: 'monospace'}}>
+          ID: {lead.account_id.slice(0,6)}...
+        </div>
+      </div>
 
-      {/* 5. STATUS / ACTIONS */}
-      <td style={tdStyle}>
-        {lead.status === 'pending' ? (
-          <div style={{display: 'flex'}}>
+      {/* 4. SUBMITTED DATA */}
+      <div>
+         <div style={{
+           background: '#111', padding: '8px', borderRadius: '6px', 
+           border: '1px solid #222', fontSize: '11px', color: '#aaa',
+           fontFamily: 'monospace', maxWidth: '90%', overflow: 'hidden', textOverflow: 'ellipsis'
+         }}>
+           {lead.customer_data || 'No Data Provided'}
+         </div>
+      </div>
+
+      {/* 5. ACTION BUTTONS */}
+      <div style={{textAlign: 'right'}}>
+        {isPending ? (
+          <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
             <button 
-              onClick={() => handleAction('approved')} 
-              style={approveBtn} 
+              onClick={() => handleValidation('approved')}
               disabled={loading}
+              style={{
+                background: '#00ff88', color: '#000', border: 'none', padding: '8px 16px', 
+                borderRadius: '8px', fontWeight: '800', fontSize: '11px', cursor: 'pointer',
+                opacity: loading ? 0.5 : 1
+              }}
             >
-              {loading ? '...' : 'Approve'}
+              ✓ APPROVE
             </button>
             <button 
-              onClick={() => handleAction('rejected')} 
-              style={rejectBtn} 
+              onClick={() => handleValidation('rejected')}
               disabled={loading}
+              style={{
+                background: 'transparent', color: '#ef4444', border: '1px solid #333', padding: '8px 12px', 
+                borderRadius: '8px', fontWeight: '800', fontSize: '11px', cursor: 'pointer',
+                opacity: loading ? 0.5 : 1
+              }}
             >
-              {loading ? '...' : 'Reject'}
+              REJECT
             </button>
           </div>
         ) : (
-          <span style={badgeStyle}>{lead.status}</span>
+          <span style={{
+            fontSize: '11px', fontWeight: '800', color: color, textTransform: 'uppercase',
+            border: `1px solid ${color}44`, padding: '4px 10px', borderRadius: '6px'
+          }}>
+            {lead.status}
+          </span>
         )}
-      </td>
-    </tr>
+      </div>
+
+    </div>
   );
 }

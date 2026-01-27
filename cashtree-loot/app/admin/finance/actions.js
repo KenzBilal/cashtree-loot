@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
+// Admin Client to bypass RLS (Row Level Security)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -28,12 +29,12 @@ export async function processPayout(payoutId, action, amount, userId) {
         account_id: userId,
         amount: amount, // Positive amount adds back to wallet
         type: 'credit',
-        description: `Refund: Withdrawal Rejected (ID: ${payoutId.slice(0,4)})`
+        description: `Refund: Withdrawal Rejected`
       });
 
     if (refundError) throw new Error("Failed to refund user.");
   }
 
-  // 3. REFRESH PAGE
+  // 3. REFRESH PAGE DATA
   revalidatePath('/admin/finance');
 }

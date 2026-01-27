@@ -1,111 +1,136 @@
 'use client';
 
 import { useState } from 'react';
-import { processPayout } from './actions';
+import { processPayout } from './actions'; // <--- IMPORT THE SERVER ACTION
 
 export default function PayoutRow({ item }) {
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleAction = async (action) => {
-    const msg = action === 'paid' 
-      ? "Confirm: Have you sent the money manually?" 
-      : "Confirm: Reject this request and refund the user?";
+  // --- THE NEW ACTION HANDLER ---
+  const handleAction = async (status) => {
+    // 1. Confirm Intent
+    const confirmMsg = status === 'paid' 
+      ? `Confirm payout of ₹${item.amount} to ${item.accounts?.username}?`
+      : `Reject this request? The money will be refunded to the user.`;
+      
+    if (!confirm(confirmMsg)) return;
     
-    if (!confirm(msg)) return;
-
     setLoading(true);
+
     try {
-      await processPayout(item.id, action, item.amount, item.account_id);
+      // 2. Call the Server Action (Securely processes on server)
+      // Pass: (Payout ID, New Status, Amount, User ID)
+      await processPayout(item.id, status, item.amount, item.account_id);
+      
+      // Success! (The Server Action handles revalidation/refresh)
     } catch (err) {
-      alert("Error: " + err.message);
+      alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- STYLES ---
-  const tdStyle = { padding: '16px 24px', borderBottom: '1px solid #1a1a1a', color: '#e5e5e5', verticalAlign: 'middle' };
-  
-  const getStatusColor = (s) => {
-    if (s === 'paid') return { bg: 'rgba(34, 197, 94, 0.1)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.2)' };
-    if (s === 'rejected') return { bg: 'rgba(239, 68, 68, 0.1)', text: '#f87171', border: 'rgba(239, 68, 68, 0.2)' };
-    return { bg: 'rgba(59, 130, 246, 0.1)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.2)' };
-  };
-  const statusColors = getStatusColor(item.status);
-
-  const badgeStyle = {
-    padding: '4px 10px',
-    borderRadius: '20px',
-    fontSize: '11px',
-    fontWeight: '800',
-    background: statusColors.bg,
-    color: statusColors.text,
-    border: `1px solid ${statusColors.border}`,
-    textTransform: 'uppercase'
+  const copyUpi = () => {
+    navigator.clipboard.writeText(item.upi_id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const btnBase = { padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', marginRight: '8px' };
-  const payBtn = { ...btnBase, background: '#14532d', color: '#4ade80', border: '1px solid #166534' };
-  const rejectBtn = { ...btnBase, background: '#450a0a', color: '#f87171', border: '1px solid #7f1d1d' };
+  // Styles based on status
+  const isPending = item.status === 'pending';
+  const statusColors = { pending: '#facc15', paid: '#00ff88', rejected: '#ef4444' };
+  const color = statusColors[item.status] || '#888';
 
   return (
-    <tr style={{background: 'transparent', transition: 'background 0.2s'}}>
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 2fr 1.5fr', 
+      padding: '16px 24px', borderBottom: '1px solid #1a1a1a', alignItems: 'center',
+      background: 'transparent', transition: 'background 0.2s', fontSize: '13px'
+    }}
+    onMouseOver={(e) => e.currentTarget.style.background = '#0e0e12'}
+    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+    >
       
-      {/* 1. DATE */}
-      <td style={tdStyle}>
-        <div style={{fontFamily: 'monospace', color: '#888', fontSize: '12px'}}>#{item.id.slice(0,4)}</div>
-        <div style={{fontSize: '12px', color: '#555', marginTop: '4px'}}>
+      {/* 1. TIMELINE */}
+      <div>
+        <div style={{color: '#fff', fontWeight: '600'}}>
           {new Date(item.created_at).toLocaleDateString()}
         </div>
-      </td>
+        <div style={{color: '#555', fontSize: '11px', marginTop: '2px'}}>
+          {new Date(item.created_at).toLocaleTimeString()}
+        </div>
+      </div>
 
       {/* 2. PROMOTER */}
-      <td style={tdStyle}>
-        <div style={{fontWeight: '700', color: '#fff'}}>{item.accounts?.username}</div>
-        <div style={{fontSize: '12px', color: '#666'}}>{item.accounts?.phone || 'No Phone'}</div>
-      </td>
-
-      {/* 3. AMOUNT & UPI */}
-      <td style={tdStyle}>
-        <div style={{fontSize: '16px', fontWeight: 'bold', color: '#fff'}}>₹{item.amount}</div>
-        <div style={{
-          marginTop: '4px',
-          background: '#111', 
-          padding: '4px 8px', 
-          borderRadius: '4px', 
-          border: '1px solid #222', 
-          fontFamily: 'monospace', 
-          fontSize: '11px',
-          color: '#eab308',
-          display: 'inline-block'
-        }}>
-          UPI: {item.upi_id || 'Not Set'}
+      <div>
+        <div style={{color: '#fff', fontWeight: '700'}}>
+          {item.accounts?.username || 'Unknown'}
         </div>
-      </td>
+        <div style={{color: '#444', fontSize: '11px', fontFamily: 'monospace'}}>
+          {item.accounts?.phone}
+        </div>
+      </div>
 
-      {/* 4. STATUS / ACTIONS */}
-      <td style={tdStyle}>
-        {item.status === 'pending' ? (
-          <div style={{display: 'flex'}}>
+      {/* 3. BANKING */}
+      <div>
+         <div style={{fontSize: '16px', fontWeight: '800', color: '#fff', marginBottom: '4px'}}>
+            ₹{item.amount.toLocaleString()}
+         </div>
+         <div 
+           onClick={copyUpi}
+           style={{
+             display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+             background: copied ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255,255,255,0.05)', 
+             padding: '4px 8px', borderRadius: '6px', border: `1px solid ${copied ? '#00ff88' : '#333'}`
+           }}
+         >
+            <span style={{fontFamily: 'monospace', color: copied ? '#00ff88' : '#aaa', fontSize: '11px'}}>
+              {item.upi_id}
+            </span>
+            <span style={{fontSize: '10px', color: copied ? '#00ff88' : '#666'}}>
+              {copied ? '✓' : '❐'}
+            </span>
+         </div>
+      </div>
+
+      {/* 4. ACTION BUTTONS */}
+      <div style={{textAlign: 'right'}}>
+        {isPending ? (
+          <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
             <button 
-              onClick={() => handleAction('paid')} 
-              style={payBtn} 
+              onClick={() => handleAction('paid')}
               disabled={loading}
+              style={{
+                background: '#00ff88', color: '#000', border: 'none', padding: '8px 16px', 
+                borderRadius: '8px', fontWeight: '800', fontSize: '11px', cursor: 'pointer',
+                opacity: loading ? 0.5 : 1
+              }}
             >
-              {loading ? '...' : 'Mark Paid'}
+              PAY
             </button>
             <button 
-              onClick={() => handleAction('rejected')} 
-              style={rejectBtn} 
+              onClick={() => handleAction('rejected')}
               disabled={loading}
+              style={{
+                background: 'transparent', color: '#ef4444', border: '1px solid #333', padding: '8px 12px', 
+                borderRadius: '8px', fontWeight: '800', fontSize: '11px', cursor: 'pointer',
+                opacity: loading ? 0.5 : 1
+              }}
             >
-              {loading ? '...' : 'Reject'}
+              X
             </button>
           </div>
         ) : (
-          <span style={badgeStyle}>{item.status}</span>
+          <span style={{
+            fontSize: '11px', fontWeight: '800', color: color, textTransform: 'uppercase',
+            border: `1px solid ${color}44`, padding: '4px 10px', borderRadius: '6px'
+          }}>
+            {item.status}
+          </span>
         )}
-      </td>
-    </tr>
+      </div>
+
+    </div>
   );
 }

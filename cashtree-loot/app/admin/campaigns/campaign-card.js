@@ -1,80 +1,106 @@
 'use client';
 
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import Link from 'next/link';
 
 export default function CampaignCard({ campaign }) {
-  const [status, setStatus] = useState(campaign.status || 'active');
-  const [loading, setLoading] = useState(false);
-
-  const toggleStatus = async () => {
-    const newStatus = status === 'active' ? 'paused' : 'active';
-    setLoading(true);
-
-    const { error } = await supabase
-      .from('campaigns')
-      .update({ status: newStatus })
-      .eq('id', campaign.id);
-
-    if (!error) setStatus(newStatus);
-    setLoading(false);
-  };
-
-  // --- STYLES ---
-  const cardStyle = {
-    background: '#0a0a0a', border: '1px solid #222', borderRadius: '20px', 
-    padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative'
-  };
-  const badgeStyle = {
-    position: 'absolute', top: '20px', right: '20px', padding: '4px 10px', 
-    borderRadius: '8px', fontSize: '10px', fontWeight: '900',
-    background: status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-    color: status === 'active' ? '#4ade80' : '#f87171',
-    border: status === 'active' ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
-  };
+  const isLive = campaign.status === 'active';
+  const leadCount = campaign.leads?.[0]?.count || 0;
+  
+  // Status Logic
+  const statusColor = isLive ? '#00ff88' : '#ef4444';
+  const statusText = isLive ? 'LIVE SIGNAL' : 'OFFLINE';
 
   return (
-    <div style={cardStyle}>
-      <div style={badgeStyle}>{status.toUpperCase()}</div>
+    <div className="camp-card" style={{
+      background: '#0a0a0f', // Obsidian
+      border: '1px solid #1a1a1a',
+      borderRadius: '20px',
+      padding: '24px',
+      position: 'relative',
+      overflow: 'hidden',
+      transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+      display: 'flex', flexDirection: 'column', height: '100%'
+    }}>
       
-      <div>
-        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: '800', pr: '60px' }}>{campaign.title}</h3>
-        <div style={{ fontSize: '11px', color: '#444', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {campaign.landing_url}
-        </div>
+      {/* 1. STATUS LINE (Top) */}
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+         <div style={{
+           display: 'flex', alignItems: 'center', gap: '6px', 
+           fontSize: '10px', fontWeight: '800', color: statusColor, 
+           background: `${statusColor}11`, padding: '4px 8px', borderRadius: '6px', border: `1px solid ${statusColor}33`
+         }}>
+            <span className={isLive ? 'pulse' : ''} style={{width: '6px', height: '6px', borderRadius: '50%', background: statusColor}}></span>
+            {statusText}
+         </div>
+         <div style={{fontSize: '11px', color: '#555', fontFamily: 'monospace'}}>ID: {campaign.id.slice(0,4)}</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#000', padding: '12px', borderRadius: '12px' }}>
-        <div>
-          <div style={{ fontSize: '10px', color: '#555', fontWeight: '800' }}>PAYOUT</div>
-          <div style={{ color: '#22c55e', fontWeight: '900' }}>₹{campaign.payout_amount}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '10px', color: '#555', fontWeight: '800' }}>REWARD</div>
-          <div style={{ color: '#60a5fa', fontWeight: '900' }}>₹{campaign.user_reward}</div>
-        </div>
+      {/* 2. ICON & TITLE */}
+      <div style={{display: 'flex', gap: '16px', marginBottom: '24px'}}>
+         <img 
+           src={campaign.icon_url} 
+           alt="icon" 
+           style={{
+             width: '56px', height: '56px', borderRadius: '14px', objectFit: 'cover',
+             boxShadow: '0 10px 30px -10px rgba(0,0,0,0.8)', border: '1px solid #222', background: '#000'
+           }} 
+         />
+         <div>
+            <h3 style={{fontSize: '16px', fontWeight: '800', color: '#fff', margin: '0 0 4px 0', lineHeight: '1.2'}}>
+              {campaign.title}
+            </h3>
+            <div style={{fontSize: '12px', color: '#888', fontWeight: '600'}}>
+              Payout: <span style={{color: '#fff'}}>₹{campaign.payout_amount}</span>
+            </div>
+         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '10px' }}>
-        <div style={{ fontSize: '13px', color: '#888' }}>
-          <b>{campaign.leads?.[0]?.count || 0}</b> Total Leads
-        </div>
-        <button 
-          onClick={toggleStatus} 
-          disabled={loading}
-          style={{
-            background: 'transparent', border: '1px solid #333', color: '#fff', 
-            padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer'
-          }}
-        >
-          {loading ? '...' : (status === 'active' ? 'Pause' : 'Activate')}
+      {/* 3. METRICS GRID */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px',
+        background: '#050505', padding: '4px', borderRadius: '12px', border: '1px solid #111'
+      }}>
+         <MetricBox label="LEADS" value={leadCount} color="#fff" />
+         <MetricBox label="TYPE" value={campaign.category || 'CPI'} color="#666" small />
+      </div>
+
+      {/* 4. ACTION FOOTER */}
+      <div style={{marginTop: 'auto', display: 'flex', gap: '10px'}}>
+        <Link href={`/admin/campaigns/${campaign.id}`} style={{
+          flex: 1, padding: '12px', borderRadius: '10px', 
+          background: '#fff', color: '#000', textAlign: 'center',
+          fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', textDecoration: 'none',
+          transition: 'transform 0.2s'
+        }}>
+          Manage
+        </Link>
+        <button style={{
+          padding: '12px', borderRadius: '10px', border: '1px solid #333',
+          background: 'transparent', color: '#fff', cursor: 'pointer'
+        }}>
+          ⚙️
         </button>
       </div>
+
+      {/* HOVER GLOW EFFECT (CSS in globals or style block) */}
+      <style jsx global>{`
+        .camp-card:hover { 
+          border-color: #333 !important; 
+          transform: translateY(-4px); 
+          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7);
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .pulse { animation: pulse 2s infinite; }
+      `}</style>
+    </div>
+  );
+}
+
+function MetricBox({ label, value, color, small }) {
+  return (
+    <div style={{padding: '10px', textAlign: 'center', borderRadius: '8px'}}>
+      <div style={{fontSize: small ? '12px' : '18px', fontWeight: '800', color: color}}>{value}</div>
+      <div style={{fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', marginTop: '2px'}}>{label}</div>
     </div>
   );
 }

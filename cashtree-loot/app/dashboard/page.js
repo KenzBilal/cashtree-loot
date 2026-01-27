@@ -46,8 +46,8 @@ export default async function DashboardPage() {
   else if (totalBalance > 1000) rank = { name: 'OPERATOR', next: 5000, progress: (totalBalance/5000)*100 };
   else rank.progress = (totalBalance/1000)*100;
 
-  // CHANGE: Use account.username instead of user.id
-const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/?ref=${account.username}`;
+  // CHANGE: Point directly to /promoter page
+const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/promoter?ref=${account.username}`;
 
   // --- STYLES ---
   const containerStyle = { paddingBottom: '120px', animation: 'fadeIn 0.6s ease-out' };
