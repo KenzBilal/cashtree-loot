@@ -259,7 +259,7 @@ export default function LandingPage() {
                   <span className="price-new">₹49</span>
                   <span className="label">Unlock Access</span>
                 </span>
-                <img src="/assets/santa-hat.png" alt="" className="santa-hat" />
+               
               </a>
             </div>
             <div className="center-stack">
