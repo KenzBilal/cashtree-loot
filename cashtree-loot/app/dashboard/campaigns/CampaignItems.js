@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function TaskCard({ campaign, promoterId }) {
+export default function CampaignItem({ campaign, promoterId }) {
   const [copied, setCopied] = useState(false);
 
   // 1. SMART LINK GENERATION
