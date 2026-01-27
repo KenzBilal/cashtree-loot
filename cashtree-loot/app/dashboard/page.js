@@ -1,30 +1,41 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { cookies } from 'next/headers'; // <--- REQUIRED
+import { redirect } from 'next/navigation'; // <--- REQUIRED
 
 // ⚡ Force fresh data on every load
 export const revalidate = 0;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
 export default async function DashboardPage() {
-  // 1. AUTH CHECK
+  // 1. GET AUTH TOKEN (Crucial Step)
+  const cookieStore = await cookies();
+  const token = cookieStore.get('ct_session')?.value;
+
+  // If no token, kick them out
+  if (!token) redirect('/login');
+
+  // 2. CONNECT TO SUPABASE WITH TOKEN
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+
+  // 3. AUTH CHECK
   const { data: { user } } = await supabase.auth.getUser();
 
-  // If loading user fails or takes time, show the premium skeleton
-  if (!user) return <DashboardSkeleton />;
+  // If token is invalid, redirect
+  if (!user) redirect('/login');
 
-  // 2. PARALLEL DATA FETCHING (Fastest method)
-  // We fire all 3 requests at the exact same millisecond
+  // 4. PARALLEL DATA FETCHING (Authenticated)
   const accountReq = supabase.from('accounts').select('username, ledger(amount)').eq('id', user.id).single();
   const configReq = supabase.from('system_config').select('notice_board').eq('id', 1).single();
+  // Fixed: Changed 'promoter_id' to 'referred_by' to match your DB
   const leadsReq = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
 
   const [accountRes, configRes, leadsRes] = await Promise.all([accountReq, configReq, leadsReq]);
 
-  // 3. SAFE DATA PARSING
+  // 5. SAFE DATA PARSING
   const account = accountRes.data || { username: 'Promoter', ledger: [] };
   const config = configRes.data || {};
   const leadCount = leadsRes.count || 0;
@@ -124,7 +135,7 @@ export default async function DashboardPage() {
 }
 
 // ------------------------------------------------------------------
-// PREMIUM SKELETON LOADER (Shows while fetching data)
+// PREMIUM SKELETON LOADER
 // ------------------------------------------------------------------
 function DashboardSkeleton() {
   const shimmer = {
@@ -136,7 +147,6 @@ function DashboardSkeleton() {
 
   return (
     <div style={{paddingBottom: '20px'}}>
-      {/* Header Skeleton */}
       <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px'}}>
         <div>
           <div style={{...shimmer, width: '80px', height: '14px', marginBottom: '8px'}}></div>
@@ -144,17 +154,11 @@ function DashboardSkeleton() {
         </div>
         <div style={{...shimmer, width: '45px', height: '45px', borderRadius: '50%'}}></div>
       </div>
-
-      {/* Card Skeleton */}
       <div style={{...shimmer, width: '100%', height: '220px', borderRadius: '24px', marginBottom: '24px'}}></div>
-
-      {/* Grid Skeleton */}
       <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
         <div style={{...shimmer, height: '120px', borderRadius: '24px'}}></div>
         <div style={{...shimmer, height: '120px', borderRadius: '24px'}}></div>
       </div>
-
-      {/* CSS Animation for Shimmer */}
       <style>{`
         @keyframes shimmer {
           0% { background-position: 200% 0; }

@@ -5,22 +5,26 @@ import { redirect } from 'next/navigation';
 export const revalidate = 0; // Always fresh data
 
 export default async function LeadsPage() {
-  // 1. GET TOKEN & AUTH CLIENT
+  // 1. GET AUTH TOKEN (The Fix)
   const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
 
+  // If no token, redirect to login immediately
   if (!token) redirect('/login');
 
+  // 2. CONNECT TO SUPABASE WITH TOKEN
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
+  // 3. AUTH CHECK
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect('/login');
 
-  // 2. FETCH LEADS (Robust)
+  // 4. FETCH LEADS (Robust)
+  // We use 'referred_by' because that matches your database table
   const { data: leads, error } = await supabase
     .from('leads')
     .select(`
@@ -28,15 +32,20 @@ export default async function LeadsPage() {
       campaigns ( title ),
       users ( phone )
     `)
-    .eq('referred_by', user.id)
+    .eq('referred_by', user.id) 
     .order('created_at', { ascending: false })
     .limit(50);
 
   if (error) {
-    return <div style={{padding: '40px', color: '#ef4444', textAlign: 'center'}}>Error loading activity log.</div>;
+    return (
+      <div style={{padding: '40px', textAlign: 'center', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '16px', background: 'rgba(239,68,68,0.1)'}}>
+        Error loading activity log. <br/>
+        <small style={{fontSize:'10px', opacity:0.7}}>{error.message}</small>
+      </div>
+    );
   }
 
-  // --- STYLES ---
+  // --- PREMIUM STYLES ---
   const headerStyle = { 
     marginBottom: '30px',
     textAlign: 'center'
