@@ -25,9 +25,11 @@ export default function AdminSidebar({ adminName, logoutAction }) {
     height: '100vh',
     background: '#0a0a0a',
     borderRight: '1px solid #222',
-    position: 'fixed',
-    top: 0,
-    left: 0,
+    // --- EDIT STARTS HERE ---
+    position: 'sticky', // Changed from 'fixed' to 'sticky' so it takes up real space
+    top: 0,             // Keeps it pinned to the top while scrolling
+    flexShrink: 0,      // Prevents it from getting squashed
+    // --- EDIT ENDS HERE ---
     display: 'flex',
     flexDirection: 'column',
     zIndex: 50,
