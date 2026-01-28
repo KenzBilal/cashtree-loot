@@ -13,9 +13,12 @@ export default function AdminLayout({ children }) {
       {/* Sidebar is FIXED on top left */}
       <AdminSidebar />
 
-      {/* Main Content is PUSHED to the right by 260px to clear the sidebar */}
+      {/* Main Content:
+          1. style={{ paddingLeft: '260px' }} -> Starts AFTER the sidebar
+          2. className="p-10" -> Adds nice breathing room INSIDE the content area
+      */}
       <main style={{ paddingLeft: '260px' }} className="w-full">
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="max-w-7xl mx-auto px-12 py-10">
           {children}
         </div>
       </main>
