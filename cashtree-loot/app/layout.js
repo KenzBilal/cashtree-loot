@@ -1,5 +1,4 @@
-
-import "./globals.css"; 
+import "./globals.css"; // Notice the ONE dot (.)
 
 export const metadata = {
   title: "CashTree",
