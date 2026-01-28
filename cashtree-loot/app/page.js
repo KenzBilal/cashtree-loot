@@ -4,19 +4,44 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
-  // State for Mobile Menu
+  // --- STATE MANAGEMENT ---
   const [isNavOpen, setIsNavOpen] = useState(false);
-  
-  // State for Mobile CTA Popup (Santa/Telegram)
+  const [activeFaq, setActiveFaq] = useState(null); // New: For FAQ
   const [isMobileCtaVisible, setIsMobileCtaVisible] = useState(false);
+  const [dashboardLink, setDashboardLink] = useState("/login"); // New: For Dashboard
 
-  // Effect to show Mobile CTA after 2 seconds (simulating your old script)
+  // --- LOGIC: Runs once when page loads ---
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMobileCtaVisible(true);
-    }, 2000);
-    return () => clearTimeout(timer);
+    // 1. Dashboard Link Logic
+    const partnerId = localStorage.getItem("p_id");
+    const oldCode = localStorage.getItem("cashttree_referral");
+    if (partnerId) {
+      setDashboardLink("/dashboard");
+    } else if (oldCode) {
+      setDashboardLink(`/dashboard?code=${oldCode}`);
+    }
+
+    // 2. Smart CTA Scroll Logic
+    const checkCtaVisibility = () => {
+      const lastClosed = localStorage.getItem("ctaClosedTime");
+      const now = new Date().getTime();
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+      if (lastClosed && (now - lastClosed < ONE_DAY_MS)) return;
+
+      const scrollPercentage = ((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight) * 100;
+      if (scrollPercentage > 50) setIsMobileCtaVisible(true);
+    };
+
+    window.addEventListener("scroll", checkCtaVisibility);
+    return () => window.removeEventListener("scroll", checkCtaVisibility);
   }, []);
+
+  // --- HANDLER: Close CTA ---
+  const closeCta = () => {
+    setIsMobileCtaVisible(false);
+    localStorage.setItem("ctaClosedTime", new Date().getTime());
+  };
 
   return (
     <>
@@ -41,7 +66,7 @@ export default function Home() {
           <div id="navLinks" className={`nav-links ${isNavOpen ? 'nav-open' : ''}`}>
             <a href="#how-it-works" onClick={() => setIsNavOpen(false)}>How it Works</a>
             <a href="#faq" onClick={() => setIsNavOpen(false)}>FAQ</a>
-            <a href="/login" id="menuDashboardLink"> 📊 Dashboard</a>
+           <a href={dashboardLink} id="menuDashboardLink"> 📊 Dashboard</a>
           </div>
 
         </div>
@@ -721,8 +746,8 @@ export default function Home() {
             <div className="faq">
 
               {/* Q1 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 1 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 1 ? null : 1)}>
                   Are these offers legitimate?
                 </button>
                 <div className="faq-answer">
@@ -735,8 +760,8 @@ export default function Home() {
               </div>
 
               {/* Q2 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 2 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 2 ? null : 2)}>
                   Do I need to pay to use these offers?
                 </button>
                 <div className="faq-answer">
@@ -749,8 +774,8 @@ export default function Home() {
               </div>
 
               {/* Q3 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 3 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 3 ? null : 3)}>
                   Is any income or reward guaranteed?
                 </button>
                 <div className="faq-answer">
@@ -763,8 +788,8 @@ export default function Home() {
               </div>
 
               {/* Q4 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 4 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 4 ? null : 4)}>
                   How long does it take to receive rewards?
                 </button>
                 <div className="faq-answer">
@@ -778,8 +803,8 @@ export default function Home() {
               </div>
 
               {/* Q5 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 5 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 5 ? null : 5)}>
                   What are the monetization tools mentioned on this site?
                 </button>
                 <div className="faq-answer">
@@ -796,8 +821,8 @@ export default function Home() {
               </div>
 
               {/* Q6 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 6 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 6 ? null : 6)}>
                   Can I monetize my own website or traffic?
                 </button>
                 <div className="faq-answer">
@@ -821,8 +846,8 @@ export default function Home() {
               </div>
 
               {/* Q7 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 7 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 7 ? null : 7)}>
                   Does CashTree Loot collect personal data?
                 </button>
                 <div className="faq-answer">
@@ -835,8 +860,8 @@ export default function Home() {
               </div>
 
               {/* Q8 */}
-              <div className="faq-item">
-                <button className="faq-question">
+              <div className={`faq-item ${activeFaq === 8 ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 8 ? null : 8)}>
                   Who should use this website?
                 </button>
                 <div className="faq-answer">
@@ -983,15 +1008,15 @@ export default function Home() {
         </a>
 
         <button
-          className="cta-close"
-          aria-label="Close"
-          type="button"
-          onClick={() => setIsMobileCtaVisible(false)}
-        >
-          ✕
-        </button>
+  className="cta-close"
+  aria-label="Close"
+  type="button"
+  onClick={closeCta}  // <--- Use the function you created!
+>
+  ✕
+</button>
       </div>
-      {/* ================= END MOBILE CTA ================= */}
+      
     </>
   );
 }
