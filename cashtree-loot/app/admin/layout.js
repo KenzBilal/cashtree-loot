@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import Script from "next/script";
 
 // Load the Inter font (matches your old site's font-family)
