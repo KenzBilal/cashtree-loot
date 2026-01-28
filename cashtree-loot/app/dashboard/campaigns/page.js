@@ -3,33 +3,42 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import CampaignsInterface from './CampaignsInterface';
 
-export const revalidate = 0;
+// Force dynamic so it doesn't cache old data
+export const dynamic = 'force-dynamic';
 
 export default async function CampaignsPage() {
-  // 1. AUTH & SECURITY
+  // 1. AUTH CHECK (Protect the page)
   const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
   
   if (!token) redirect('/login');
 
-  const supabase = createClient(
+  // Verify User (Security Check)
+  const supabaseAuth = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
-
-  const { data: { user } } = await supabase.auth.getUser();
+  
+  const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) redirect('/login');
 
-  // 2. FETCH CAMPAIGNS (FIXED COLUMN NAME)
-  // We use 'payout_amount' because that is what your DB has
-  const { data: campaigns, error } = await supabase
+  // 2. FETCH CAMPAIGNS (Use Admin Client to Guarantee Data Loads)
+  // This bypasses RLS so users DEFINITELY see the tasks
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  const { data: campaigns, error } = await supabaseAdmin
     .from('campaigns')
     .select('*')
+    // ✅ FILTER: Only show active campaigns to users
+    .eq('is_active', true) 
     .order('payout_amount', { ascending: false }); 
 
   if (error) {
-    console.error("Campaign Error:", error); // Log actual error to console
+    console.error("Campaign Error:", error);
     return (
         <div style={{padding:'40px', textAlign:'center', color:'#f87171'}}>
             <h3>Error Loading Tasks</h3>

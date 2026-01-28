@@ -19,8 +19,8 @@ export default function CreateCampaignPage() {
     title: '',
     description: '',
     landing_url: '',
-    icon_url: '', // New Field
-    category: 'CPI', // New Field
+    icon_url: '', 
+    category: 'CPI', 
     payout_amount: '',
     user_reward: ''
   });
@@ -44,18 +44,21 @@ export default function CreateCampaignPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Session expired. Please login again.");
 
-      // Insert
-      const { error } = await supabase.from('campaigns').insert({
+      // ✅ FIX: Send 'is_active' (boolean) and ensure numbers are correct
+      // We do NOT send 'id' because the Database now generates it automatically.
+      const payload = {
         created_by: user.id,
         title: formData.title,
         description: formData.description,
         landing_url: formData.landing_url,
-        icon_url: formData.icon_url || 'https://via.placeholder.com/100', // Fallback icon
+        icon_url: formData.icon_url || 'https://via.placeholder.com/100',
         category: formData.category,
         payout_amount: parseFloat(formData.payout_amount) || 0,
         user_reward: parseFloat(formData.user_reward) || 0,
-        status: 'active'
-      });
+        is_active: true // ✅ CHANGED from "status: 'active'" to match your new Schema
+      };
+
+      const { error } = await supabase.from('campaigns').insert(payload);
 
       if (error) throw error;
 
@@ -64,6 +67,7 @@ export default function CreateCampaignPage() {
       router.refresh();
 
     } catch (err) {
+      console.error(err);
       alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
