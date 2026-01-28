@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Motwal App Reward – CashTree Loot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+
+  <div class="card">
+    <div class="brand">🌱 CashTree <span>Loot</span></div>
+
+    <h1>Motwal</h1>
+    <div class="badge">Verified App Offer</div>
+
+    <div class="earn-box">
+      <strong>How you earn ₹70:</strong><br>
+      • Click the button below<br>
+      • Register using your Phone Number<br>
+      • Complete the basic profile setup<br>
+      • Reward credited to UPI after verification
+    </div>
+
+    <div class="info-box" style="margin-top:15px;">
+        <strong>Requirements:</strong><br>
+        • Aadhaar linked to Mobile<br>
+        • Valid PAN Card<br>
+        • New Users Only<br>
+        • <strong>Reward: ₹70</strong>
+    </div>
+
+    <div class="section">
+      <label>Phone Number (Used for Motwal)</label>
+      <input type="tel" id="phone" placeholder="Enter 10-digit mobile number">
+    </div>
+
+    <div class="section">
+      <label>Your UPI ID (For Payment)</label>
+      <input type="text" id="upi" placeholder="Ex: name@upi">
+    </div>
+
+    <button class="submit-btn" id="submitBtn">
+      Submit & Download App
+    </button>
+
+    <p id="statusMsg" style="display:none; color: #16a34a; font-weight: bold; text-align: center; margin-top: 15px;">
+      ✅ Redirecting to Offer...
+    </p>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
