@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import LeadRow from './lead-row';
+import { formatDistanceToNow } from 'date-fns';
 
-export default function LeadsInterface({ initialData, stats }) {
+// --- MAIN INTERFACE COMPONENT ---
+export default function LeadsInterface({ initialData, stats, updateStatusAction }) {
   const [activeTab, setActiveTab] = useState('PENDING'); // PENDING | HISTORY
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -77,13 +78,105 @@ export default function LeadsInterface({ initialData, stats }) {
 
         <div>
           {filteredData.length > 0 ? (
-            filteredData.map(lead => <LeadRow key={lead.id} lead={lead} />)
+            filteredData.map(lead => (
+              <LeadRow 
+                key={lead.id} 
+                lead={lead} 
+                updateStatusAction={updateStatusAction} // <--- Pass action down
+              />
+            ))
           ) : (
             <div style={{padding: '60px', textAlign: 'center', color: '#444', fontSize: '13px'}}>
                {activeTab === 'PENDING' ? '✨ All clear! No pending leads.' : 'No history found.'}
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTS ---
+
+function LeadRow({ lead, updateStatusAction }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleAction = async (status) => {
+    if (!confirm(`Are you sure you want to ${status} this lead?`)) return;
+    setLoading(true);
+    await updateStatusAction(lead.id, status);
+    setLoading(false);
+  };
+
+  const statusColor = {
+    pending: '#facc15',
+    approved: '#00ff88',
+    rejected: '#ef4444'
+  }[lead.status];
+
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr 2fr 1.5fr', 
+      padding: '20px 24px', borderBottom: '1px solid #1a1a1a', alignItems: 'center',
+      fontSize: '13px', color: '#ccc', opacity: loading ? 0.5 : 1
+    }}>
+      {/* 1. Time */}
+      <div style={{color: '#666', fontSize: '12px'}}>
+        {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
+      </div>
+
+      {/* 2. Campaign */}
+      <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+        {lead.campaigns?.icon_url && (
+          <img src={lead.campaigns.icon_url} alt="" style={{width:'24px', height:'24px', borderRadius:'6px'}} />
+        )}
+        <span style={{fontWeight:'600', color:'#fff'}}>{lead.campaigns?.title || 'Unknown'}</span>
+      </div>
+
+      {/* 3. Promoter */}
+      <div>
+        <div style={{color:'#fff'}}>{lead.accounts?.username || 'Unknown'}</div>
+        <div style={{fontSize:'11px', color:'#555'}}>{lead.accounts?.phone}</div>
+      </div>
+
+      {/* 4. Data */}
+      <div style={{fontFamily: 'monospace', background: '#050505', padding: '6px 10px', borderRadius: '6px', border: '1px solid #222', display: 'inline-block'}}>
+        {lead.customer_data || 'No Data'}
+      </div>
+
+      {/* 5. Actions (The Important Part) */}
+      <div style={{textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
+        {lead.status === 'pending' ? (
+          <>
+            <button 
+              onClick={() => handleAction('rejected')}
+              disabled={loading}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
+                padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+              }}
+            >
+              REJECT
+            </button>
+            <button 
+              onClick={() => handleAction('approved')}
+              disabled={loading}
+              style={{
+                background: 'rgba(0, 255, 136, 0.1)', color: '#00ff88', border: '1px solid rgba(0, 255, 136, 0.2)',
+                padding: '6px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+              }}
+            >
+              APPROVE
+            </button>
+          </>
+        ) : (
+          <span style={{
+            color: statusColor, fontWeight: '800', fontSize: '11px', textTransform: 'uppercase',
+            background: `${statusColor}10`, padding: '4px 10px', borderRadius: '6px', border: `1px solid ${statusColor}30`
+          }}>
+            {lead.status}
+          </span>
+        )}
       </div>
     </div>
   );
