@@ -12,7 +12,7 @@ const supabaseAdmin = createClient(
 
 // --- SERVER ACTIONS (Securely run on server) ---
 async function updateLeadStatus(leadId, newStatus) {
-  'use server'; // <--- Magic line: Allows Client to call this Server Function
+  'use server';
 
   console.log(`Processing lead ${leadId} to ${newStatus}...`);
 
@@ -29,18 +29,17 @@ async function updateLeadStatus(leadId, newStatus) {
     return { success: false, error: error.message };
   }
 
-  // Refresh the page data instantly
   revalidatePath('/admin/leads');
   return { success: true };
 }
 
 export default async function LeadsPage() {
-  // 1. FETCH DATA
+  // 1. FETCH DATA (Removed 'icon_url' to fix the error)
   const { data: leads, error } = await supabaseAdmin
     .from('leads')
     .select(`
       *,
-      campaigns ( title, payout_amount, icon_url ),
+      campaigns ( title, payout_amount ),
       accounts ( id, username, phone )
     `)
     .order('created_at', { ascending: false })
@@ -61,13 +60,13 @@ export default async function LeadsPage() {
     pendingValue: pending.reduce((sum, l) => sum + (l.campaigns?.payout_amount || 0), 0)
   };
 
-  // 3. RENDER INTERFACE (Pass the Server Action)
+  // 3. RENDER INTERFACE
   return (
     <div className="fade-in-animation">
       <LeadsInterface 
         initialData={leads || []} 
         stats={stats} 
-        updateStatusAction={updateLeadStatus} // <--- Passing the power to the client
+        updateStatusAction={updateLeadStatus} 
       />
     </div>
   );
