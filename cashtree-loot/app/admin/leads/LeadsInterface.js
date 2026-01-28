@@ -125,11 +125,8 @@ function LeadRow({ lead, updateStatusAction }) {
         {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
       </div>
 
-      {/* 2. Campaign */}
+      {/* 2. Campaign (No Icon) */}
       <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-        {lead.campaigns?.icon_url && (
-          <img src={lead.campaigns.icon_url} alt="" style={{width:'24px', height:'24px', borderRadius:'6px'}} />
-        )}
         <span style={{fontWeight:'600', color:'#fff'}}>{lead.campaigns?.title || 'Unknown'}</span>
       </div>
 
@@ -144,7 +141,7 @@ function LeadRow({ lead, updateStatusAction }) {
         {lead.customer_data || 'No Data'}
       </div>
 
-      {/* 5. Actions (The Important Part) */}
+      {/* 5. Actions */}
       <div style={{textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
         {lead.status === 'pending' ? (
           <>

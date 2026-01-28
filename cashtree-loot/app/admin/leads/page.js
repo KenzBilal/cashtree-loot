@@ -34,7 +34,7 @@ async function updateLeadStatus(leadId, newStatus) {
 }
 
 export default async function LeadsPage() {
-  // 1. FETCH DATA (Removed 'icon_url' to fix the error)
+  // 1. FETCH DATA (Removed 'icon_url' completely)
   const { data: leads, error } = await supabaseAdmin
     .from('leads')
     .select(`
