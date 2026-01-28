@@ -25,11 +25,9 @@ export default function AdminSidebar({ adminName, logoutAction }) {
     height: '100vh',
     background: '#0a0a0a',
     borderRight: '1px solid #222',
-    // --- EDIT STARTS HERE ---
-    position: 'sticky', // Changed from 'fixed' to 'sticky' so it takes up real space
-    top: 0,             // Keeps it pinned to the top while scrolling
-    flexShrink: 0,      // Prevents it from getting squashed
-    // --- EDIT ENDS HERE ---
+    position: 'fixed', // ✅ FIXED: Stays locked on left
+    top: 0,
+    left: 0,
     display: 'flex',
     flexDirection: 'column',
     zIndex: 50,
@@ -82,7 +80,6 @@ export default function AdminSidebar({ adminName, logoutAction }) {
 
   return (
     <aside style={sidebarStyle}>
-      
       {/* BRANDING */}
       <div style={logoSectionStyle}>
         <div style={logoIconStyle}>C</div>
