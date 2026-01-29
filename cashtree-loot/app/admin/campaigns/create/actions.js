@@ -9,14 +9,41 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// --- HELPER: Smart URL Formatter ---
+// ✅ FEATURE: Type "motwal" -> Saves "https://cashttree.online/motwal"
+function formatLandingUrl(input) {
+  if (!input) return '';
+  
+  // 1. If it's already a full link (http/https), leave it alone
+  if (input.startsWith('http://') || input.startsWith('https://')) {
+    return input;
+  }
+
+  // 2. Get the Base URL (Localhost or Live)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cashttree.online';
+
+  // 3. If it starts with slash (e.g. "/motwal"), just prepend base
+  if (input.startsWith('/')) {
+    return `${baseUrl}${input}`;
+  }
+
+  // 4. If it's just a word (e.g. "motwal"), add slash and prepend base
+  return `${baseUrl}/${input}`;
+}
+
 export async function createCampaign(formData) {
-  // 1. Extract Data
+  // 1. Extract & Format Data
+  const rawUrl = formData.get('landing_url');
+
   const newCampaign = {
     title: formData.get('title'),
     description: formData.get('description'),
     payout_amount: parseFloat(formData.get('payout_amount')),
     user_reward: parseFloat(formData.get('user_reward')),
-    landing_url: formData.get('landing_url'),
+    
+    // ✅ APPLIED FIX: Using the formatter function here
+    landing_url: formatLandingUrl(rawUrl),
+    
     icon_url: formData.get('icon_url'),
     category: formData.get('category'),
     is_active: true, // Auto-activate
@@ -34,10 +61,12 @@ export async function createCampaign(formData) {
     .insert([newCampaign]);
 
   if (error) {
+    // Return error to the client component
     return { success: false, error: error.message };
   }
 
   // 4. Refresh & Redirect
+  // We revalidate the main list so the new campaign shows up instantly
   revalidatePath('/admin/campaigns');
   redirect('/admin/campaigns');
 }
