@@ -24,23 +24,45 @@ export default function CampaignManager({ initialCampaigns }) {
     }
   };
 
-  // --- 2. SAVE EDITS ---
+  // --- 2. SAVE EDITS (INSTANT VERSION) ---
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.target);
     
-    const res = await updateCampaign(editing.id, formData);
+    // 1. Capture the new data from the form
+    const formData = new FormData(e.target);
+    const updates = {
+      title: formData.get('title'),
+      landing_url: formData.get('landing_url'),
+      payout_amount: parseFloat(formData.get('payout_amount')),
+      user_reward: parseFloat(formData.get('user_reward')),
+      category: formData.get('category'),
+      icon_url: formData.get('icon_url'),
+      description: formData.get('description'),
+    };
+
+    // 2. OPTIMISTIC UPDATE: Update the list on screen INSTANTLY
+    setList(prev => prev.map(c => 
+      c.id === editing.id ? { ...c, ...updates } : c
+    ));
+
+    // 3. Close the popup INSTANTLY (Don't wait for server)
+    setEditing(null); 
     setLoading(false);
 
-    if (res.success) {
-      setEditing(null); // Close modal
-    } else {
-      alert("Update Failed: " + res.error);
+    // 4. Send to server in the background (Silent Sync)
+    const res = await updateCampaign(editing.id, formData);
+
+    // 5. Handle failure if server rejects it
+    if (!res.success) {
+      alert("Save failed! The changes were not saved to the database.");
+      window.location.reload(); // Reload to reset to true server state
     }
   };
 
   const neonGreen = '#00ff88';
+
+ 
 
   return (
     <div className="fade-in">

@@ -22,7 +22,11 @@ export default async function CampaignsPage() {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) redirect('/login');
 
-  // 2. FETCH ACTIVE MISSIONS (Using Service Role to guarantee loading)
+  // 2. GET PROMOTER DETAILS (Username needed for referral links)
+  // We try to get the username from metadata, or fallback to the email prefix
+  const promoterUsername = user.user_metadata?.username || user.email?.split('@')[0] || 'promoter';
+
+  // 3. FETCH ACTIVE MISSIONS (Using Service Role to guarantee loading)
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -31,7 +35,7 @@ export default async function CampaignsPage() {
   const { data: campaigns, error } = await supabaseAdmin
     .from('campaigns')
     .select('*')
-    .eq('is_active', true) // ✅ CRITICAL: Only show active tasks
+    .eq('is_active', true) // ✅ Only show active tasks
     .order('payout_amount', { ascending: false }); // Highest paying first
 
   if (error) {
@@ -39,7 +43,7 @@ export default async function CampaignsPage() {
     return <div className="p-10 text-center text-red-500">System Error: Could not load missions.</div>;
   }
 
-  // 3. RENDER THE INTERFACE
+  // 4. RENDER THE INTERFACE
   return (
     <div style={{paddingBottom: '100px', animation: 'fadeIn 0.5s ease-out'}}>
       
@@ -53,8 +57,12 @@ export default async function CampaignsPage() {
         </p>
       </div>
 
-      {/* THE INTERACTIVE LIST */}
-      <CampaignsInterface campaigns={campaigns || []} promoterId={user.id} />
+      {/* THE 10/10 INTERACTIVE LIST */}
+      <CampaignsInterface 
+        campaigns={campaigns || []} 
+        promoterId={user.id} 
+        promoterUsername={promoterUsername} // ✅ Critical for referral links
+      />
       
     </div>
   );

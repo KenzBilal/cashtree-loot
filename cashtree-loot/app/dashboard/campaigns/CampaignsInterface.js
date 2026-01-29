@@ -1,199 +1,161 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ChevronRight, Zap, ShieldCheck, Clock } from 'lucide-react';
+import { X, ChevronRight, Zap, Copy, Check, Info } from 'lucide-react';
 
-export default function CampaignsInterface({ campaigns, promoterId }) {
+export default function CampaignsInterface({ campaigns, promoterId, promoterUsername }) {
   const [selectedTask, setSelectedTask] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  // --- HELPER: Parse Description into Steps ---
+  const parseSteps = (text) => {
+    if (!text) return [];
+    // Split by new lines or numbers like "1.", "2."
+    return text.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0);
+  };
+
+  // --- HELPER: Copy Logic ---
+  const handleCopy = (url) => {
+    // Generate the unique affiliate link
+    // Example: https://cashtree.in/motwal?ref=john_doe&camp=123
+    const affiliateLink = `${window.location.origin}/motwal?ref=${promoterUsername}&camp=${selectedTask.id}`;
+    
+    navigator.clipboard.writeText(affiliateLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="fade-in">
       
-      {/* 1. EMPTY STATE CHECK */}
-      {campaigns.length === 0 ? (
-        <div style={{textAlign: 'center', padding: '60px 20px', border: '1px dashed #333', borderRadius: '20px'}}>
-          <div style={{fontSize: '40px', marginBottom: '16px'}}>😴</div>
-          <h3 style={{color: '#fff', fontSize: '18px', fontWeight: 'bold'}}>No Missions Available</h3>
-          <p style={{color: '#666', fontSize: '13px'}}>Check back later for new earning opportunities.</p>
-        </div>
-      ) : (
-        /* 2. THE GRID */
-        <div style={{
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-          gap: '16px'
-        }}>
-          {campaigns.map((camp, index) => (
-            <div 
-              key={camp.id} 
-              onClick={() => setSelectedTask(camp)}
-              style={{
-                background: '#0a0a0f', 
-                border: '1px solid #1a1a1a', 
-                borderRadius: '20px', 
-                padding: '20px', 
-                cursor: 'pointer',
-                position: 'relative',
-                animation: `slideUp 0.4s ease-out ${index * 0.05}s backwards`,
-                transition: 'transform 0.2s, border-color 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#333';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#1a1a1a';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              {/* Card Header */}
-              <div style={{display: 'flex', gap: '14px', alignItems: 'flex-start'}}>
-                <div style={{
-                  width: '56px', height: '56px', borderRadius: '14px', 
-                  background: '#111', flexShrink: 0, overflow: 'hidden',
-                  border: '1px solid #222'
-                }}>
-                  <img 
-                    src={camp.icon_url || 'https://via.placeholder.com/60/111/333'} 
-                    alt={camp.title}
-                    style={{width: '100%', height: '100%', objectFit: 'cover'}} 
-                  />
-                </div>
-
-                <div style={{flex: 1}}>
-                  <h3 style={{
-                    color: '#fff', fontWeight: '800', fontSize: '15px', 
-                    lineHeight: '1.3', marginBottom: '6px'
-                  }}>
-                    {camp.title}
-                  </h3>
-                  
-                  {/* Category Tag */}
-                  <span style={{
-                    fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', 
-                    borderRadius: '6px', background: '#1a1a1a', color: '#888',
-                    textTransform: 'uppercase', letterSpacing: '0.5px'
-                  }}>
-                    {camp.category || 'General'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card Footer: Price */}
-              <div style={{
-                marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #222',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-              }}>
-                <div style={{fontSize: '11px', color: '#666', fontWeight: '700'}}>
-                  REWARD
-                </div>
-                <div style={{
-                  color: '#00ff88', fontSize: '16px', fontWeight: '900',
-                  textShadow: '0 0 20px rgba(0, 255, 136, 0.2)'
-                }}>
-                  ₹{camp.payout_amount}
-                </div>
+      {/* 1. GRID OF OFFERS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        {campaigns.map((camp, index) => (
+          <div 
+            key={camp.id} 
+            onClick={() => setSelectedTask(camp)}
+            style={{
+              background: '#0a0a0f', border: '1px solid #1a1a1a', borderRadius: '24px', padding: '24px', cursor: 'pointer',
+              position: 'relative', transition: 'all 0.2s', animation: `slideUp 0.5s ease-out ${index * 0.05}s backwards`
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#333'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
+          >
+            {/* Header */}
+            <div style={{display: 'flex', gap: '16px', alignItems: 'start', marginBottom: '20px'}}>
+              <img src={camp.icon_url} style={{width: '60px', height: '60px', borderRadius: '16px', border: '1px solid #222', objectFit: 'cover'}} />
+              <div>
+                <h3 style={{color: '#fff', fontSize: '16px', fontWeight: '800', lineHeight: '1.2', marginBottom: '6px'}}>{camp.title}</h3>
+                <span style={{fontSize: '11px', background: '#1a1a1a', color: '#888', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', textTransform: 'uppercase'}}>{camp.category || 'Offer'}</span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
+            {/* Payout Grid */}
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#111', padding: '12px', borderRadius: '14px'}}>
+              <div>
+                <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>YOU EARN</div>
+                <div style={{color: '#00ff88', fontSize: '18px', fontWeight: '900'}}>₹{camp.payout_amount}</div>
+              </div>
+              <div style={{borderLeft: '1px solid #222', paddingLeft: '12px'}}>
+                <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>USER GETS</div>
+                <div style={{color: '#fff', fontSize: '18px', fontWeight: '900'}}>₹{camp.user_reward}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      {/* 3. THE POPUP MODAL (Task Details) */}
+      {/* 2. ADVANCED POPUP MODAL */}
       {selectedTask && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'end', justifyContent: 'center',
-          animation: 'fadeIn 0.2s ease-out'
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
         }} onClick={() => setSelectedTask(null)}>
           
-          <div 
-            onClick={(e) => e.stopPropagation()} 
-            className="slide-up-modal"
-            style={{
-              width: '100%', maxWidth: '480px', 
-              background: '#0a0a0f', 
-              borderTop: '1px solid #333',
-              borderRadius: '24px 24px 0 0', 
-              padding: '30px', 
-              boxShadow: '0 -10px 40px rgba(0,0,0,0.5)'
-            }}
-          >
-            {/* Modal Header */}
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '24px'}}>
-              <img 
-                src={selectedTask.icon_url} 
-                style={{width: '64px', height: '64px', borderRadius: '16px', border: '1px solid #333'}} 
-              />
-              <button onClick={() => setSelectedTask(null)} style={{
-                background: '#1a1a1a', border: 'none', borderRadius: '50%', width: '32px', height: '32px', 
-                color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-              }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <h2 style={{color: '#fff', fontSize: '22px', fontWeight: '900', lineHeight: '1.2', marginBottom: '12px'}}>
-              {selectedTask.title}
-            </h2>
+          <div onClick={(e) => e.stopPropagation()} className="slide-up" style={{
+            width: '100%', maxWidth: '500px', background: '#0a0a0f', border: '1px solid #333', 
+            borderRadius: '30px', padding: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.7)', maxHeight: '90vh', overflowY: 'auto'
+          }}>
             
-            {/* Badges */}
-            <div style={{display: 'flex', gap: '8px', marginBottom: '24px'}}>
-              <Badge text="Instant Payment" color="#00ff88" bg="rgba(0, 255, 136, 0.1)" icon={<Zap size={10} />} />
-              <Badge text="Verified" color="#3b82f6" bg="rgba(59, 130, 246, 0.1)" icon={<ShieldCheck size={10} />} />
+            {/* Header */}
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px'}}>
+              <div style={{display: 'flex', gap: '14px', alignItems: 'center'}}>
+                <img src={selectedTask.icon_url} style={{width: '56px', height: '56px', borderRadius: '16px', border: '1px solid #333'}} />
+                <div>
+                   <h2 style={{color: '#fff', fontSize: '20px', fontWeight: '900', margin: 0}}>{selectedTask.title}</h2>
+                   <div style={{display: 'flex', gap: '6px', marginTop: '6px'}}>
+                      <Badge text="Verified Offer" color="#3b82f6" bg="rgba(59, 130, 246, 0.1)" />
+                      <Badge text="Instant Track" color="#00ff88" bg="rgba(0, 255, 136, 0.1)" />
+                   </div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedTask(null)} style={{background: '#1a1a1a', border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><X size={20} /></button>
             </div>
 
-            {/* Description */}
-            <div style={{
-              background: '#111', borderRadius: '16px', padding: '20px', 
-              marginBottom: '24px', border: '1px solid #222'
-            }}>
-               <h4 style={{color: '#666', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px'}}>
-                 INSTRUCTIONS
-               </h4>
-               <p style={{color: '#ddd', fontSize: '13px', lineHeight: '1.6', whiteSpace: 'pre-wrap'}}>
-                 {selectedTask.description || "Complete the steps to earn your reward."}
-               </p>
+            {/* Money Box */}
+            <div style={{display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)', padding: '20px', borderRadius: '20px', marginBottom: '24px', border: '1px solid #222'}}>
+               <div>
+                  <div style={{fontSize: '11px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase'}}>Your Commission</div>
+                  <div style={{fontSize: '24px', color: '#00ff88', fontWeight: '900'}}>₹{selectedTask.payout_amount}</div>
+               </div>
+               <div style={{textAlign: 'right'}}>
+                  <div style={{fontSize: '11px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase'}}>User Bonus</div>
+                  <div style={{fontSize: '24px', color: '#fff', fontWeight: '900'}}>₹{selectedTask.user_reward}</div>
+               </div>
             </div>
 
-            {/* START BUTTON */}
-            <a 
-              href={`${selectedTask.landing_url}${selectedTask.landing_url.includes('?') ? '&' : '?'}sub1=${promoterId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                width: '100%', padding: '18px', borderRadius: '16px',
-                background: '#fff', color: '#000', 
-                fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px',
-                textDecoration: 'none', boxShadow: '0 0 30px rgba(255,255,255,0.2)'
-              }}
-            >
-              Start Mission <ChevronRight size={18} />
-            </a>
+            {/* Smart Instructions List */}
+            <div style={{marginBottom: '24px'}}>
+              <h4 style={{color: '#fff', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                <Info size={14} color="#666" /> Steps to Complete
+              </h4>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                {parseSteps(selectedTask.description).map((step, i) => (
+                  <div key={i} style={{display: 'flex', gap: '12px', fontSize: '14px', color: '#ccc', lineHeight: '1.5'}}>
+                    <div style={{
+                      minWidth: '24px', height: '24px', background: '#222', borderRadius: '50%', 
+                      color: '#fff', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '-2px'
+                    }}>
+                      {i + 1}
+                    </div>
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            <div style={{textAlign: 'center', marginTop: '16px', fontSize: '10px', color: '#444', fontWeight: '600'}}>
-              Clicking starts tracking. Do not use VPN.
+            {/* Share Link Section */}
+            <div style={{background: '#111', padding: '16px', borderRadius: '16px', border: '1px dashed #333'}}>
+              <div style={{fontSize: '11px', color: '#666', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase'}}>YOUR UNIQUE SHARE LINK</div>
+              
+              <button 
+                onClick={() => handleCopy()}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
+                  background: copied ? '#00ff88' : '#fff', 
+                  color: '#000', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  cursor: 'pointer', transition: 'background 0.2s'
+                }}
+              >
+                {copied ? <Check size={20} /> : <Copy size={20} />}
+                {copied ? 'LINK COPIED!' : 'COPY REFERRAL LINK'}
+              </button>
             </div>
 
           </div>
         </div>
       )}
+
     </div>
   );
 }
 
-// Badge Component
-function Badge({ text, color, bg, icon }) {
+function Badge({ text, color, bg }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      fontSize: '10px', fontWeight: '800', color: color, background: bg,
-      padding: '6px 12px', borderRadius: '8px'
-    }}>
-      {icon} {text}
+    <span style={{fontSize: '10px', fontWeight: '800', color: color, background: bg, padding: '4px 8px', borderRadius: '6px'}}>
+      {text}
     </span>
   );
 }
