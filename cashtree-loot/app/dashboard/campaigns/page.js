@@ -3,17 +3,16 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import CampaignsInterface from './CampaignsInterface';
 
-// Force dynamic so it doesn't cache old data
+// Force dynamic ensures users always see new tasks instantly
 export const dynamic = 'force-dynamic';
 
 export default async function CampaignsPage() {
-  // 1. AUTH CHECK (Protect the page)
+  // 1. AUTH & SECURITY CHECK
   const cookieStore = await cookies();
   const token = cookieStore.get('ct_session')?.value;
   
   if (!token) redirect('/login');
 
-  // Verify User (Security Check)
   const supabaseAuth = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -23,8 +22,7 @@ export default async function CampaignsPage() {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) redirect('/login');
 
-  // 2. FETCH CAMPAIGNS (Use Admin Client to Guarantee Data Loads)
-  // This bypasses RLS so users DEFINITELY see the tasks
+  // 2. FETCH ACTIVE MISSIONS (Using Service Role to guarantee loading)
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -33,46 +31,31 @@ export default async function CampaignsPage() {
   const { data: campaigns, error } = await supabaseAdmin
     .from('campaigns')
     .select('*')
-    // ✅ FILTER: Only show active campaigns to users
-    .eq('is_active', true) 
-    .order('payout_amount', { ascending: false }); 
+    .eq('is_active', true) // ✅ CRITICAL: Only show active tasks
+    .order('payout_amount', { ascending: false }); // Highest paying first
 
   if (error) {
-    console.error("Campaign Error:", error);
-    return (
-        <div style={{padding:'40px', textAlign:'center', color:'#f87171'}}>
-            <h3>Error Loading Tasks</h3>
-            <p style={{fontSize:'12px', opacity:0.7}}>{error.message}</p>
-        </div>
-    );
+    console.error("Dashboard Load Error:", error);
+    return <div className="p-10 text-center text-red-500">System Error: Could not load missions.</div>;
   }
 
-  // 3. RENDER
-  const headerStyle = { marginBottom: '30px', textAlign: 'center', paddingTop: '10px' };
-  const neonTitle = {
-    fontSize: '28px', fontWeight: '900', color: '#fff', 
-    marginBottom: '8px', textShadow: '0 0 25px rgba(0, 255, 136, 0.4)'
-  };
-
+  // 3. RENDER THE INTERFACE
   return (
-    <div style={{paddingBottom: '100px'}}>
+    <div style={{paddingBottom: '100px', animation: 'fadeIn 0.5s ease-out'}}>
       
-      {/* HEADER */}
-      <div style={headerStyle}>
-        <h1 style={neonTitle}>Earn Money</h1>
-        <p style={{
-          color: '#888', fontSize: '11px', fontWeight: '700', 
-          textTransform: 'uppercase', letterSpacing: '2px',
-          background: 'rgba(255,255,255,0.05)', display: 'inline-block',
-          padding: '6px 16px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)'
-        }}>
-          Active Premium Tasks
+      {/* HEADER SECTION */}
+      <div style={{marginBottom: '30px', textAlign: 'center'}}>
+        <h1 style={{fontSize: '28px', fontWeight: '900', color: '#fff', margin: '0 0 8px 0', letterSpacing: '-1px'}}>
+          Available <span style={{color: '#00ff88'}}>Missions</span>
+        </h1>
+        <p style={{fontSize: '13px', color: '#888', fontWeight: '600'}}>
+          Complete tasks below to earn instant rewards.
         </p>
       </div>
 
-      {/* THE 10/10 INTERFACE */}
+      {/* THE INTERACTIVE LIST */}
       <CampaignsInterface campaigns={campaigns || []} promoterId={user.id} />
-
+      
     </div>
   );
 }

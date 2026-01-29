@@ -1,175 +1,199 @@
 'use client';
 
 import { useState } from 'react';
+import { X, ChevronRight, Zap, ShieldCheck, Clock } from 'lucide-react';
 
 export default function CampaignsInterface({ campaigns, promoterId }) {
-  const [filter, setFilter] = useState('all'); // all, high_pay, easy
-  const [search, setSearch] = useState('');
-
-  // --- 1. FILTER LOGIC (Fixed Columns) ---
-  const filteredCampaigns = campaigns.filter(c => {
-    const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = 
-      filter === 'all' ? true :
-      filter === 'high_pay' ? c.payout_amount >= 500 : // Fixed
-      filter === 'easy' ? c.payout_amount < 100 : true; // Fixed
-    return matchesSearch && matchesFilter;
-  });
-
-  // --- 2. STATS CALCULATION (Fixed Columns) ---
-  const potentialEarnings = filteredCampaigns.reduce((acc, curr) => acc + curr.payout_amount, 0);
-
-  // --- STYLES ---
-  const filterBtnStyle = (active) => ({
-    padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: '700',
-    cursor: 'pointer', border: active ? '1px solid #00ff88' : '1px solid rgba(255,255,255,0.1)',
-    background: active ? 'rgba(0,255,136,0.1)' : 'transparent',
-    color: active ? '#00ff88' : '#888', transition: 'all 0.2s'
-  });
+  const [selectedTask, setSelectedTask] = useState(null);
 
   return (
     <div className="fade-in">
       
-      {/* 1. HERO STATS BAR */}
-      <div style={{
-        background: 'linear-gradient(135deg, #050505 0%, #111 100%)',
-        border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '20px',
-        marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-      }}>
-        <div>
-          <div style={{fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700'}}>Available Missions</div>
-          <div style={{fontSize: '24px', fontWeight: '900', color: '#fff'}}>{filteredCampaigns.length}</div>
+      {/* 1. EMPTY STATE CHECK */}
+      {campaigns.length === 0 ? (
+        <div style={{textAlign: 'center', padding: '60px 20px', border: '1px dashed #333', borderRadius: '20px'}}>
+          <div style={{fontSize: '40px', marginBottom: '16px'}}>😴</div>
+          <h3 style={{color: '#fff', fontSize: '18px', fontWeight: 'bold'}}>No Missions Available</h3>
+          <p style={{color: '#666', fontSize: '13px'}}>Check back later for new earning opportunities.</p>
         </div>
-        <div style={{textAlign: 'right'}}>
-          <div style={{fontSize: '10px', color: '#00ff88', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700'}}>Potential Profit</div>
-          <div style={{fontSize: '24px', fontWeight: '900', color: '#00ff88', textShadow: '0 0 15px rgba(0,255,136,0.4)'}}>
-            ₹{potentialEarnings.toLocaleString()}
+      ) : (
+        /* 2. THE GRID */
+        <div style={{
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+          gap: '16px'
+        }}>
+          {campaigns.map((camp, index) => (
+            <div 
+              key={camp.id} 
+              onClick={() => setSelectedTask(camp)}
+              style={{
+                background: '#0a0a0f', 
+                border: '1px solid #1a1a1a', 
+                borderRadius: '20px', 
+                padding: '20px', 
+                cursor: 'pointer',
+                position: 'relative',
+                animation: `slideUp 0.4s ease-out ${index * 0.05}s backwards`,
+                transition: 'transform 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#333';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#1a1a1a';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              {/* Card Header */}
+              <div style={{display: 'flex', gap: '14px', alignItems: 'flex-start'}}>
+                <div style={{
+                  width: '56px', height: '56px', borderRadius: '14px', 
+                  background: '#111', flexShrink: 0, overflow: 'hidden',
+                  border: '1px solid #222'
+                }}>
+                  <img 
+                    src={camp.icon_url || 'https://via.placeholder.com/60/111/333'} 
+                    alt={camp.title}
+                    style={{width: '100%', height: '100%', objectFit: 'cover'}} 
+                  />
+                </div>
+
+                <div style={{flex: 1}}>
+                  <h3 style={{
+                    color: '#fff', fontWeight: '800', fontSize: '15px', 
+                    lineHeight: '1.3', marginBottom: '6px'
+                  }}>
+                    {camp.title}
+                  </h3>
+                  
+                  {/* Category Tag */}
+                  <span style={{
+                    fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', 
+                    borderRadius: '6px', background: '#1a1a1a', color: '#888',
+                    textTransform: 'uppercase', letterSpacing: '0.5px'
+                  }}>
+                    {camp.category || 'General'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card Footer: Price */}
+              <div style={{
+                marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #222',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <div style={{fontSize: '11px', color: '#666', fontWeight: '700'}}>
+                  REWARD
+                </div>
+                <div style={{
+                  color: '#00ff88', fontSize: '16px', fontWeight: '900',
+                  textShadow: '0 0 20px rgba(0, 255, 136, 0.2)'
+                }}>
+                  ₹{camp.payout_amount}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+
+      {/* 3. THE POPUP MODAL (Task Details) */}
+      {selectedTask && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'end', justifyContent: 'center',
+          animation: 'fadeIn 0.2s ease-out'
+        }} onClick={() => setSelectedTask(null)}>
+          
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="slide-up-modal"
+            style={{
+              width: '100%', maxWidth: '480px', 
+              background: '#0a0a0f', 
+              borderTop: '1px solid #333',
+              borderRadius: '24px 24px 0 0', 
+              padding: '30px', 
+              boxShadow: '0 -10px 40px rgba(0,0,0,0.5)'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '24px'}}>
+              <img 
+                src={selectedTask.icon_url} 
+                style={{width: '64px', height: '64px', borderRadius: '16px', border: '1px solid #333'}} 
+              />
+              <button onClick={() => setSelectedTask(null)} style={{
+                background: '#1a1a1a', border: 'none', borderRadius: '50%', width: '32px', height: '32px', 
+                color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+              }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <h2 style={{color: '#fff', fontSize: '22px', fontWeight: '900', lineHeight: '1.2', marginBottom: '12px'}}>
+              {selectedTask.title}
+            </h2>
+            
+            {/* Badges */}
+            <div style={{display: 'flex', gap: '8px', marginBottom: '24px'}}>
+              <Badge text="Instant Payment" color="#00ff88" bg="rgba(0, 255, 136, 0.1)" icon={<Zap size={10} />} />
+              <Badge text="Verified" color="#3b82f6" bg="rgba(59, 130, 246, 0.1)" icon={<ShieldCheck size={10} />} />
+            </div>
+
+            {/* Description */}
+            <div style={{
+              background: '#111', borderRadius: '16px', padding: '20px', 
+              marginBottom: '24px', border: '1px solid #222'
+            }}>
+               <h4 style={{color: '#666', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px'}}>
+                 INSTRUCTIONS
+               </h4>
+               <p style={{color: '#ddd', fontSize: '13px', lineHeight: '1.6', whiteSpace: 'pre-wrap'}}>
+                 {selectedTask.description || "Complete the steps to earn your reward."}
+               </p>
+            </div>
+
+            {/* START BUTTON */}
+            <a 
+              href={`${selectedTask.landing_url}${selectedTask.landing_url.includes('?') ? '&' : '?'}sub1=${promoterId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                width: '100%', padding: '18px', borderRadius: '16px',
+                background: '#fff', color: '#000', 
+                fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px',
+                textDecoration: 'none', boxShadow: '0 0 30px rgba(255,255,255,0.2)'
+              }}
+            >
+              Start Mission <ChevronRight size={18} />
+            </a>
+
+            <div style={{textAlign: 'center', marginTop: '16px', fontSize: '10px', color: '#444', fontWeight: '600'}}>
+              Clicking starts tracking. Do not use VPN.
+            </div>
+
           </div>
         </div>
-      </div>
-
-      {/* 2. CONTROLS (Search + Filter) */}
-      <div style={{display: 'flex', gap: '10px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '5px'}}>
-        <button onClick={() => setFilter('all')} style={filterBtnStyle(filter === 'all')}>ALL</button>
-        <button onClick={() => setFilter('high_pay')} style={filterBtnStyle(filter === 'high_pay')}>🔥 HIGH PAY</button>
-        <button onClick={() => setFilter('easy')} style={filterBtnStyle(filter === 'easy')}>⚡ EASY TASK</button>
-      </div>
-
-      <input 
-        type="text" 
-        placeholder="🔍 Find a campaign..." 
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{
-          width: '100%', padding: '14px', background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px',
-          color: '#fff', fontSize: '14px', outline: 'none', marginBottom: '24px'
-        }}
-      />
-
-      {/* 3. CAMPAIGN GRID */}
-      <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-        {filteredCampaigns.length > 0 ? (
-          filteredCampaigns.map((camp) => (
-            <CampaignCard key={camp.id} campaign={camp} promoterId={promoterId} />
-          ))
-        ) : (
-          <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>No campaigns found.</div>
-        )}
-      </div>
-
+      )}
     </div>
   );
 }
 
-// ---------------------------------------------------------
-// SUB-COMPONENT: THE "LEGENDARY" CARD
-// ---------------------------------------------------------
-function CampaignCard({ campaign, promoterId }) {
-  const [copied, setCopied] = useState(false);
-
-  // Generate Unique Link using landing_url
-  const separator = campaign.landing_url.includes('?') ? '&' : '?';
-  const uniqueLink = `${campaign.landing_url}${separator}ref=${promoterId}`;
-
-  // Rarity Logic using payout_amount
-  const isLegendary = campaign.payout_amount >= 500;
-  const isRare = campaign.payout_amount >= 200 && campaign.payout_amount < 500;
-  
-  const accentColor = isLegendary ? '#fbbf24' : isRare ? '#3b82f6' : '#00ff88'; // Gold, Blue, Green
-  const bgGradient = isLegendary 
-    ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(0,0,0,0))'
-    : 'rgba(255,255,255,0.03)';
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(uniqueLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
+// Badge Component
+function Badge({ text, color, bg, icon }) {
   return (
-    <div style={{
-      position: 'relative',
-      background: bgGradient,
-      backdropFilter: 'blur(10px)',
-      border: `1px solid ${isLegendary ? 'rgba(251, 191, 36, 0.3)' : 'rgba(255,255,255,0.08)'}`,
-      borderRadius: '24px',
-      padding: '20px',
-      overflow: 'hidden',
-      transition: 'transform 0.2s',
-      boxShadow: isLegendary ? '0 10px 40px -10px rgba(251, 191, 36, 0.15)' : 'none'
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '4px',
+      fontSize: '10px', fontWeight: '800', color: color, background: bg,
+      padding: '6px 12px', borderRadius: '8px'
     }}>
-      
-      {/* GLOW EFFECT */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
-        background: accentColor, boxShadow: `0 0 15px ${accentColor}`
-      }}></div>
-
-      <div style={{paddingLeft: '12px'}}>
-        {/* HEADER */}
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px'}}>
-          <div>
-            {isLegendary && <div style={{fontSize:'9px', color: '#fbbf24', fontWeight:'900', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'4px'}}>👑 Legendary Offer</div>}
-            <h3 style={{fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0}}>{campaign.title}</h3>
-            <div style={{fontSize: '12px', color: '#888', marginTop: '4px'}}>{campaign.description?.slice(0, 60)}...</div>
-          </div>
-          <div style={{textAlign: 'right'}}>
-            <div style={{fontSize: '20px', fontWeight: '900', color: accentColor, textShadow: `0 0 15px ${accentColor}44`}}>
-              ₹{campaign.payout_amount}
-            </div>
-            <div style={{fontSize: '9px', color: '#666', fontWeight: 'bold'}}>PER LEAD</div>
-          </div>
-        </div>
-
-        {/* ACTION BAR */}
-        <div style={{display: 'flex', gap: '10px', marginTop: '16px'}}>
-          <div style={{
-            flex: 1, background: '#000', borderRadius: '12px', padding: '10px 14px', 
-            fontSize: '11px', color: '#666', fontFamily: 'monospace', 
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center'
-          }}>
-            {uniqueLink}
-          </div>
-          
-          <button 
-            onClick={handleCopy}
-            style={{
-              background: copied ? accentColor : '#fff',
-              color: copied ? '#000' : '#000',
-              border: 'none', borderRadius: '12px', padding: '0 20px',
-              fontWeight: '800', fontSize: '11px', cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: copied ? `0 0 20px ${accentColor}` : 'none'
-            }}
-          >
-            {copied ? 'COPIED!' : 'COPY LINK'}
-          </button>
-        </div>
-      </div>
-
-    </div>
+      {icon} {text}
+    </span>
   );
 }
