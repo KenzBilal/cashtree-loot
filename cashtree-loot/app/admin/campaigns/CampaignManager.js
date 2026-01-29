@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { toggleCampaignStatus, updateCampaign } from './actions';
-import { Settings, ExternalLink, X, Save, Loader2 } from 'lucide-react';
+import { toggleCampaignStatus, updateCampaign, deleteCampaign } from './actions'; // ✅ Added deleteCampaign
+import { Settings, ExternalLink, X, Save, Loader2, Trash2 } from 'lucide-react'; // ✅ Added Trash2
 
 export default function CampaignManager({ initialCampaigns }) {
   const [list, setList] = useState(initialCampaigns);
@@ -24,7 +24,21 @@ export default function CampaignManager({ initialCampaigns }) {
     }
   };
 
-  // --- 2. SAVE EDITS (INSTANT VERSION) ---
+  // --- 2. DELETE CAMPAIGN (Secure) ---
+  const handleDelete = async (id) => {
+    if (!confirm("⚠️ Are you sure? This will delete the mission and all its history permanently.")) return;
+
+    // Optimistic UI: Remove immediately
+    setList(prev => prev.filter(c => c.id !== id));
+
+    const res = await deleteCampaign(id);
+    if (!res.success) {
+      alert("Delete failed: " + res.error);
+      window.location.reload(); // Revert if failed
+    }
+  };
+
+  // --- 3. SAVE EDITS (INSTANT VERSION) ---
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -61,8 +75,6 @@ export default function CampaignManager({ initialCampaigns }) {
   };
 
   const neonGreen = '#00ff88';
-
- 
 
   return (
     <div className="fade-in">
@@ -123,16 +135,25 @@ export default function CampaignManager({ initialCampaigns }) {
               <button onClick={() => setEditing(camp)} style={{
                 flex: 1, background: '#1a1a1a', color: '#fff', border: 'none', padding: '12px', 
                 borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                fontSize: '12px', fontWeight: '700'
+                fontSize: '11px', fontWeight: '700'
               }}>
                 <Settings size={14} /> EDIT
               </button>
+              
               <a href={camp.landing_url} target="_blank" style={{
-                flex: 1, background: '#1a1a1a', color: '#888', textDecoration: 'none', padding: '12px', 
-                borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', fontWeight: '700'
+                width: '40px', background: '#1a1a1a', color: '#888', textDecoration: 'none', padding: '12px', 
+                borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <ExternalLink size={14} /> LINK
+                <ExternalLink size={16} />
               </a>
+
+              {/* 🗑️ DELETE BUTTON */}
+              <button onClick={() => handleDelete(camp.id)} style={{
+                width: '40px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', 
+                borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Trash2 size={16} />
+              </button>
             </div>
 
           </div>
@@ -159,7 +180,7 @@ export default function CampaignManager({ initialCampaigns }) {
 
             <form onSubmit={handleSave} style={{display: 'grid', gap: '16px'}}>
               <Input label="Title" name="title" defaultValue={editing.title} />
-              <Input label="Landing URL" name="landing_url" defaultValue={editing.landing_url} />
+              <Input label="Landing URL (Type 'motwal' for auto-link)" name="landing_url" defaultValue={editing.landing_url} />
               
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                  <Input label="Payout (₹)" name="payout_amount" type="number" defaultValue={editing.payout_amount} />
@@ -169,6 +190,14 @@ export default function CampaignManager({ initialCampaigns }) {
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                  <Input label="Category" name="category" defaultValue={editing.category} />
                  <Input label="Icon URL" name="icon_url" defaultValue={editing.icon_url} />
+              </div>
+
+              {/* Added Description Input */}
+              <div>
+                <label style={{display: 'block', fontSize: '10px', fontWeight: '800', color: '#666', marginBottom: '6px', textTransform: 'uppercase'}}>Instructions</label>
+                <textarea name="description" defaultValue={editing.description} rows={3} style={{
+                   width: '100%', background: '#000', border: '1px solid #222', borderRadius: '10px', padding: '14px', color: '#fff', outline: 'none', fontSize: '13px', fontFamily: 'sans-serif'
+                }} />
               </div>
 
               <button type="submit" disabled={loading} style={{

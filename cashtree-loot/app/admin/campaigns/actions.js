@@ -30,8 +30,8 @@ export async function toggleCampaignStatus(campaignId, currentStatus) {
     const { error } = await supabaseAdmin
       .from('campaigns')
       .update({ 
-        is_active: !currentStatus,
-        updated_at: new Date().toISOString()
+        is_active: !currentStatus
+        // Removed updated_at (Schema fix)
       })
       .eq('id', campaignId);
 
@@ -54,7 +54,7 @@ export async function updateCampaign(campaignId, formData) {
 
     const updates = {
       title: formData.get('title'),
-      description: formData.get('description'), // Added description support
+      description: formData.get('description'), 
       payout_amount: parseFloat(formData.get('payout_amount')) || 0,
       user_reward: parseFloat(formData.get('user_reward')) || 0,
       
@@ -63,7 +63,7 @@ export async function updateCampaign(campaignId, formData) {
       
       category: formData.get('category'),
       icon_url: formData.get('icon_url'),
-      updated_at: new Date().toISOString()
+      // Removed updated_at (Schema fix)
     };
 
     const { error } = await supabaseAdmin
@@ -81,6 +81,24 @@ export async function updateCampaign(campaignId, formData) {
 
   } catch (e) {
     console.error("Update Failed:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+// 3. DELETE CAMPAIGN (✅ NEW ADDITION)
+export async function deleteCampaign(campaignId) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('campaigns')
+      .delete()
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    revalidatePath('/admin/campaigns');
+    revalidatePath('/dashboard/campaigns');
+    return { success: true };
+  } catch (e) {
     return { success: false, error: e.message };
   }
 }
