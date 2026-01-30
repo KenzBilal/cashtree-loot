@@ -10,20 +10,23 @@ export default function AdminLayout({ children }) {
   return (
     <div className="min-h-screen bg-black text-white font-sans flex">
       
-      {/* 1. SIDEBAR: Fixed on Desktop, Hidden on Mobile */}
-      {/* This ensures the sidebar stays stuck to the left glass */}
-      <div className="hidden lg:block fixed inset-y-0 left-0 z-50 w-[260px]">
+      {/* 1. SIDEBAR (Sticky Layout) 
+          - w-[260px]: Physically occupies 260px of width (pushes main content)
+          - h-screen + sticky: Stays pinned to the screen while scrolling
+          - flex-shrink-0: Prevents it from getting squashed
+      */}
+      <aside className="hidden lg:block w-[260px] h-screen sticky top-0 z-50 overflow-y-auto border-r border-white/5 flex-shrink-0">
          <AdminSidebar />
-      </div>
+      </aside>
 
-      {/* 2. MAIN CONTENT: Smart Responsive Width */}
-      {/* lg:pl-[260px] -> Pushes content right ONLY on Desktop */}
-      {/* w-full -> Uses 100% width on Mobile (No Sidebar squash) */}
-      <main className="w-full lg:pl-[260px] transition-all duration-300">
+      {/* 2. MAIN CONTENT 
+          - flex-1: Fills the remaining space automatically
+          - min-w-0: Prevents horizontal scroll issues
+          - No manual padding needed (Sidebar does the work)
+      */}
+      <main className="flex-1 w-full min-w-0">
         
-        {/* INNER CONTAINER: The "Breathing Room" */}
-        {/* lg:px-12 -> Gives nice wide spacing on big screens */}
-        {/* px-4 -> Safe small spacing on phones */}
+        {/* INNER CONTAINER */}
         <div className="max-w-7xl mx-auto px-4 py-8 lg:px-12 lg:py-10">
           {children}
         </div>

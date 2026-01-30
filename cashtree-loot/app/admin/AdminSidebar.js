@@ -21,13 +21,13 @@ export default function AdminSidebar({ adminName, logoutAction }) {
 
   // --- STYLES ---
   const sidebarStyle = {
-    width: '260px',
+    width: '100%', // ✅ CHANGED: Fills the parent container (layout handles the 260px width)
     height: '100vh',
     background: '#0a0a0a',
     borderRight: '1px solid #222',
-    position: 'fixed', // ✅ FIXED: Stays locked on left
-    top: 0,
-    left: 0,
+    // position: 'fixed', // ❌ REMOVED: Layout handles positioning now
+    // top: 0,            // ❌ REMOVED
+    // left: 0,           // ❌ REMOVED
     display: 'flex',
     flexDirection: 'column',
     zIndex: 50,
@@ -116,7 +116,7 @@ export default function AdminSidebar({ adminName, logoutAction }) {
           <div style={{width: '32px', height: '32px', borderRadius: '50%', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px'}}>👑</div>
           <div style={{overflow: 'hidden'}}>
             <div style={{color: '#fff', fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap'}}>{adminName || 'Admin'}</div>
-            <div style={{color: '#555', fontSize: '11px'}}>Super Admin</div>
+            <div style={{color: '#555', fontSize: '11px'}}>Admin</div>
           </div>
         </div>
         
