@@ -11,11 +11,12 @@ export default function AdminLayout({ children }) {
       </div>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 py-8 lg:px-12 lg:py-10">
-          {children}
-        </div>
-      </main>
+      <main className="flex-1 flex justify-center">
+  <div className="max-w-7xl px-4 py-8 lg:px-12 lg:py-10">
+    {children}
+  </div>
+</main>
+
 
     </div>
   );
