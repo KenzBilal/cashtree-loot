@@ -14,19 +14,25 @@ export default async function OfferPage({ params, searchParams }) {
   const { slug } = params;       
   const refCode = searchParams?.ref; 
 
-  // Fetch Campaign Details
+  // ✅ SMART SEARCH: 
+  // We construct the full URL so we can find it even if your DB stores the long version
+  const fullLink = `https://cashttree.online/${slug}`;
+
+  // We ask Supabase: "Give me the row where landing_url is 'motwal' OR 'https://cashttree.online/motwal'"
   const { data: campaign, error } = await supabase
     .from('campaigns')
     .select('*')
-    .eq('landing_url', slug) 
+    .or(`landing_url.eq.${slug},landing_url.eq.${fullLink}`) // <--- THIS FIXES THE 404
     .eq('is_active', true)   
     .single();
 
   if (error || !campaign) {
+    // Debug Log to help you see what happened if it still fails
+    console.error("❌ Search Failed. Slug:", slug, "FullLink:", fullLink, "Error:", error);
     return notFound(); 
   }
 
-  // --- 3. PARSE DESCRIPTION (To make beautiful list items) ---
+  // --- 3. PARSE DESCRIPTION ---
   const steps = campaign.description 
     ? campaign.description.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0)
     : ["Register to continue", "Complete verification", "Get Reward"];
