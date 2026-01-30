@@ -1,19 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createCampaign } from './actions';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Search, Zap } from 'lucide-react';
 
 export default function CreateForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // --- BRAND INTELLIGENCE STATE ---
+  const [brandInput, setBrandInput] = useState('');
+  const [detectedIcon, setDetectedIcon] = useState('');
+  const [isVector, setIsVector] = useState(false);
+
+  // --- THE MAGIC LOGIC (Auto-Fetch Logo) ---
+  useEffect(() => {
+    const timeOutId = setTimeout(() => {
+      if (!brandInput) {
+        setDetectedIcon('');
+        return;
+      }
+
+      const cleanInput = brandInput.toLowerCase().trim();
+
+      // 1. Check if it looks like a domain (has dot) -> e.g. "angelone.in"
+      if (cleanInput.includes('.')) {
+        // Use Google's Secret High-Res API (Fastest in the world)
+        setDetectedIcon(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${cleanInput}&size=256`);
+        setIsVector(false);
+      } 
+      // 2. Else assume it's a famous tech/crypto brand -> e.g. "binance"
+      else {
+        // Try to fetch the Vector (SVG) from SimpleIcons
+        setDetectedIcon(`https://cdn.simpleicons.org/${cleanInput}/white`);
+        setIsVector(true);
+      }
+    }, 500); // 0.5s delay to let you type
+
+    return () => clearTimeout(timeOutId);
+  }, [brandInput]);
 
   async function handleSubmit(formData) {
     setLoading(true);
     setError(null);
 
-    // Call Server Action
-    // Note: If successful, the action will redirect us.
+    // Inject the auto-detected icon if user didn't paste a custom one
+    if (!formData.get('icon_url') && detectedIcon) {
+      formData.set('icon_url', detectedIcon);
+    }
+
     const result = await createCampaign(formData);
     
     if (result?.error) {
@@ -44,13 +79,63 @@ export default function CreateForm() {
         boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)'
       }}>
         
-        {/* SECTION 1: CORE INFO */}
+        {/* --- 1. BRAND INTELLIGENCE (NEW) --- */}
+        <div style={{marginBottom: '30px', background: '#111', padding: '20px', borderRadius: '20px', border: '1px dashed #333'}}>
+          <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <Zap size={14} color={neonGreen} /> Brand Identity
+          </h3>
+
+          <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
+             {/* The Smart Input */}
+             <div style={{flex: 1}}>
+                <Input 
+                   label="Brand Name OR Domain" 
+                   name="temp_brand_search" 
+                   placeholder="e.g. 'Binance' OR 'kotak.com'" 
+                   value={brandInput}
+                   onChange={(e) => setBrandInput(e.target.value)}
+                   hint="✨ Auto-detects Vectors & Logos"
+                />
+             </div>
+
+             {/* The Neon Preview Card */}
+             <div style={{
+                width: '80px', height: '80px', borderRadius: '16px', 
+                background: '#000', border: detectedIcon ? `1px solid ${neonGreen}` : '1px solid #333',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: detectedIcon ? `0 0 20px ${neonGreen}40` : 'none',
+                transition: 'all 0.3s'
+             }}>
+                {detectedIcon ? (
+                  <img 
+                    src={detectedIcon} 
+                    alt="Preview" 
+                    style={{
+                      width: '40px', height: '40px', objectFit: 'contain',
+                      filter: isVector ? 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' : 'none'
+                    }} 
+                    onError={(e) => {
+                      e.target.style.display='none'; // Hide broken
+                      setDetectedIcon(''); // Reset
+                    }}
+                  />
+                ) : (
+                  <Search size={20} color="#333" />
+                )}
+             </div>
+          </div>
+          
+          {/* Hidden input to send the URL to server */}
+          <input type="hidden" name="icon_url" value={detectedIcon} />
+        </div>
+
+        {/* --- 2. CORE DETAILS --- */}
         <div style={{marginBottom: '24px'}}>
           <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', borderBottom: '1px solid #222', paddingBottom: '8px', letterSpacing: '1px'}}>Core Details</h3>
           
           <Input label="Campaign Title" name="title" placeholder="e.g. Install ByBit App" required />
           
-          {/* ✅ UPDATED LABEL WITH HINT */}
+          {/* Tracking Link with Motwal Hint */}
           <Input 
             label="Tracking Link (Landing URL)" 
             name="landing_url" 
@@ -59,13 +144,13 @@ export default function CreateForm() {
             hint="💡 Pro Tip: Type 'motwal' to auto-generate https://cashttree.online/motwal"
           />
           
-          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '16px'}}>
-            <Input label="Icon URL" name="icon_url" placeholder="https://imgur..." />
+          {/* Replaced Icon URL with simple Category input since Icon is handled above */}
+          <div style={{marginTop: '16px'}}>
             <Input label="Category" name="category" placeholder="e.g. Finance" />
           </div>
         </div>
 
-        {/* SECTION 2: FINANCE */}
+        {/* --- 3. FINANCE --- */}
         <div style={{marginBottom: '24px'}}>
           <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', borderBottom: '1px solid #222', paddingBottom: '8px', letterSpacing: '1px'}}>Financials</h3>
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
@@ -74,7 +159,7 @@ export default function CreateForm() {
           </div>
         </div>
 
-        {/* SECTION 3: INSTRUCTIONS */}
+        {/* --- 4. INSTRUCTIONS --- */}
         <div style={{marginBottom: '30px'}}>
           <label style={{display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#666', marginBottom: '8px', textTransform: 'uppercase'}}>User Instructions</label>
           <textarea 
@@ -105,8 +190,8 @@ export default function CreateForm() {
   );
 }
 
-// Helper Input Component
-function Input({ label, name, type = "text", placeholder, required, hint }) {
+// Helper Input Component (Unchanged)
+function Input({ label, name, type = "text", placeholder, required, hint, value, onChange }) {
   return (
     <div style={{marginBottom: '16px'}}>
       <label style={{display: 'block', fontSize: '10px', fontWeight: '800', color: '#666', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
@@ -118,6 +203,8 @@ function Input({ label, name, type = "text", placeholder, required, hint }) {
         name={name} 
         placeholder={placeholder}
         required={required}
+        value={value}
+        onChange={onChange}
         style={{
           width: '100%', background: '#000', border: '1px solid #222', borderRadius: '12px', padding: '14px', 
           color: '#fff', outline: 'none', fontSize: '14px', fontWeight: '600', transition: 'border 0.2s'

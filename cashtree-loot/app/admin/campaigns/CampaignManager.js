@@ -1,76 +1,101 @@
 'use client';
 
-import { useState } from 'react';
-import { toggleCampaignStatus, updateCampaign, deleteCampaign } from './actions'; // ✅ Added deleteCampaign
-import { Settings, ExternalLink, X, Save, Loader2, Trash2 } from 'lucide-react'; // ✅ Added Trash2
+import { useState, useEffect } from 'react';
+import { toggleCampaignStatus, updateCampaign, deleteCampaign } from './actions';
+import { Settings, ExternalLink, X, Save, Loader2, Trash2, Zap, Search } from 'lucide-react';
 
 export default function CampaignManager({ initialCampaigns }) {
   const [list, setList] = useState(initialCampaigns);
   const [editing, setEditing] = useState(null); 
   const [loading, setLoading] = useState(false);
 
-  // --- 1. INSTANT TOGGLE (Zero Lag) ---
-  const handleToggle = async (id, currentStatus) => {
-    // Optimistic UI: Update screen BEFORE server responds
-    setList(prev => prev.map(c => c.id === id ? { ...c, is_active: !currentStatus } : c));
+  // --- BRAND INTELLIGENCE STATE (For Edit Modal) ---
+  const [brandInput, setBrandInput] = useState('');
+  const [detectedIcon, setDetectedIcon] = useState('');
+  const [isVector, setIsVector] = useState(false);
 
-    // Call Server
+  // --- SYNC STATE WHEN OPENING EDIT ---
+  useEffect(() => {
+    if (editing) {
+      setDetectedIcon(editing.icon_url || '');
+      setBrandInput(''); // Reset search input
+    }
+  }, [editing]);
+
+  // --- THE MAGIC LOGIC (Auto-Fetch Logo) ---
+  useEffect(() => {
+    const timeOutId = setTimeout(() => {
+      if (!brandInput) return; // Keep existing icon if search is empty
+
+      const cleanInput = brandInput.toLowerCase().trim();
+
+      // 1. Check if it looks like a domain (has dot)
+      if (cleanInput.includes('.')) {
+        setDetectedIcon(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${cleanInput}&size=256`);
+        setIsVector(false);
+      } 
+      // 2. Else assume it's a brand name
+      else {
+        setDetectedIcon(`https://cdn.simpleicons.org/${cleanInput}/white`);
+        setIsVector(true);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeOutId);
+  }, [brandInput]);
+
+
+  // --- 1. INSTANT TOGGLE ---
+  const handleToggle = async (id, currentStatus) => {
+    setList(prev => prev.map(c => c.id === id ? { ...c, is_active: !currentStatus } : c));
     const res = await toggleCampaignStatus(id, currentStatus);
-    
-    // If error, revert
     if (!res.success) {
       alert("Error: " + res.error);
       setList(prev => prev.map(c => c.id === id ? { ...c, is_active: currentStatus } : c));
     }
   };
 
-  // --- 2. DELETE CAMPAIGN (Secure) ---
+  // --- 2. DELETE CAMPAIGN ---
   const handleDelete = async (id) => {
-    if (!confirm("⚠️ Are you sure? This will delete the mission and all its history permanently.")) return;
-
-    // Optimistic UI: Remove immediately
+    if (!confirm("⚠️ Are you sure? This will delete the mission permanently.")) return;
     setList(prev => prev.filter(c => c.id !== id));
-
     const res = await deleteCampaign(id);
     if (!res.success) {
       alert("Delete failed: " + res.error);
-      window.location.reload(); // Revert if failed
+      window.location.reload();
     }
   };
 
-  // --- 3. SAVE EDITS (INSTANT VERSION) ---
+  // --- 3. SAVE EDITS ---
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // 1. Capture the new data from the form
     const formData = new FormData(e.target);
+    
+    // Inject the detected icon
+    if (detectedIcon) {
+      formData.set('icon_url', detectedIcon);
+    }
+
     const updates = {
       title: formData.get('title'),
       landing_url: formData.get('landing_url'),
       payout_amount: parseFloat(formData.get('payout_amount')),
       user_reward: parseFloat(formData.get('user_reward')),
       category: formData.get('category'),
-      icon_url: formData.get('icon_url'),
+      icon_url: formData.get('icon_url'), // Use the injected value
       description: formData.get('description'),
     };
 
-    // 2. OPTIMISTIC UPDATE: Update the list on screen INSTANTLY
-    setList(prev => prev.map(c => 
-      c.id === editing.id ? { ...c, ...updates } : c
-    ));
-
-    // 3. Close the popup INSTANTLY (Don't wait for server)
+    setList(prev => prev.map(c => c.id === editing.id ? { ...c, ...updates } : c));
     setEditing(null); 
     setLoading(false);
 
-    // 4. Send to server in the background (Silent Sync)
     const res = await updateCampaign(editing.id, formData);
-
-    // 5. Handle failure if server rejects it
     if (!res.success) {
-      alert("Save failed! The changes were not saved to the database.");
-      window.location.reload(); // Reload to reset to true server state
+      alert("Save failed!");
+      window.location.reload();
     }
   };
 
@@ -79,33 +104,32 @@ export default function CampaignManager({ initialCampaigns }) {
   return (
     <div className="fade-in">
       
-      {/* GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+      {/* GRID LAYOUT */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
         {list.map((camp) => (
           <div key={camp.id} style={{
             background: '#0a0a0f', 
             border: camp.is_active ? '1px solid #222' : '1px solid #1a1a1a', 
             borderRadius: '20px', padding: '24px', position: 'relative',
-            opacity: camp.is_active ? 1 : 0.6, 
-            transition: 'all 0.3s'
+            opacity: camp.is_active ? 1 : 0.6, transition: 'all 0.3s'
           }}>
             
             {/* HEADER */}
             <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px'}}>
-              <div style={{display: 'flex', gap: '12px'}}>
+              <div style={{display: 'flex', gap: '12px', overflow: 'hidden'}}>
                 <div style={{
-                  width: '48px', height: '48px', borderRadius: '12px', background: '#111',
+                  minWidth: '48px', width: '48px', height: '48px', borderRadius: '12px', background: '#111',
                   backgroundImage: `url(${camp.icon_url})`, backgroundSize: 'cover', border: '1px solid #222'
                 }} />
-                <div>
-                  <div style={{color: '#fff', fontWeight: 'bold', fontSize: '15px'}}>{camp.title}</div>
+                <div style={{overflow: 'hidden'}}>
+                  <div style={{color: '#fff', fontWeight: 'bold', fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{camp.title}</div>
                   <div style={{color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase'}}>{camp.category}</div>
                 </div>
               </div>
               
-              {/* TOGGLE SWITCH */}
+              {/* TOGGLE */}
               <button onClick={() => handleToggle(camp.id, camp.is_active)} style={{
-                width: '44px', height: '24px', borderRadius: '20px', 
+                minWidth: '44px', height: '24px', borderRadius: '20px', 
                 background: camp.is_active ? neonGreen : '#333',
                 border: 'none', cursor: 'pointer', position: 'relative', transition: '0.3s',
                 boxShadow: camp.is_active ? `0 0 15px ${neonGreen}66` : 'none'
@@ -130,7 +154,7 @@ export default function CampaignManager({ initialCampaigns }) {
               </div>
             </div>
 
-            {/* FOOTER ACTIONS */}
+            {/* ACTIONS */}
             <div style={{display: 'flex', gap: '10px'}}>
               <button onClick={() => setEditing(camp)} style={{
                 flex: 1, background: '#1a1a1a', color: '#fff', border: 'none', padding: '12px', 
@@ -147,7 +171,6 @@ export default function CampaignManager({ initialCampaigns }) {
                 <ExternalLink size={16} />
               </a>
 
-              {/* 🗑️ DELETE BUTTON */}
               <button onClick={() => handleDelete(camp.id)} style={{
                 width: '40px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', 
                 borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -160,16 +183,17 @@ export default function CampaignManager({ initialCampaigns }) {
         ))}
       </div>
 
-      {/* --- EDIT MODAL --- */}
+      {/* --- EDIT MODAL (UPGRADED) --- */}
       {editing && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
           background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
         }}>
           <div className="slide-up" style={{
             background: '#0a0a0f', border: '1px solid #333', borderRadius: '24px', 
-            width: '90%', maxWidth: '450px', padding: '30px', boxShadow: '0 25px 50px -10px #000'
+            width: '100%', maxWidth: '450px', maxHeight: '90vh', overflowY: 'auto',
+            padding: '30px', boxShadow: '0 25px 50px -10px #000'
           }}>
             <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px'}}>
               <h2 style={{color: '#fff', margin: 0, fontSize: '18px', fontWeight: '800'}}>EDIT CAMPAIGN</h2>
@@ -179,20 +203,45 @@ export default function CampaignManager({ initialCampaigns }) {
             </div>
 
             <form onSubmit={handleSave} style={{display: 'grid', gap: '16px'}}>
+              
+              {/* BRAND INTELLIGENCE IN EDIT MODE */}
+              <div style={{background: '#111', padding: '16px', borderRadius: '16px', border: '1px dashed #333'}}>
+                <h3 style={{color: '#fff', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                   <Zap size={12} color={neonGreen} /> Update Identity
+                </h3>
+                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
+                   <div style={{flex: 1}}>
+                      <input 
+                         placeholder="Search new brand..."
+                         value={brandInput}
+                         onChange={(e) => setBrandInput(e.target.value)}
+                         style={{width: '100%', background: '#000', border: '1px solid #333', borderRadius: '10px', padding: '12px', color: '#fff', outline: 'none', fontSize: '13px'}}
+                      />
+                   </div>
+                   <div style={{
+                      width: '48px', height: '48px', borderRadius: '12px', 
+                      background: '#000', border: `1px solid ${detectedIcon ? neonGreen : '#333'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                   }}>
+                      {detectedIcon ? (
+                        <img src={detectedIcon} style={{width: '24px', height: '24px', objectFit: 'contain'}} />
+                      ) : <Search size={16} color="#333" />}
+                   </div>
+                </div>
+                <input type="hidden" name="icon_url" value={detectedIcon} />
+              </div>
+
               <Input label="Title" name="title" defaultValue={editing.title} />
-              <Input label="Landing URL (Type 'motwal' for auto-link)" name="landing_url" defaultValue={editing.landing_url} />
+              <Input label="Landing URL (or 'motwal')" name="landing_url" defaultValue={editing.landing_url} />
               
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                  <Input label="Payout (₹)" name="payout_amount" type="number" defaultValue={editing.payout_amount} />
                  <Input label="User Reward (₹)" name="user_reward" type="number" defaultValue={editing.user_reward} />
               </div>
 
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                 <Input label="Category" name="category" defaultValue={editing.category} />
-                 <Input label="Icon URL" name="icon_url" defaultValue={editing.icon_url} />
-              </div>
+              {/* Simplified Category Input */}
+              <Input label="Category" name="category" defaultValue={editing.category} />
 
-              {/* Added Description Input */}
               <div>
                 <label style={{display: 'block', fontSize: '10px', fontWeight: '800', color: '#666', marginBottom: '6px', textTransform: 'uppercase'}}>Instructions</label>
                 <textarea name="description" defaultValue={editing.description} rows={3} style={{
