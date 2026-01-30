@@ -3,21 +3,17 @@ import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="min-h-screen bg-black text-white font-sans flex">
+    <div className="min-h-screen bg-black text-white font-sans">
 
-      {/* SIDEBAR SLOT (space reservation) */}
-      <div className="hidden lg:block w-[260px] flex-shrink-0">
+      {/* SIDEBAR (Fixed, hidden on mobile) */}
+      <div className="hidden lg:block">
         <AdminSidebar />
       </div>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex justify-center">
-  <div className="w-full px-4 py-8 lg:px-12 lg:py-10">
-
-    {children}
-  </div>
-</main>
-
+      {/* MAIN CONTENT — SAME LOGIC AS PROMOTER */}
+      <main className="min-h-screen px-4 py-8 lg:px-12 lg:py-10 lg:pl-[260px]">
+        {children}
+      </main>
 
     </div>
   );
