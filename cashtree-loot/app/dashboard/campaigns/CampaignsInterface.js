@@ -10,15 +10,27 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
   // --- HELPER: Parse Description into Steps ---
   const parseSteps = (text) => {
     if (!text) return [];
-    // Split by new lines or numbers like "1.", "2."
     return text.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0);
   };
 
-  // --- HELPER: Copy Logic ---
-  const handleCopy = (url) => {
-    // Generate the unique affiliate link
-    // Example: https://cashtree.in/motwal?ref=john_doe&camp=123
-    const affiliateLink = `${window.location.origin}/motwal?ref=${promoterUsername}&camp=${selectedTask.id}`;
+  // --- HELPER: Copy Logic (FIXED 🛠️) ---
+  const handleCopy = () => {
+    // 1. Get the Base URL (Live or Local)
+    const origin = window.location.origin;
+    
+    // 2. Determine the path (e.g., /motwal)
+    // If landing_url is full (https://...), we use that. 
+    // If it's short ("motwal"), we append it to origin.
+    let targetUrl = selectedTask.landing_url;
+    if (!targetUrl.startsWith('http')) {
+      // Clean up slash if needed
+      const path = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
+      targetUrl = `${origin}${path}`;
+    }
+
+    // 3. Append Ref Code
+    const separator = targetUrl.includes('?') ? '&' : '?';
+    const affiliateLink = `${targetUrl}${separator}ref=${promoterUsername}`;
     
     navigator.clipboard.writeText(affiliateLink);
     setCopied(true);
@@ -130,7 +142,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
               <div style={{fontSize: '11px', color: '#666', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase'}}>YOUR UNIQUE SHARE LINK</div>
               
               <button 
-                onClick={() => handleCopy()}
+                onClick={handleCopy} // Fixed: No arguments needed, uses state logic
                 style={{
                   width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
                   background: copied ? '#00ff88' : '#fff', 

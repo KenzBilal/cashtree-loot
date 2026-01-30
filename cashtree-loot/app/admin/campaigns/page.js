@@ -43,9 +43,15 @@ export default async function CampaignsPage() {
 
   // --- STYLES ---
   const headerStyle = { 
-    display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '30px',
-    paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)'
-  };
+  display: 'flex', 
+  flexWrap: 'wrap', // <--- THIS IS THE ONLY CHANGE NEEDED
+  justifyContent: 'space-between', 
+  alignItems: 'end', 
+  gap: '20px',      // <--- Adds safety gap when wrapped
+  marginBottom: '30px',
+  paddingBottom: '20px', 
+  borderBottom: '1px solid rgba(255,255,255,0.05)'
+};
 
   return (
     <div style={{animation: 'fadeIn 0.6s ease-out', paddingBottom: '100px'}}>
