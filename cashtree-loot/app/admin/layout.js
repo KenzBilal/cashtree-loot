@@ -8,25 +8,21 @@ export const metadata = {
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="min-h-screen bg-black text-white font-sans flex">
+    // REMOVED 'flex': standard block layout is safer for fixed sidebars
+    <div className="min-h-screen bg-black text-white font-sans">
       
-      {/* 1. SIDEBAR (Sticky Layout) 
-          - w-[260px]: Physically occupies 260px of width (pushes main content)
-          - h-screen + sticky: Stays pinned to the screen while scrolling
-          - flex-shrink-0: Prevents it from getting squashed
-      */}
-      <aside className="hidden lg:block w-[260px] h-screen sticky top-0 z-50 overflow-y-auto border-r border-white/5 flex-shrink-0">
+      {/* 1. SIDEBAR (Hidden on Mobile, Visible on Desktop) */}
+      <div className="hidden lg:block">
          <AdminSidebar />
-      </aside>
+      </div>
 
-      {/* 2. MAIN CONTENT 
-          - flex-1: Fills the remaining space automatically
-          - min-w-0: Prevents horizontal scroll issues
-          - No manual padding needed (Sidebar does the work)
-      */}
-      <main className="flex-1 w-full min-w-0">
+      {/* 2. MAIN CONTENT */}
+      {/* w-full: Takes full width */}
+      {/* lg:pl-[260px]: Adds 260px padding on the left to clear the sidebar */}
+      <main className="w-full lg:pl-[260px] transition-all duration-300">
         
-        {/* INNER CONTAINER */}
+        {/* INNER CONTAINER (Centers content in the remaining space) */}
+        {/* lg:px-12: Adds nice gap between sidebar edge and your text */}
         <div className="max-w-7xl mx-auto px-4 py-8 lg:px-12 lg:py-10">
           {children}
         </div>

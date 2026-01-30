@@ -21,13 +21,13 @@ export default function AdminSidebar({ adminName, logoutAction }) {
 
   // --- STYLES ---
   const sidebarStyle = {
-    width: '100%', // ✅ CHANGED: Fills the parent container (layout handles the 260px width)
+    width: '260px',       // ✅ FIXED WIDTH
     height: '100vh',
     background: '#0a0a0a',
     borderRight: '1px solid #222',
-    // position: 'fixed', // ❌ REMOVED: Layout handles positioning now
-    // top: 0,            // ❌ REMOVED
-    // left: 0,           // ❌ REMOVED
+    position: 'fixed',    // ✅ FIXED POSITION (Stays on left)
+    top: 0,
+    left: 0,
     display: 'flex',
     flexDirection: 'column',
     zIndex: 50,
