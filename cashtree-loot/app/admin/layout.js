@@ -3,17 +3,15 @@ import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div style={{ minHeight: "100vh", background: "#000", color: "#fff" }}>
+      
+      {/* Sidebar */}
+      <AdminSidebar />
 
-      {/* SIDEBAR (Fixed, hidden on mobile) */}
-      <div className="hidden lg:block">
-        <AdminSidebar />
-      </div>
-
-      {/* MAIN CONTENT — SAME LOGIC AS PROMOTER */}
-      <main className="min-h-screen px-4 py-8 lg:px-12 lg:py-10 lg:pl-[260px]">
+      {/* Main Content */}
+      <div style={{ marginLeft: "260px", padding: "32px" }}>
         {children}
-      </main>
+      </div>
 
     </div>
   );
