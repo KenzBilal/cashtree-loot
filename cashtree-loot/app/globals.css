@@ -566,3 +566,12 @@ a, button { pointer-events: auto !important; }
 /* Ad Sandbox Fix */
 .ad-sandbox { pointer-events: none; }
 .ad-sandbox iframe, .ad-sandbox div { z-index: 1 !important; pointer-events: auto; }
+
+@media (max-width: 768px) {
+  .admin-main {
+    margin-left: 0 !important;
+  }
+  .admin-sidebar {
+    display: none;
+  }
+}

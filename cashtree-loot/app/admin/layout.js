@@ -6,10 +6,12 @@ export default function AdminLayout({ children }) {
     <div style={{ minHeight: "100vh", background: "#000", color: "#fff" }}>
       
       {/* Sidebar */}
-      <AdminSidebar />
+      <div className="admin-sidebar">
+        <AdminSidebar />
+      </div>
 
       {/* Main Content */}
-      <div style={{ marginLeft: "260px", padding: "32px" }}>
+      <div className="admin-main" style={{ marginLeft: "260px", padding: "32px" }}>
         {children}
       </div>
 
