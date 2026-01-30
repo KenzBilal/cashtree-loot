@@ -12,7 +12,8 @@ export default function AdminLayout({ children }) {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex justify-center">
-  <div className="max-w-7xl px-4 py-8 lg:px-12 lg:py-10">
+  <div className="w-full px-4 py-8 lg:px-12 lg:py-10">
+
     {children}
   </div>
 </main>
