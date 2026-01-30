@@ -21,11 +21,11 @@ export default function AdminSidebar({ adminName, logoutAction }) {
 
   // --- STYLES ---
   const sidebarStyle = {
-    width: '260px',       // ✅ FIXED WIDTH
+    width: '260px',
     height: '100vh',
     background: '#0a0a0a',
     borderRight: '1px solid #222',
-    position: 'fixed',    // ✅ FIXED POSITION (Stays on left)
+    position: 'fixed', // ✅ FIXED: Stays locked on left
     top: 0,
     left: 0,
     display: 'flex',
