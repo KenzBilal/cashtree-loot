@@ -55,13 +55,15 @@ export async function savePayoutSettings(campaignId, userBonus, promoterShare) {
         user_bonus: parseFloat(userBonus),
         promoter_share: parseFloat(promoterShare),
         updated_at: new Date().toISOString()
+        // Note: We don't send 'created_at' or 'id', the DB must handle them (Step 1)
       }, {
-        onConflict: 'account_id, campaign_id' // Uses the Unique Constraint we set in DB
+        onConflict: 'account_id, campaign_id'
       });
 
     if (error) {
       console.error("Save Error:", error);
-      return { success: false, error: "Failed to save settings." };
+      // 🚨 CHANGE THIS LINE TO SEE THE REAL ERROR:
+      return { success: false, error: error.message || error.details || "Database rejected the save." };
     }
 
     // 5. REFRESH UI
