@@ -45,11 +45,14 @@ export async function processWithdrawal(payoutId, action, amount, userId) {
         .insert({
           account_id: userId,
           amount: amount,
-          type: 'credit',
+          type: 'legacy_migration', // ✅ FIXED: Changed from 'credit' to match DB rules
           description: `Refund: Withdrawal Rejected`
         });
 
-      if (refundError) throw new Error("Failed to refund user ledger.");
+      if (refundError) {
+          console.error("Refund Error:", refundError); // Added for debugging
+          throw new Error("Failed to refund user ledger.");
+      }
     }
 
     revalidatePath('/admin/finance');

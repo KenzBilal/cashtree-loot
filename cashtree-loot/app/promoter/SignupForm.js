@@ -49,14 +49,21 @@ export default function SignupForm() {
       if (formData.password.length < 6) throw new Error("Password must be at least 6 chars.");
 
       // A. CHECK REFERRER
+      // A. CHECK REFERRER
       let referrerId = null;
-      if (refCode.trim()) {
-        const { data: referrer } = await supabase
+      if (refCode && refCode.trim()) {
+        const { data: referrer, error: refError } = await supabase
           .from('accounts')
           .select('id')
           .eq('username', refCode.trim().toUpperCase())
           .single();
-        if (referrer) referrerId = referrer.id;
+        
+        if (referrer) {
+          referrerId = referrer.id;
+          console.log("✅ Referrer Found:", referrerId);
+        } else {
+          console.log("❌ Referrer Not Found:", refError?.message);
+        }
       }
 
       // B. CREATE AUTH USER
