@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
+import { notFound } from 'next/navigation';
+import { CheckCircle2, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
+import { submitLead } from './actions';
 
-// Initialize Supabase
+// --- 1. SETUP SUPABASE ---
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL, 
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -8,59 +11,103 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic';
 
-export default async function DebugPage({ params }) {
-  const { slug } = params;
-  
-  // Construct the full URL version (since your DB has https://...)
+// --- 2. MAIN PAGE COMPONENT ---
+export default async function OfferPage(props) {
+  // ✅ FIX FOR NEXT.JS 15: We must 'await' params and searchParams
+  const params = await props.params;
+  const searchParams = await props.searchParams;
+
+  const slug = params.slug;
+  const refCode = searchParams.ref;
+
+  // Debug Log (Check your server terminal to see this)
+  console.log(`✅ SLUG FIXED: ${slug}`);
+
+  // --- 3. DATABASE SEARCH ---
+  // We search for 'motwal' OR 'https://cashttree.online/motwal'
   const fullLink = `https://cashttree.online/${slug}`;
-
-  console.log(`[DEBUG] Searching for slug: ${slug}`);
-
-  // 1. Try to fetch the campaign
-  const { data, error } = await supabase
+  
+  const { data: campaign, error } = await supabase
     .from('campaigns')
     .select('*')
-    // Search for EITHER 'motwal' OR the full link
-    .or(`landing_url.eq.${slug},landing_url.eq.${fullLink}`);
+    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`) 
+    .eq('is_active', true)   
+    .single();
+
+  if (error || !campaign) {
+    console.error("❌ Still Not Found. DB Error:", error);
+    return notFound(); 
+  }
+
+  // --- 4. PARSE DESCRIPTION ---
+  const steps = campaign.description 
+    ? campaign.description.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0)
+    : ["Register to continue", "Complete verification", "Get Reward"];
 
   return (
-    <div className="min-h-screen bg-black text-green-400 p-10 font-mono text-sm">
-      <h1 className="text-2xl text-white mb-4">🕵️‍♂️ DEBUG MODE</h1>
+    <div className="min-h-screen bg-black text-white font-sans flex items-center justify-center p-4 relative overflow-hidden">
       
-      <div className="border border-gray-800 p-4 rounded mb-4">
-        <p className="text-white font-bold">Search Parameters:</p>
-        <p>Slug: <span className="text-yellow-400">{slug}</span></p>
-        <p>Full Link Attempt: <span className="text-yellow-400">{fullLink}</span></p>
-      </div>
+      {/* Background Mesh */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top,#111827,#000)] -z-10" />
+      <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-green-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="border border-gray-800 p-4 rounded">
-        <p className="text-white font-bold">Database Result:</p>
+      {/* Offer Card */}
+      <div className="w-full max-w-md bg-[#0a0a0f] border border-[#222] rounded-3xl p-6 md:p-8 shadow-2xl relative z-10">
         
-        {/* CASE A: Database Error (RLS, Connection, etc) */}
-        {error && (
-          <div className="text-red-500 mt-2">
-            <strong>❌ SUPABASE ERROR:</strong>
-            <pre>{JSON.stringify(error, null, 2)}</pre>
-            <p className="mt-2 text-gray-400">If code is "42501", you need to run the RLS Policies I sent you.</p>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#111] border border-[#222] rounded-2xl mb-4 shadow-[0_0_30px_rgba(0,255,136,0.1)]">
+             {campaign.icon_url ? (
+               <img src={campaign.icon_url} alt={campaign.title} className="w-10 h-10 object-contain" />
+             ) : (
+               <span className="text-3xl">🎁</span>
+             )}
           </div>
-        )}
+          <h1 className="text-2xl font-black tracking-tight mb-2">{campaign.title}</h1>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/20 border border-green-900/50 text-green-400 text-[10px] font-bold uppercase tracking-wider">
+            <Zap size={12} fill="currentColor" /> Earn ₹{campaign.user_reward} Cash
+          </div>
+        </div>
 
-        {/* CASE B: Success but Empty (Data mismatch) */}
-        {!error && (!data || data.length === 0) && (
-          <div className="text-orange-500 mt-2">
-            <strong>⚠️ NO DATA FOUND</strong>
-            <p>Connection successful, but no rows matched.</p>
-            <p>Check your table "landing_url" column exactly.</p>
-          </div>
-        )}
+        {/* Instructions */}
+        <div className="bg-[#111] border border-[#222] border-dashed rounded-xl p-5 mb-6">
+           <strong className="text-xs text-gray-500 uppercase tracking-widest block mb-3">Steps to Qualify:</strong>
+           <ul className="space-y-3">
+             {steps.map((step, i) => (
+               <li key={i} className="text-xs text-gray-300 flex gap-3 leading-relaxed">
+                 <span className="text-green-500 font-bold shrink-0 mt-0.5">{i+1}.</span> 
+                 {step}
+               </li>
+             ))}
+           </ul>
+        </div>
 
-        {/* CASE C: Success! */}
-        {data && data.length > 0 && (
-          <div className="text-green-500 mt-2">
-            <strong>✅ SUCCESS! FOUND {data.length} CAMPAIGN(S)</strong>
-            <pre>{JSON.stringify(data[0], null, 2)}</pre>
+        {/* Form */}
+        <form action={submitLead} className="space-y-4">
+          <input type="hidden" name="campaign_id" value={campaign.id} />
+          <input type="hidden" name="referral_code" value={refCode || ''} />
+          <input type="hidden" name="redirect_url" value={campaign.affiliate_link || '#'} />
+
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Full Name</label>
+            <input name="user_name" required placeholder="e.g. Rahul Kumar" className="w-full bg-[#050505] border border-[#222] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:border-green-500/50 transition-colors" />
           </div>
-        )}
+
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Phone Number</label>
+            <input name="phone" type="tel" required placeholder="+91 98765 43210" className="w-full bg-[#050505] border border-[#222] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:border-green-500/50 transition-colors" />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">UPI ID (For Payment)</label>
+            <input name="upi_id" type="text" required placeholder="e.g. 9876543210@ybl" className="w-full bg-[#050505] border border-[#222] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:border-green-500/50 transition-colors" />
+          </div>
+
+          <button type="submit" className="w-full bg-[#00ff88] hover:bg-[#00cc6a] text-black font-extrabold text-sm py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(0,255,136,0.3)] mt-2 uppercase tracking-wide flex items-center justify-center gap-2">
+            Submit & Start Mission <ArrowRight size={18} />
+          </button>
+        </form>
+
       </div>
     </div>
   );
