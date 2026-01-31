@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import { ShieldCheck, Zap } from 'lucide-react';
-import OfferForm from './OfferForm'; // Import the new Interactive Form
+import OfferForm from './OfferForm'; 
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL, 
@@ -10,13 +10,38 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic';
 
+// ---------------------------------------------------------
+// 🚀 NEW: Professional SEO Metadata (WhatsApp/Telegram Previews)
+// ---------------------------------------------------------
+export async function generateMetadata(props) {
+  const params = await props.params;
+  const { slug } = params;
+  
+  // Quick fetch for metadata only
+  const { data: campaign } = await supabase
+    .from('campaigns')
+    .select('title, description, icon_url')
+    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`)
+    .single();
+
+  if (!campaign) return { title: 'Offer Not Found' };
+
+  return {
+    title: `${campaign.title} - Get Rewarded | CashTree`,
+    description: `Complete this task and earn instant cashback. Verified offer.`,
+    openGraph: {
+      images: [campaign.icon_url || 'https://cashttree.online/default-og.png'], // Fallback image
+    },
+  };
+}
+
 export default async function OfferPage(props) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const { slug } = params;
   const refCode = searchParams.ref;
 
-  const fullLink = `https://cashttree.online/${slug}`;
+  // 1. FETCH CAMPAIGN
   const { data: campaign, error } = await supabase
     .from('campaigns')
     .select('*')
@@ -25,6 +50,39 @@ export default async function OfferPage(props) {
     .single();
 
   if (error || !campaign) return notFound();
+
+  // ---------------------------------------------------------
+  // ⚡ 2. DYNAMIC PAYOUT LOGIC (Optimized)
+  // ---------------------------------------------------------
+  let finalReward = campaign.user_reward; // Default value
+  let referrerId = null;                  // Store the UUID here
+
+  if (refCode) {
+    // A. Resolve Username (KENZ) to UUID
+    const { data: promoter } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('username', refCode.trim().toUpperCase())
+      .single();
+
+    if (promoter) {
+      referrerId = promoter.id; // ✅ Save UUID to pass to form
+
+      // B. Check for Custom Split
+      const { data: settings } = await supabase
+        .from('promoter_campaign_settings')
+        .select('user_bonus')
+        .eq('account_id', promoter.id)
+        .eq('campaign_id', campaign.id)
+        .single();
+
+      // C. Override Default if custom setting exists
+      if (settings) {
+        finalReward = settings.user_bonus;
+      }
+    }
+  }
+  // ---------------------------------------------------------
 
   const steps = campaign.description 
     ? campaign.description.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0)
@@ -43,16 +101,15 @@ export default async function OfferPage(props) {
            <div className="brand-logo">
              <span className="text-white">Cash</span><span className="text-green">Tree</span>
            </div>
-           
         </div>
 
-        {/* HEADER */}
+        {/* HERO */}
         <div className="hero-section">
           <div className="icon-box">
             {campaign.icon_url ? (
               <img src={campaign.icon_url} alt={campaign.title} />
             ) : (
-              <span style={{fontSize:'24px'}}></span>
+              <span style={{fontSize:'24px'}}>🔥</span>
             )}
           </div>
           <div>
@@ -66,7 +123,8 @@ export default async function OfferPage(props) {
         {/* EARNINGS */}
         <div className="earn-glass">
           <div className="earn-header">
-            <Zap size={14} fill="currentColor" /> YOUR REWARD: ₹{campaign.user_reward}
+            {/* Shows: YOUR REWARD: ₹50 */}
+            <Zap size={14} fill="currentColor" /> YOUR REWARD: ₹{finalReward}
           </div>
           <ul className="earn-steps">
              {steps.map((step, i) => (
@@ -75,11 +133,13 @@ export default async function OfferPage(props) {
           </ul>
         </div>
 
-        {/* INTERACTIVE FORM */}
+        {/* FORM - Now passing referrerId (UUID) for perfect accuracy */}
         <OfferForm 
           campaignId={campaign.id} 
-          refCode={refCode} 
-          redirectUrl={campaign.affiliate_link} 
+          refCode={refCode}         // Keeping for UI (if needed)
+          referrerId={referrerId}   // ✅ NEW: Pass the UUID directly!
+          redirectUrl={campaign.affiliate_link}
+          payoutAmount={finalReward} 
         />
 
         <p className="footer-text">
@@ -109,7 +169,6 @@ export default async function OfferPage(props) {
         .brand-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
         .brand-logo { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
         .text-white { color: #fff; } .text-green { color: var(--neon); }
-        .brand-badge { font-size: 10px; font-weight: 800; background: #fff; color: #000; padding: 3px 8px; border-radius: 6px; letter-spacing: 1px; }
 
         .hero-section { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
         .icon-box { width: 64px; height: 64px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 18px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }

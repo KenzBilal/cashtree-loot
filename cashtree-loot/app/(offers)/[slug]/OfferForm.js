@@ -4,14 +4,15 @@ import { useState } from 'react';
 import { submitLead } from './actions';
 import { Loader2, CheckCircle2, ArrowRight, AlertTriangle } from 'lucide-react';
 
-export default function OfferForm({ campaignId, refCode, redirectUrl }) {
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
-  const [errorMessage, setErrorMessage] = useState(''); // ✅ Holds the real error text
+// ✅ UPDATED: Added referrerId and payoutAmount to props
+export default function OfferForm({ campaignId, refCode, redirectUrl, referrerId, payoutAmount }) {
+  const [status, setStatus] = useState('idle'); 
+  const [errorMessage, setErrorMessage] = useState(''); 
 
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus('loading');
-    setErrorMessage(''); // Reset error
+    setErrorMessage(''); 
 
     const formData = new FormData(e.target);
     
@@ -20,20 +21,21 @@ export default function OfferForm({ campaignId, refCode, redirectUrl }) {
     formData.append('referral_code', refCode || '');
     formData.append('redirect_url', redirectUrl);
 
+    // 🚀 NEW: Pass the UUID and the Locked Bonus Amount to the server
+    // This ensures we save the EXACT deal the user saw (Snapshot Logic)
+    if (referrerId) formData.append('referrer_id', referrerId);
+    if (payoutAmount) formData.append('payout_amount', payoutAmount);
+
     const result = await submitLead(formData);
 
     if (result.success) {
       setStatus('success');
-      // Wait 1.5s for the animation, then go
       setTimeout(() => {
         window.location.href = result.redirectUrl;
       }, 1500);
     } else {
       setStatus('error');
-      // ✅ CAPTURE THE REAL ERROR FROM SERVER
       setErrorMessage(result.error || 'Submission failed. Please try again.');
-      
-      // Keep the error visible for 5 seconds so you can read it
       setTimeout(() => setStatus('idle'), 5000);
     }
   }
@@ -101,7 +103,6 @@ export default function OfferForm({ campaignId, refCode, redirectUrl }) {
         )}
       </button>
 
-      {/* ✅ ERROR MESSAGE DISPLAY */}
       {status === 'error' && (
         <div className="error-box">
           <AlertTriangle size={16} />
