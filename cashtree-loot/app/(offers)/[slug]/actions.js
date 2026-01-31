@@ -13,16 +13,18 @@ export async function submitLead(formData) {
   const campaign_id = formData.get('campaign_id');
   const user_name = formData.get('user_name');
   const upi_id = formData.get('upi_id');
+  const phone = formData.get('phone'); // ✅ NEW: Capture Phone Number
   const referral_code = formData.get('referral_code');
   const redirect_url = formData.get('redirect_url');
 
-  // 1. Resolve Referral Code to Promoter ID (If exists)
+  // 1. Resolve Referral Code to Promoter ID
   let promoter_id = null;
   if (referral_code) {
+    // ✅ FIX: Searching 'accounts' table instead of 'users'
     const { data: promoter } = await supabase
-      .from('users') 
+      .from('accounts') 
       .select('id')
-      .eq('username', referral_code) 
+      .eq('username', referral_code.toUpperCase()) // Ensure matching case
       .single();
     
     if (promoter) promoter_id = promoter.id;
@@ -32,7 +34,11 @@ export async function submitLead(formData) {
   const { error } = await supabase.from('leads').insert({
     campaign_id: campaign_id,
     user_name: user_name,
-    customer_data: { upi: upi_id }, 
+    // ✅ FIX: Save both UPI and Phone
+    customer_data: { 
+      upi: upi_id,
+      phone: phone 
+    }, 
     referred_by: promoter_id,
     status: 'Pending',
     payout: 0 
@@ -40,7 +46,7 @@ export async function submitLead(formData) {
 
   if (error) {
     console.error("Lead Error:", error);
-    // On error, we still redirect to fallback to avoid getting stuck
+    // On error, fallback to Google (or your choice)
     redirect('https://google.com'); 
   }
 

@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
-import { CheckCircle2, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
 import { submitLead } from './actions';
 
 // --- 1. SETUP SUPABASE ---
@@ -11,104 +10,263 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic';
 
-// --- 2. MAIN PAGE COMPONENT ---
 export default async function OfferPage(props) {
-  // ✅ FIX FOR NEXT.JS 15: We must 'await' params and searchParams
+  // ✅ DATA FETCHING
   const params = await props.params;
   const searchParams = await props.searchParams;
-
-  const slug = params.slug;
+  const { slug } = params;
   const refCode = searchParams.ref;
 
-  // Debug Log (Check your server terminal to see this)
-  console.log(`✅ SLUG FIXED: ${slug}`);
-
-  // --- 3. DATABASE SEARCH ---
-  // We search for 'motwal' OR 'https://cashttree.online/motwal'
+  // Search logic (Supports both 'motwal' and full URL)
   const fullLink = `https://cashttree.online/${slug}`;
-  
   const { data: campaign, error } = await supabase
     .from('campaigns')
     .select('*')
-    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`) 
-    .eq('is_active', true)   
+    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`)
+    .eq('is_active', true)
     .single();
 
-  if (error || !campaign) {
-    console.error("❌ Still Not Found. DB Error:", error);
-    return notFound(); 
-  }
+  if (error || !campaign) return notFound();
 
-  // --- 4. PARSE DESCRIPTION ---
+  // ✅ DATA PARSING (Convert DB text to Bullet Points)
+  // We look for "1. Step" or new lines to break the text into the list
   const steps = campaign.description 
     ? campaign.description.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0)
-    : ["Register to continue", "Complete verification", "Get Reward"];
+    : ["Register using your Phone Number", "Complete basic profile", "Reward credited to UPI"];
+
+  // --- STYLES (Your Exact 'style.css' ported to React) ---
+  const colors = {
+    bg: '#02050a',
+    card: '#0b121a', // Darker card bg
+    border: 'rgba(255, 255, 255, 0.08)',
+    text: '#eaf2f8',
+    muted: '#9aa4af',
+    green: '#22c55e',
+    greenGlow: 'rgba(34, 197, 94, 0.15)'
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="page-wrapper">
       
-      {/* Background Mesh */}
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top,#111827,#000)] -z-10" />
-      <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-green-500/10 blur-[120px] rounded-full pointer-events-none" />
+      {/* 1. BACKGROUND (Desktop Only) */}
+      <div className="bg-mesh" />
 
-      {/* Offer Card */}
-      <div className="w-full max-w-md bg-[#0a0a0f] border border-[#222] rounded-3xl p-6 md:p-8 shadow-2xl relative z-10">
+      {/* 2. MAIN CARD */}
+      <div className="card">
         
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#111] border border-[#222] rounded-2xl mb-4 shadow-[0_0_30px_rgba(0,255,136,0.1)]">
-             {campaign.icon_url ? (
-               <img src={campaign.icon_url} alt={campaign.title} className="w-10 h-10 object-contain" />
-             ) : (
-               <span className="text-3xl">🎁</span>
-             )}
-          </div>
-          <h1 className="text-2xl font-black tracking-tight mb-2">{campaign.title}</h1>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/20 border border-green-900/50 text-green-400 text-[10px] font-bold uppercase tracking-wider">
-            <Zap size={12} fill="currentColor" /> Earn ₹{campaign.user_reward} Cash
-          </div>
+        {/* BRANDING */}
+        <div className="brand">
+          🌱 CashTree <span style={{color: colors.green}}>Loot</span>
         </div>
 
-        {/* Instructions */}
-        <div className="bg-[#111] border border-[#222] border-dashed rounded-xl p-5 mb-6">
-           <strong className="text-xs text-gray-500 uppercase tracking-widest block mb-3">Steps to Qualify:</strong>
-           <ul className="space-y-3">
+        {/* TITLE & BADGE */}
+        <h1>{campaign.title}</h1>
+        <div className="badge">Verified App Offer</div>
+
+        {/* EARN BOX (Green Gradient) */}
+        <div className="earn-box">
+          <strong>How you earn ₹{campaign.user_reward}:</strong>
+          <ul style={{margin: '8px 0 0 0', paddingLeft: '20px', color: '#d1fae5'}}>
              {steps.map((step, i) => (
-               <li key={i} className="text-xs text-gray-300 flex gap-3 leading-relaxed">
-                 <span className="text-green-500 font-bold shrink-0 mt-0.5">{i+1}.</span> 
-                 {step}
-               </li>
+               <li key={i} style={{marginBottom: '4px'}}>{step}</li>
              ))}
-           </ul>
+          </ul>
         </div>
 
-        {/* Form */}
-        <form action={submitLead} className="space-y-4">
+        {/* INFO BOX (Dashed Border) */}
+        <div className="info-box">
+            <strong>Requirements:</strong><br/>
+            • Aadhaar linked to Mobile<br/>
+            • Valid PAN Card (If required)<br/>
+            • New Users Only<br/>
+            • <strong style={{color: '#fff'}}>Reward: ₹{campaign.user_reward}</strong>
+        </div>
+
+        {/* FORM SECTION */}
+        <form action={submitLead}>
           <input type="hidden" name="campaign_id" value={campaign.id} />
           <input type="hidden" name="referral_code" value={refCode || ''} />
           <input type="hidden" name="redirect_url" value={campaign.affiliate_link || '#'} />
 
-          <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Full Name</label>
-            <input name="user_name" required placeholder="e.g. Rahul Kumar" className="w-full bg-[#050505] border border-[#222] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:border-green-500/50 transition-colors" />
+          {/* NAME FIELD (New Requirement) */}
+          <div className="section">
+            <label>Full Name</label>
+            <input name="user_name" type="text" placeholder="Your Name" required />
           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Phone Number</label>
-            <input name="phone" type="tel" required placeholder="+91 98765 43210" className="w-full bg-[#050505] border border-[#222] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:border-green-500/50 transition-colors" />
+          {/* PHONE FIELD */}
+          <div className="section">
+            <label>Phone Number (Used for Signup)</label>
+            <input name="phone" type="tel" placeholder="Enter 10-digit mobile number" required />
           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">UPI ID (For Payment)</label>
-            <input name="upi_id" type="text" required placeholder="e.g. 9876543210@ybl" className="w-full bg-[#050505] border border-[#222] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:border-green-500/50 transition-colors" />
+          {/* UPI FIELD */}
+          <div className="section">
+            <label>Your UPI ID (For Payment)</label>
+            <input name="upi_id" type="text" placeholder="Ex: name@upi" required />
           </div>
 
-          <button type="submit" className="w-full bg-[#00ff88] hover:bg-[#00cc6a] text-black font-extrabold text-sm py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(0,255,136,0.3)] mt-2 uppercase tracking-wide flex items-center justify-center gap-2">
-            Submit & Start Mission <ArrowRight size={18} />
+          {/* REFERRAL CODE BOX (Glassmorphism) */}
+          {refCode && (
+             <div className="referral-glass">
+                <span className="ref-label">Referral Applied</span>
+                <div className="ref-code">
+                   <span>✨ {refCode.toUpperCase()}</span>
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+             </div>
+          )}
+
+          {/* SUBMIT BUTTON */}
+          <button type="submit" className="submit-btn">
+            Submit & Download App
           </button>
+        
         </form>
 
+        <p style={{fontSize: '12px', textAlign: 'center', marginTop: '20px', color: '#555'}}>
+           100% Safe & Secure • Instant Tracking
+        </p>
+
       </div>
+
+      {/* --- CSS IN JS (Scoped to this page) --- */}
+      <style>{`
+        /* GLOBAL RESET FOR THIS PAGE */
+        .page-wrapper {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: system-ui, -apple-system, sans-serif;
+          color: ${colors.text};
+          padding: 20px;
+          position: relative;
+        }
+
+        /* BACKGROUND MESH (Your requested radial gradient) */
+        .bg-mesh {
+          position: fixed;
+          inset: 0;
+          background: radial-gradient(circle at top, #111827, #02050a);
+          z-index: -1;
+        }
+
+        /* CARD STYLES (Exact Match) */
+        .card {
+          width: 100%;
+          max-width: 440px;
+          background: rgba(255, 255, 255, 0.03); /* Glass Effect */
+          border: 1px solid ${colors.border};
+          border-radius: 22px;
+          padding: 26px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          position: relative;
+          z-index: 10;
+        }
+
+        /* TYPOGRAPHY */
+        .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-weight: 800; font-size: 20px; }
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .badge {
+          display: inline-block;
+          margin-top: 8px;
+          padding: 6px 12px;
+          border-radius: 999px;
+          background: ${colors.greenGlow};
+          color: ${colors.green};
+          font-size: 0.85rem;
+          font-weight: 700;
+        }
+
+        /* BOXES */
+        .earn-box {
+          margin-top: 20px;
+          background: linear-gradient(135deg, rgba(34,197,94,0.1), transparent);
+          border: 1px solid rgba(34,197,94,0.2);
+          padding: 15px;
+          border-radius: 12px;
+          font-size: 0.95rem;
+          line-height: 1.6;
+        }
+
+        .info-box {
+          margin-top: 15px;
+          padding: 15px;
+          border-radius: 12px;
+          background: rgba(0,0,0,0.3);
+          border: 1px dashed ${colors.border};
+          font-size: 0.9rem;
+          color: ${colors.muted};
+          line-height: 1.6;
+        }
+
+        /* FORM INPUTS */
+        .section { margin-top: 20px; }
+        label { display: block; font-size: 0.85rem; color: ${colors.muted}; margin-bottom: 8px; margin-left: 4px; font-weight: 500; }
+        
+        input {
+          width: 100%;
+          padding: 14px;
+          border-radius: 12px;
+          border: 1px solid ${colors.border};
+          background: #0b121a;
+          color: ${colors.text};
+          font-size: 16px;
+          transition: all 0.2s;
+        }
+        input:focus {
+          outline: none;
+          border-color: ${colors.green};
+          box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+        }
+
+        /* NEW REFERRAL GLASS BOX */
+        .referral-glass {
+          margin-top: 20px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .ref-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 1px; }
+        .ref-code { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fff; font-size: 14px; }
+
+        /* BUTTON */
+        .submit-btn {
+          width: 100%;
+          margin-top: 25px;
+          padding: 16px;
+          border-radius: 14px;
+          border: none;
+          background: ${colors.green};
+          color: #000;
+          font-weight: 800;
+          font-size: 16px;
+          cursor: pointer;
+          transition: 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .submit-btn:hover {
+          background: #16a34a;
+          transform: translateY(-2px);
+          box-shadow: 0 10px 20px -5px rgba(34, 197, 94, 0.4);
+        }
+
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 600px) {
+          .bg-mesh { display: none; } /* Remove heavy background on mobile */
+          .page-wrapper { background: #000; padding: 10px; align-items: flex-start; }
+          .card { border: none; background: transparent; box-shadow: none; padding: 10px; }
+          .submit-btn { position: sticky; bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        }
+      `}</style>
     </div>
   );
 }
