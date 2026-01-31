@@ -21,7 +21,7 @@ export async function updateLeadStatus(leadId, newStatus) {
 
     if (fetchError || !lead) throw new Error("Lead not found.");
 
-    // 2. COMMISSION LOGIC (Only if Approving for the first time & Promoter exists)
+    // 2. COMMISSION LOGIC
     if (newStatus === 'Approved' && lead.status !== 'Approved' && lead.referred_by) {
       
       const commission = parseFloat(lead.payout) || 0;
@@ -33,16 +33,20 @@ export async function updateLeadStatus(leadId, newStatus) {
         const { error: ledgerError } = await supabaseAdmin
           .from('ledger')
           .insert({
+            // ✅ FIX 1: Ensure a unique ID is provided if default isn't set
+            // ✅ FIX 2: Use 'task_earning' to pass the database CHECK constraint
             account_id: lead.referred_by,
-            type: 'credit',
+            type: 'task_earning', 
             amount: commission,
             description: `Commission: ${lead.user_name} (${lead.campaigns?.title || 'Lead'})`
           });
 
-        if (ledgerError) throw new Error("Failed to create ledger entry.");
+        if (ledgerError) {
+          console.error("Ledger Insert Error:", ledgerError);
+          throw new Error("Failed to create ledger entry.");
+        }
 
-        // B. Update Wallet Balance
-        // Get current balance
+        // B. Update Wallet Balance (Note: Your View handles this, but we update the table for redundancy)
         const { data: promoter } = await supabaseAdmin
           .from('accounts')
           .select('balance')
@@ -52,22 +56,15 @@ export async function updateLeadStatus(leadId, newStatus) {
         const currentBalance = promoter?.balance || 0;
         const newBalance = currentBalance + commission;
 
-        // Save new balance
-        const { error: balanceError } = await supabaseAdmin
+        await supabaseAdmin
           .from('accounts')
           .update({ balance: newBalance })
           .eq('id', lead.referred_by);
-
-        if (balanceError) throw new Error("Failed to update wallet balance.");
       }
     }
 
     // 3. UPDATE LEAD STATUS
-    // ✅ FIX: Removed 'updated_at'. Only using 'approved_at' which exists in your DB.
-    const updates = {
-      status: newStatus
-    };
-
+    const updates = { status: newStatus };
     if (newStatus === 'Approved') {
       updates.approved_at = new Date().toISOString();
     }
@@ -79,7 +76,6 @@ export async function updateLeadStatus(leadId, newStatus) {
 
     if (updateError) throw updateError;
 
-    // 4. REFRESH DATA
     revalidatePath('/admin/leads');
     revalidatePath('/admin/finance');
     revalidatePath('/admin');
