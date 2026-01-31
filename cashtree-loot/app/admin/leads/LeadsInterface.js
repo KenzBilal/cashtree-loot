@@ -10,18 +10,20 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
 
   // FILTER LOGIC
   const filteredData = initialData.filter(item => {
-    // 1. Tab Filter
-    const isPending = item.status === 'pending';
+    // 1. Tab Filter (✅ FIXED: Case Sensitive Check)
+    const isPending = item.status === 'Pending';
+    
     if (activeTab === 'PENDING' && !isPending) return false;
     if (activeTab === 'HISTORY' && isPending) return false;
 
     // 2. Search Filter
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
+      // Safety checks added for null values
       return (
         item.campaigns?.title?.toLowerCase().includes(s) ||
         item.accounts?.username?.toLowerCase().includes(s) ||
-        item.customer_data?.toLowerCase().includes(s)
+        JSON.stringify(item.customer_data)?.toLowerCase().includes(s)
       );
     }
     return true;
@@ -82,7 +84,7 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
               <LeadRow 
                 key={lead.id} 
                 lead={lead} 
-                updateStatusAction={updateStatusAction} // <--- Pass action down
+                updateStatusAction={updateStatusAction} 
               />
             ))
           ) : (
@@ -101,6 +103,7 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
 function LeadRow({ lead, updateStatusAction }) {
   const [loading, setLoading] = useState(false);
 
+  // ✅ FIXED: Sending Capitalized Status to DB
   const handleAction = async (status) => {
     if (!confirm(`Are you sure you want to ${status} this lead?`)) return;
     setLoading(true);
@@ -108,11 +111,12 @@ function LeadRow({ lead, updateStatusAction }) {
     setLoading(false);
   };
 
+  // ✅ FIXED: Matching Capitalized Status keys
   const statusColor = {
-    pending: '#facc15',
-    approved: '#00ff88',
-    rejected: '#ef4444'
-  }[lead.status];
+    Pending: '#facc15',
+    Approved: '#00ff88',
+    Rejected: '#ef4444'
+  }[lead.status] || '#999';
 
   return (
     <div style={{
@@ -125,28 +129,28 @@ function LeadRow({ lead, updateStatusAction }) {
         {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
       </div>
 
-      {/* 2. Campaign (No Icon) */}
+      {/* 2. Campaign */}
       <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
         <span style={{fontWeight:'600', color:'#fff'}}>{lead.campaigns?.title || 'Unknown'}</span>
       </div>
 
       {/* 3. Promoter */}
       <div>
-        <div style={{color:'#fff'}}>{lead.accounts?.username || 'Unknown'}</div>
+        <div style={{color:'#fff'}}>{lead.accounts?.username || 'Direct / Organic'}</div>
         <div style={{fontSize:'11px', color:'#555'}}>{lead.accounts?.phone}</div>
       </div>
 
-      {/* 4. Data */}
+      {/* 4. Data (Parsed properly) */}
       <div style={{fontFamily: 'monospace', background: '#050505', padding: '6px 10px', borderRadius: '6px', border: '1px solid #222', display: 'inline-block'}}>
-        {lead.customer_data || 'No Data'}
+        {lead.customer_data?.phone ? `${lead.customer_data.phone} / ${lead.customer_data.upi}` : 'No Data'}
       </div>
 
       {/* 5. Actions */}
       <div style={{textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
-        {lead.status === 'pending' ? (
+        {lead.status === 'Pending' ? (
           <>
             <button 
-              onClick={() => handleAction('rejected')}
+              onClick={() => handleAction('Rejected')}
               disabled={loading}
               style={{
                 background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -156,7 +160,7 @@ function LeadRow({ lead, updateStatusAction }) {
               REJECT
             </button>
             <button 
-              onClick={() => handleAction('approved')}
+              onClick={() => handleAction('Approved')}
               disabled={loading}
               style={{
                 background: 'rgba(0, 255, 136, 0.1)', color: '#00ff88', border: '1px solid rgba(0, 255, 136, 0.2)',
