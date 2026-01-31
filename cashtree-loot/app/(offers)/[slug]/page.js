@@ -43,7 +43,7 @@ export default async function OfferPage(props) {
            <div className="brand-logo">
              <span className="text-white">Cash</span><span className="text-green">Tree</span>
            </div>
-           <div className="brand-badge">LOOT</div>
+           
         </div>
 
         {/* HEADER */}
@@ -52,7 +52,7 @@ export default async function OfferPage(props) {
             {campaign.icon_url ? (
               <img src={campaign.icon_url} alt={campaign.title} />
             ) : (
-              <span style={{fontSize:'24px'}}>🎁</span>
+              <span style={{fontSize:'24px'}}></span>
             )}
           </div>
           <div>

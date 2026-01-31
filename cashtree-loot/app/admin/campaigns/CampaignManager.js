@@ -9,43 +9,34 @@ export default function CampaignManager({ initialCampaigns }) {
   const [editing, setEditing] = useState(null); 
   const [loading, setLoading] = useState(false);
 
-  // --- BRAND INTELLIGENCE STATE (For Edit Modal) ---
+  // --- BRAND INTELLIGENCE STATE ---
   const [brandInput, setBrandInput] = useState('');
   const [detectedIcon, setDetectedIcon] = useState('');
-  const [isVector, setIsVector] = useState(false);
 
   // --- SYNC STATE WHEN OPENING EDIT ---
   useEffect(() => {
     if (editing) {
       setDetectedIcon(editing.icon_url || '');
-      setBrandInput(''); // Reset search input
+      setBrandInput(''); 
     }
   }, [editing]);
 
-  // --- THE MAGIC LOGIC (Auto-Fetch Logo) ---
+  // --- AUTO-FETCH LOGO LOGIC ---
   useEffect(() => {
     const timeOutId = setTimeout(() => {
-      if (!brandInput) return; // Keep existing icon if search is empty
-
+      if (!brandInput) return;
       const cleanInput = brandInput.toLowerCase().trim();
-
-      // 1. Check if it looks like a domain (has dot)
       if (cleanInput.includes('.')) {
         setDetectedIcon(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${cleanInput}&size=256`);
-        setIsVector(false);
-      } 
-      // 2. Else assume it's a brand name
-      else {
+      } else {
         setDetectedIcon(`https://cdn.simpleicons.org/${cleanInput}/white`);
-        setIsVector(true);
       }
     }, 500);
-
     return () => clearTimeout(timeOutId);
   }, [brandInput]);
 
 
-  // --- 1. INSTANT TOGGLE ---
+  // --- 1. TOGGLE STATUS ---
   const handleToggle = async (id, currentStatus) => {
     setList(prev => prev.map(c => c.id === id ? { ...c, is_active: !currentStatus } : c));
     const res = await toggleCampaignStatus(id, currentStatus);
@@ -60,10 +51,7 @@ export default function CampaignManager({ initialCampaigns }) {
     if (!confirm("⚠️ Are you sure? This will delete the mission permanently.")) return;
     setList(prev => prev.filter(c => c.id !== id));
     const res = await deleteCampaign(id);
-    if (!res.success) {
-      alert("Delete failed: " + res.error);
-      window.location.reload();
-    }
+    if (!res.success) alert("Delete failed: " + res.error);
   };
 
   // --- 3. SAVE EDITS ---
@@ -73,25 +61,17 @@ export default function CampaignManager({ initialCampaigns }) {
     
     const formData = new FormData(e.target);
     
-    // Inject the detected icon
-    if (detectedIcon) {
-      formData.set('icon_url', detectedIcon);
-    }
+    // Inject detected icon if changed
+    if (detectedIcon) formData.set('icon_url', detectedIcon);
 
-    const updates = {
-      title: formData.get('title'),
-      landing_url: formData.get('landing_url'),
-      payout_amount: parseFloat(formData.get('payout_amount')),
-      user_reward: parseFloat(formData.get('user_reward')),
-      category: formData.get('category'),
-      icon_url: formData.get('icon_url'), // Use the injected value
-      description: formData.get('description'),
-    };
-
+    // Optimistic Update
+    const updates = Object.fromEntries(formData.entries());
     setList(prev => prev.map(c => c.id === editing.id ? { ...c, ...updates } : c));
+    
     setEditing(null); 
     setLoading(false);
 
+    // Server Update
     const res = await updateCampaign(editing.id, formData);
     if (!res.success) {
       alert("Save failed!");
@@ -127,7 +107,6 @@ export default function CampaignManager({ initialCampaigns }) {
                 </div>
               </div>
               
-              {/* TOGGLE */}
               <button onClick={() => handleToggle(camp.id, camp.is_active)} style={{
                 minWidth: '44px', height: '24px', borderRadius: '20px', 
                 background: camp.is_active ? neonGreen : '#333',
@@ -183,7 +162,7 @@ export default function CampaignManager({ initialCampaigns }) {
         ))}
       </div>
 
-      {/* --- EDIT MODAL (UPGRADED) --- */}
+      {/* --- EDIT MODAL --- */}
       {editing && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
@@ -204,7 +183,7 @@ export default function CampaignManager({ initialCampaigns }) {
 
             <form onSubmit={handleSave} style={{display: 'grid', gap: '16px'}}>
               
-              {/* BRAND INTELLIGENCE IN EDIT MODE */}
+              {/* BRAND INTELLIGENCE */}
               <div style={{background: '#111', padding: '16px', borderRadius: '16px', border: '1px dashed #333'}}>
                 <h3 style={{color: '#fff', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px'}}>
                    <Zap size={12} color={neonGreen} /> Update Identity
@@ -232,14 +211,18 @@ export default function CampaignManager({ initialCampaigns }) {
               </div>
 
               <Input label="Title" name="title" defaultValue={editing.title} />
-              <Input label="Landing URL (or 'motwal')" name="landing_url" defaultValue={editing.landing_url} />
+              
+              {/* ✅ ADDED: SLUG */}
+              <Input label="URL Slug (e.g. motwal)" name="landing_url" defaultValue={editing.landing_url} />
+
+              {/* ✅ ADDED: AFFILIATE LINK */}
+              <Input label="Target/Affiliate Link" name="affiliate_link" defaultValue={editing.affiliate_link} placeholder="https://tracking..." />
               
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                  <Input label="Payout (₹)" name="payout_amount" type="number" defaultValue={editing.payout_amount} />
                  <Input label="User Reward (₹)" name="user_reward" type="number" defaultValue={editing.user_reward} />
               </div>
 
-              {/* Simplified Category Input */}
               <Input label="Category" name="category" defaultValue={editing.category} />
 
               <div>
@@ -267,11 +250,11 @@ export default function CampaignManager({ initialCampaigns }) {
 }
 
 // Helper for Inputs
-function Input({ label, name, defaultValue, type = "text" }) {
+function Input({ label, name, defaultValue, type = "text", placeholder }) {
   return (
     <div>
       <label style={{display: 'block', fontSize: '10px', fontWeight: '800', color: '#666', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>{label}</label>
-      <input type={type} name={name} defaultValue={defaultValue} style={{
+      <input type={type} name={name} defaultValue={defaultValue} placeholder={placeholder} style={{
         width: '100%', background: '#000', border: '1px solid #222', borderRadius: '10px', padding: '14px', color: '#fff', outline: 'none', fontSize: '14px', fontWeight: '600'
       }} />
     </div>

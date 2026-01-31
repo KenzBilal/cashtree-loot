@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createCampaign } from './actions';
+import { createCampaign } from '../actions';
 import { Save, Loader2, Search, Zap } from 'lucide-react';
 
 export default function CreateForm() {
@@ -25,17 +25,15 @@ export default function CreateForm() {
 
       // 1. Check if it looks like a domain (has dot) -> e.g. "angelone.in"
       if (cleanInput.includes('.')) {
-        // Use Google's Secret High-Res API (Fastest in the world)
         setDetectedIcon(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${cleanInput}&size=256`);
         setIsVector(false);
       } 
       // 2. Else assume it's a famous tech/crypto brand -> e.g. "binance"
       else {
-        // Try to fetch the Vector (SVG) from SimpleIcons
         setDetectedIcon(`https://cdn.simpleicons.org/${cleanInput}/white`);
         setIsVector(true);
       }
-    }, 500); // 0.5s delay to let you type
+    }, 500);
 
     return () => clearTimeout(timeOutId);
   }, [brandInput]);
@@ -57,7 +55,6 @@ export default function CreateForm() {
     }
   }
 
-  // --- STYLES ---
   const neonGreen = '#00ff88';
 
   return (
@@ -79,14 +76,13 @@ export default function CreateForm() {
         boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)'
       }}>
         
-        {/* --- 1. BRAND INTELLIGENCE (NEW) --- */}
+        {/* --- 1. BRAND INTELLIGENCE --- */}
         <div style={{marginBottom: '30px', background: '#111', padding: '20px', borderRadius: '20px', border: '1px dashed #333'}}>
           <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px'}}>
             <Zap size={14} color={neonGreen} /> Brand Identity
           </h3>
 
           <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
-             {/* The Smart Input */}
              <div style={{flex: 1}}>
                 <Input 
                    label="Brand Name OR Domain" 
@@ -98,7 +94,6 @@ export default function CreateForm() {
                 />
              </div>
 
-             {/* The Neon Preview Card */}
              <div style={{
                 width: '80px', height: '80px', borderRadius: '16px', 
                 background: '#000', border: detectedIcon ? `1px solid ${neonGreen}` : '1px solid #333',
@@ -115,8 +110,8 @@ export default function CreateForm() {
                       filter: isVector ? 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' : 'none'
                     }} 
                     onError={(e) => {
-                      e.target.style.display='none'; // Hide broken
-                      setDetectedIcon(''); // Reset
+                      e.target.style.display='none';
+                      setDetectedIcon(''); 
                     }}
                   />
                 ) : (
@@ -124,8 +119,6 @@ export default function CreateForm() {
                 )}
              </div>
           </div>
-          
-          {/* Hidden input to send the URL to server */}
           <input type="hidden" name="icon_url" value={detectedIcon} />
         </div>
 
@@ -135,16 +128,24 @@ export default function CreateForm() {
           
           <Input label="Campaign Title" name="title" placeholder="e.g. Install ByBit App" required />
           
-          {/* Tracking Link with Motwal Hint */}
+          {/* ✅ 1. SLUG INPUT */}
           <Input 
-            label="Tracking Link (Landing URL)" 
+            label="URL Slug (e.g. motwal)" 
             name="landing_url" 
-            placeholder="e.g. https://... OR just type 'motwal'" 
+            placeholder="motwal" 
             required 
-            hint="💡 Pro Tip: Type 'motwal' to auto-generate https://cashttree.online/motwal"
+            hint="This creates: cashttree.online/motwal"
+          />
+
+          {/* ✅ 2. AFFILIATE LINK INPUT (ADDED) */}
+          <Input 
+            label="Target / Affiliate Link" 
+            name="affiliate_link" 
+            placeholder="https://tracking.com/click?id=..." 
+            required 
+            hint="Where the user goes after the Signup Page"
           />
           
-          {/* Replaced Icon URL with simple Category input since Icon is handled above */}
           <div style={{marginTop: '16px'}}>
             <Input label="Category" name="category" placeholder="e.g. Finance" />
           </div>
@@ -190,7 +191,7 @@ export default function CreateForm() {
   );
 }
 
-// Helper Input Component (Unchanged)
+// Helper Input Component
 function Input({ label, name, type = "text", placeholder, required, hint, value, onChange }) {
   return (
     <div style={{marginBottom: '16px'}}>

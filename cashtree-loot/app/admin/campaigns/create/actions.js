@@ -9,64 +9,106 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- HELPER: Smart URL Formatter ---
-// ✅ FEATURE: Type "motwal" -> Saves "https://cashttree.online/motwal"
-function formatLandingUrl(input) {
-  if (!input) return '';
-  
-  // 1. If it's already a full link (http/https), leave it alone
-  if (input.startsWith('http://') || input.startsWith('https://')) {
-    return input;
-  }
-
-  // 2. Get the Base URL (Localhost or Live)
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cashttree.online';
-
-  // 3. If it starts with slash (e.g. "/motwal"), just prepend base
-  if (input.startsWith('/')) {
-    return `${baseUrl}${input}`;
-  }
-
-  // 4. If it's just a word (e.g. "motwal"), add slash and prepend base
-  return `${baseUrl}/${input}`;
-}
-
+// --- 1. CREATE CAMPAIGN (Now supports Affiliate Link) ---
 export async function createCampaign(formData) {
-  // 1. Extract & Format Data
-  const rawUrl = formData.get('landing_url');
+  const title = formData.get('title');
+  const landing_url = formData.get('landing_url'); // e.g. "motwal"
+  const affiliate_link = formData.get('affiliate_link'); // e.g. "https://tracking..."
+  const user_reward = formData.get('user_reward');
+  const payout_amount = formData.get('payout_amount');
+  const description = formData.get('description');
+  const category = formData.get('category');
+  const icon_url = formData.get('icon_url');
 
-  const newCampaign = {
-    title: formData.get('title'),
-    description: formData.get('description'),
-    payout_amount: parseFloat(formData.get('payout_amount')),
-    user_reward: parseFloat(formData.get('user_reward')),
-    
-    // ✅ APPLIED FIX: Using the formatter function here
-    landing_url: formatLandingUrl(rawUrl),
-    
-    icon_url: formData.get('icon_url'),
-    category: formData.get('category'),
-    is_active: true, // Auto-activate
+  // Validate
+  if (!title || !landing_url) {
+    return { success: false, error: 'Title and URL Slug are required.' };
+  }
+
+  // Insert
+  const { error } = await supabaseAdmin.from('campaigns').insert({
+    title,
+    landing_url: landing_url.trim(), // ✅ Save EXACT slug (No auto-formatting)
+    affiliate_link,                  // ✅ Save Redirect Link
+    user_reward: parseFloat(user_reward) || 0,
+    payout_amount: parseFloat(payout_amount) || 0,
+    description,
+    category,
+    icon_url,
+    is_active: true,
     created_at: new Date().toISOString(),
-  };
+  });
 
-  // 2. Validate
-  if (!newCampaign.title || !newCampaign.landing_url) {
-    return { success: false, error: 'Title and URL are required.' };
-  }
+  if (error) return { success: false, error: error.message };
 
-  // 3. Insert into DB
-  const { error } = await supabaseAdmin
-    .from('campaigns')
-    .insert([newCampaign]);
-
-  if (error) {
-    // Return error to the client component
-    return { success: false, error: error.message };
-  }
-
-  // 4. Refresh & Redirect
-  // We revalidate the main list so the new campaign shows up instantly
   revalidatePath('/admin/campaigns');
   redirect('/admin/campaigns');
+}
+
+// --- 2. UPDATE CAMPAIGN ---
+export async function updateCampaign(campaignId, formData) {
+  try {
+    const updates = {
+      title: formData.get('title'),
+      description: formData.get('description'), 
+      user_reward: parseFloat(formData.get('user_reward')) || 0,
+      payout_amount: parseFloat(formData.get('payout_amount')) || 0,
+      
+      // ✅ LOGIC FIX: Save slug and link separately
+      landing_url: formData.get('landing_url').trim(),
+      affiliate_link: formData.get('affiliate_link'),
+
+      category: formData.get('category'),
+      icon_url: formData.get('icon_url'),
+    };
+
+    const { error } = await supabaseAdmin
+      .from('campaigns')
+      .update(updates)
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    revalidatePath('/admin/campaigns');
+    return { success: true };
+    
+  } catch (e) {
+    console.error("Update Failed:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+// --- 3. TOGGLE STATUS ---
+export async function toggleCampaignStatus(campaignId, currentStatus) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('campaigns')
+      .update({ is_active: !currentStatus })
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    revalidatePath('/admin/campaigns');
+    return { success: true };
+
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// --- 4. DELETE CAMPAIGN ---
+export async function deleteCampaign(campaignId) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('campaigns')
+      .delete()
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    revalidatePath('/admin/campaigns');
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 }
