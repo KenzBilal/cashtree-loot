@@ -13,20 +13,13 @@ export async function updateLeadStatus(leadId, newStatus) {
     console.log(`⚡ Updating Lead ${leadId} to ${newStatus}...`);
 
     // 1. Prepare the update object
+    // ✅ FIX: We only update 'status', not 'approved'
     const updates = {
-      status: newStatus,          // Update Text Column (Pending/Approved)
+      status: newStatus,          
       updated_at: new Date().toISOString()
     };
 
-    // 2. SAFETY: If you have an 'approved' boolean column, sync it too
-    // (This fixes the "approved is false" issue you saw in DB)
-    if (newStatus === 'Approved') {
-      updates.approved = true;
-    } else if (newStatus === 'Rejected' || newStatus === 'Pending') {
-      updates.approved = false;
-    }
-
-    // 3. Run Update
+    // 2. Run Update
     const { error } = await supabaseAdmin
       .from('leads')
       .update(updates)
@@ -37,8 +30,9 @@ export async function updateLeadStatus(leadId, newStatus) {
       return { success: false, error: error.message };
     }
 
-    // 4. Refresh Data
+    // 3. Refresh Data
     revalidatePath('/admin/leads');
+    revalidatePath('/admin'); // Refresh dashboard stats too
     return { success: true };
 
   } catch (e) {
