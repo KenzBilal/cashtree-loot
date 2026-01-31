@@ -10,6 +10,7 @@ const supabaseAdmin = createClient(
 );
 
 export async function savePayoutSettings(campaignId, userBonus, promoterShare) {
+  console.log("🚀 DEBUG: Running Updated Action v2.0 - promoter_share"); // <--- Add this line
   try {
     // 1. GET AUTHENTICATED USER
     const cookieStore = await cookies();
