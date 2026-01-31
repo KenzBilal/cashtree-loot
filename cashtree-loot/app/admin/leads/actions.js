@@ -12,14 +12,21 @@ export async function updateLeadStatus(leadId, newStatus) {
   try {
     console.log(`⚡ Updating Lead ${leadId} to ${newStatus}...`);
 
-    // 1. Prepare the update object
-    // ✅ FIX: We only update 'status', not 'approved'
+    // 1. Prepare the basic update object
     const updates = {
-      status: newStatus,          
-      updated_at: new Date().toISOString()
+      status: newStatus
     };
 
-    // 2. Run Update
+    // 2. Handle Timestamps based on your actual Schema
+    // Your table has 'approved_at', so we use that.
+    if (newStatus === 'Approved') {
+      updates.approved_at = new Date().toISOString();
+    } else {
+      // If rejecting or moving back to pending, clear the approval time
+      updates.approved_at = null;
+    }
+
+    // 3. Run Update
     const { error } = await supabaseAdmin
       .from('leads')
       .update(updates)
@@ -30,9 +37,9 @@ export async function updateLeadStatus(leadId, newStatus) {
       return { success: false, error: error.message };
     }
 
-    // 3. Refresh Data
+    // 4. Refresh Data
     revalidatePath('/admin/leads');
-    revalidatePath('/admin'); // Refresh dashboard stats too
+    revalidatePath('/admin'); 
     return { success: true };
 
   } catch (e) {
