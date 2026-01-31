@@ -11,12 +11,15 @@ const supabaseAdmin = createClient(
 // --- 1. PAY A USER (Direct Lead Payout) ---
 export async function markLeadAsPaid(leadId) {
   try {
+    // ✅ FIX: Removed 'updated_at' because the column does not exist in 'leads'.
+    // We only update the status to 'Paid'.
     const { error } = await supabaseAdmin
       .from('leads')
-      .update({ status: 'Paid', updated_at: new Date().toISOString() })
+      .update({ status: 'Paid' }) 
       .eq('id', leadId);
 
     if (error) throw new Error(error.message);
+    
     revalidatePath('/admin/finance');
     return { success: true };
   } catch (e) {
@@ -35,7 +38,7 @@ export async function processWithdrawal(payoutId, action, amount, userId) {
 
     if (updateError) throw new Error(updateError.message);
 
-    // B. If Rejected -> Refund the User (Your original logic)
+    // B. If Rejected -> Refund the User
     if (action === 'rejected' && userId) {
       const { error: refundError } = await supabaseAdmin
         .from('ledger')
