@@ -37,7 +37,8 @@ export async function submitLead(formData) {
 
   if (error) {
     console.error("Lead Error:", error);
-    return { success: false, error: "Database error" };
+    // ✅ CHANGE THIS LINE TO SEND THE REAL ERROR:
+    return { success: false, error: error.message }; 
   }
 
   // Return the URL to the client so it can redirect nicely

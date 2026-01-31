@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import { submitLead } from './actions';
-import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle2, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export default function OfferForm({ campaignId, refCode, redirectUrl }) {
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [errorMessage, setErrorMessage] = useState(''); // ✅ Holds the real error text
 
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus('loading');
+    setErrorMessage(''); // Reset error
 
     const formData = new FormData(e.target);
     
-    // Add hidden fields manually since we aren't using <input type="hidden"> inside the form anymore for cleaner DOM
+    // Add hidden fields manually
     formData.append('campaign_id', campaignId);
     formData.append('referral_code', refCode || '');
     formData.append('redirect_url', redirectUrl);
@@ -28,10 +30,15 @@ export default function OfferForm({ campaignId, refCode, redirectUrl }) {
       }, 1500);
     } else {
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      // ✅ CAPTURE THE REAL ERROR FROM SERVER
+      setErrorMessage(result.error || 'Submission failed. Please try again.');
+      
+      // Keep the error visible for 5 seconds so you can read it
+      setTimeout(() => setStatus('idle'), 5000);
     }
   }
 
+  // --- SUCCESS STATE ---
   if (status === 'success') {
     return (
       <div className="success-overlay">
@@ -61,6 +68,7 @@ export default function OfferForm({ campaignId, refCode, redirectUrl }) {
     );
   }
 
+  // --- FORM STATE ---
   return (
     <form onSubmit={handleSubmit} className="form-stack">
       <div className="input-group">
@@ -93,7 +101,13 @@ export default function OfferForm({ campaignId, refCode, redirectUrl }) {
         )}
       </button>
 
-      {status === 'error' && <p className="error-text">⚠️ Something went wrong. Please try again.</p>}
+      {/* ✅ ERROR MESSAGE DISPLAY */}
+      {status === 'error' && (
+        <div className="error-box">
+          <AlertTriangle size={16} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       <style jsx>{`
         .form-stack { display: flex; flex-direction: column; gap: 16px; }
@@ -121,7 +135,13 @@ export default function OfferForm({ campaignId, refCode, redirectUrl }) {
         
         .flex-center { display: flex; align-items: center; justify-content: center; gap: 8px; }
         .spin { animation: spin 1s linear infinite; }
-        .error-text { color: #ef4444; font-size: 12px; text-align: center; font-weight: 600; margin-top: 10px; }
+        
+        .error-box { 
+          margin-top: 12px; padding: 12px; background: rgba(239, 68, 68, 0.15); 
+          border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; color: #ef4444; 
+          font-size: 12px; font-weight: 600; text-align: center; display: flex; 
+          align-items: center; justify-content: center; gap: 8px; animation: fadeIn 0.3s ease;
+        }
         
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
