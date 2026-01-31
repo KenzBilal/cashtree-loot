@@ -63,8 +63,7 @@ export async function updateLeadStatus(leadId, newStatus) {
     }
 
     // 3. UPDATE LEAD STATUS
-    // ✅ FIX: Only using 'approved_at' which exists in your DB. 
-    // removed 'updated_at' to prevent crashes.
+    // ✅ FIX: Removed 'updated_at'. Only using 'approved_at' which exists in your DB.
     const updates = {
       status: newStatus
     };
