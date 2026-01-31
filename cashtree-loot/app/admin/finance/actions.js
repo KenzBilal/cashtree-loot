@@ -39,7 +39,7 @@ export async function processWithdrawal(payoutId, action, amount, userId) {
     if (updateError) throw new Error(updateError.message);
 
     // B. If Rejected -> Refund the User
-    if (action === 'rejected' && userId) {
+    /*if (action === 'rejected' && userId) {
       const { error: refundError } = await supabaseAdmin
         .from('ledger')
         .insert({
@@ -53,7 +53,7 @@ export async function processWithdrawal(payoutId, action, amount, userId) {
           console.error("Refund Error:", refundError); // Added for debugging
           throw new Error("Failed to refund user ledger.");
       }
-    }
+    }*/
 
     revalidatePath('/admin/finance');
     return { success: true };
