@@ -9,36 +9,78 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- 1. CREATE CAMPAIGN (Required for Create Page) ---
+// --- 1. CREATE CAMPAIGN ---
 export async function createCampaign(formData) {
   const title = formData.get('title');
-  const landing_url = formData.get('landing_url'); // e.g. "motwal"
-  const affiliate_link = formData.get('affiliate_link'); // e.g. "https://tracking..."
-  const user_reward = formData.get('user_reward');
+  const landing_url = formData.get('landing_url');
+  const affiliate_link = formData.get('affiliate_link');
+  
+  // ✅ FIX: Grab Payout Amount AND force 0 if missing
+  const user_reward = parseFloat(formData.get('user_reward')) || 0;
+  const payout_amount = parseFloat(formData.get('payout_amount')) || 0; // <--- WAS MISSING BEFORE
+  
   const description = formData.get('description');
+  const category = formData.get('category');
   const icon_url = formData.get('icon_url');
 
-  if (!title || !landing_url || !user_reward) {
-    return { error: 'Missing required fields' };
+  if (!title || !landing_url) {
+    return { success: false, error: 'Title and URL Slug are required.' };
   }
 
   const { error } = await supabaseAdmin.from('campaigns').insert({
     title,
-    landing_url: landing_url.trim(), // ✅ Save EXACT slug
-    affiliate_link,                  // ✅ Save Redirect Link
-    user_reward,
+    landing_url: landing_url.trim(),
+    affiliate_link,
+    user_reward,   
+    payout_amount, // ✅ Now sends 0 instead of null
     description,
+    category,
     icon_url,
-    is_active: true
+    is_active: true,
+    created_at: new Date().toISOString(),
   });
 
-  if (error) return { error: error.message };
+  if (error) return { success: false, error: error.message };
 
   revalidatePath('/admin/campaigns');
   redirect('/admin/campaigns');
 }
 
-// --- 2. TOGGLE STATUS (Kept Exact) ---
+// --- 2. UPDATE CAMPAIGN (Also updated for safety) ---
+export async function updateCampaign(campaignId, formData) {
+  try {
+    const updates = {
+      title: formData.get('title'),
+      description: formData.get('description'), 
+      
+      // ✅ Safety Check: Never allow null here either
+      user_reward: parseFloat(formData.get('user_reward')) || 0,
+      payout_amount: parseFloat(formData.get('payout_amount')) || 0,
+      
+      landing_url: formData.get('landing_url').trim(),
+      affiliate_link: formData.get('affiliate_link'),
+
+      category: formData.get('category'),
+      icon_url: formData.get('icon_url'),
+    };
+
+    const { error } = await supabaseAdmin
+      .from('campaigns')
+      .update(updates)
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    revalidatePath('/admin/campaigns');
+    return { success: true };
+    
+  } catch (e) {
+    console.error("Update Failed:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+// --- 3. TOGGLE STATUS ---
 export async function toggleCampaignStatus(campaignId, currentStatus) {
   try {
     const { error } = await supabaseAdmin
@@ -49,7 +91,6 @@ export async function toggleCampaignStatus(campaignId, currentStatus) {
     if (error) throw error;
 
     revalidatePath('/admin/campaigns');
-    revalidatePath('/dashboard/campaigns');
     return { success: true };
 
   } catch (e) {
@@ -57,44 +98,7 @@ export async function toggleCampaignStatus(campaignId, currentStatus) {
   }
 }
 
-// --- 3. UPDATE CAMPAIGN (Fixed for New Logic) ---
-export async function updateCampaign(formData) {
-  const id = formData.get('id');
-  
-  try {
-    const updates = {
-      title: formData.get('title'),
-      description: formData.get('description'), 
-      user_reward: parseFloat(formData.get('user_reward')) || 0,
-      
-      // ✅ LOGIC FIX: Save slug and link separately
-      landing_url: formData.get('landing_url').trim(),
-      affiliate_link: formData.get('affiliate_link'),
-
-      icon_url: formData.get('icon_url'),
-      is_active: formData.get('is_active') === 'on'
-    };
-
-    const { error } = await supabaseAdmin
-      .from('campaigns')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) throw error;
-
-    revalidatePath('/admin/campaigns');
-    revalidatePath('/dashboard/campaigns');
-    
-  } catch (e) {
-    console.error("Update Failed:", e);
-    return { success: false, error: e.message };
-  }
-
-  // Redirect must be outside try/catch
-  redirect('/admin/campaigns');
-}
-
-// --- 4. DELETE CAMPAIGN (Kept Exact) ---
+// --- 4. DELETE CAMPAIGN ---
 export async function deleteCampaign(campaignId) {
   try {
     const { error } = await supabaseAdmin
@@ -105,7 +109,6 @@ export async function deleteCampaign(campaignId) {
     if (error) throw error;
 
     revalidatePath('/admin/campaigns');
-    revalidatePath('/dashboard/campaigns');
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
