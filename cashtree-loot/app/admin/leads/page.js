@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import LeadsInterface from './LeadsInterface';
 
-export const revalidate = 0;
+export const revalidate = 0; // Disable cache so you always see new leads
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -25,26 +25,45 @@ async function updateLeadStatus(leadId, newStatus) {
 // --- MAIN PAGE COMPONENT ---
 export default async function LeadsPage() {
   // 1. FETCH DATA
-  // We select 'payout_amount' (The correct Numeric field)
+  // ✅ FIX: Use Service Role to bypass RLS
+  // We fetch 'payout' from the leads table directly (Snapshot)
   const { data: leads, error } = await supabaseAdmin
     .from('leads')
-    .select('*, campaigns(title, payout_amount), accounts(username, phone)') 
+    .select(`
+      *,
+      campaigns ( title, icon_url ),
+      accounts ( username, phone )
+    `) 
     .order('created_at', { ascending: false })
     .limit(500);
 
-  if (error) return <div className="p-10 text-red-500">Error: {error.message}</div>;
+  if (error) {
+    return (
+      <div className="p-10 text-red-500 bg-red-900/10 border border-red-500 rounded-xl m-4">
+        <strong>Error Loading Leads:</strong> {error.message}
+        <br/><span className="text-xs opacity-70">Check if 'leads' table exists and Foreign Keys are correct.</span>
+      </div>
+    );
+  }
 
-  // 2. CALCULATE STATS (With Math Safety)
+  // 2. CALCULATE STATS (Fixed Capitalization & Payout Source)
   const stats = {
-    pendingCount: leads.filter(l => l.status === 'pending').length,
-    approvedCount: leads.filter(l => l.status === 'approved').length,
-    rejectedCount: leads.filter(l => l.status === 'rejected').length,
+    // ✅ FIX: Match the 'Pending' (Capital P) from your database
+    pendingCount: leads.filter(l => l.status === 'Pending').length,
+    approvedCount: leads.filter(l => l.status === 'Approved').length,
+    rejectedCount: leads.filter(l => l.status === 'Rejected').length,
     
-    // ✅ FIX: Use parseFloat() to ensure we do Math, not Text Joining
+    // ✅ FIX: Sum 'l.payout' (The lead's value), NOT the campaign's generic price
     pendingValue: leads
-      .filter(l => l.status === 'pending')
-      .reduce((sum, l) => sum + (parseFloat(l.campaigns?.payout_amount) || 0), 0)
+      .filter(l => l.status === 'Pending')
+      .reduce((sum, l) => sum + (parseFloat(l.payout) || 0), 0)
   };
 
-  return <LeadsInterface initialData={leads || []} stats={stats} updateStatusAction={updateLeadStatus} />;
+  return (
+    <LeadsInterface 
+      initialData={leads || []} 
+      stats={stats} 
+      updateStatusAction={updateLeadStatus} 
+    />
+  );
 }

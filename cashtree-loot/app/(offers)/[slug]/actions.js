@@ -15,6 +15,16 @@ export async function submitLead(formData) {
   const referral_code = formData.get('referral_code');
   const redirect_url = formData.get('redirect_url');
 
+  // --- 1. FETCH REAL PAYOUT (Added This Block) ---
+  const { data: campaign } = await supabase
+    .from('campaigns')
+    .select('payout_amount')
+    .eq('id', campaign_id)
+    .single();
+    
+  // Default to 0 if something goes wrong, but usually this will have the real value
+  const realPayout = campaign?.payout_amount || 0;
+
   let promoter_id = null;
   if (referral_code) {
     const { data: promoter } = await supabase
@@ -25,23 +35,21 @@ export async function submitLead(formData) {
     if (promoter) promoter_id = promoter.id;
   }
 
-  // Insert Lead
+  // --- 2. INSERT LEAD (Updated payout field) ---
   const { error } = await supabase.from('leads').insert({
     campaign_id: campaign_id,
     user_name: user_name,
     customer_data: { upi: upi_id, phone: phone }, 
     referred_by: promoter_id,
     status: 'Pending',
-    payout: 0 
+    payout: realPayout // ✅ Now uses the fetched amount
   });
 
   if (error) {
     console.error("Lead Error:", error);
-    // ✅ CHANGE THIS LINE TO SEND THE REAL ERROR:
     return { success: false, error: error.message }; 
   }
 
-  // Return the URL to the client so it can redirect nicely
   return { 
     success: true, 
     redirectUrl: redirect_url && redirect_url !== '#' ? redirect_url : 'https://google.com' 
