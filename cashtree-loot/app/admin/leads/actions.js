@@ -12,8 +12,7 @@ export async function updateLeadStatus(leadId, newStatus) {
   try {
     console.log(`⚡ Processing Lead ${leadId} -> ${newStatus}...`);
 
-    // 1. FETCH LEAD DETAILS FIRST
-    // We need to know who referred it and how much it is worth
+    // 1. FETCH LEAD DETAILS
     const { data: lead, error: fetchError } = await supabaseAdmin
       .from('leads')
       .select('id, referred_by, payout, status, user_name, campaigns(title)')
@@ -22,8 +21,7 @@ export async function updateLeadStatus(leadId, newStatus) {
 
     if (fetchError || !lead) throw new Error("Lead not found.");
 
-    // 2. COMMISSION LOGIC (Only runs when Approving for the first time)
-    // We check if it is being Approved AND has a Promoter
+    // 2. COMMISSION LOGIC (Only if Approving for the first time & Promoter exists)
     if (newStatus === 'Approved' && lead.status !== 'Approved' && lead.referred_by) {
       
       const commission = parseFloat(lead.payout) || 0;
@@ -31,7 +29,7 @@ export async function updateLeadStatus(leadId, newStatus) {
       if (commission > 0) {
         console.log(`💰 Paying ₹${commission} to Promoter ${lead.referred_by}`);
 
-        // A. Add to Ledger (History)
+        // A. Add to Ledger
         const { error: ledgerError } = await supabaseAdmin
           .from('ledger')
           .insert({
@@ -41,13 +39,10 @@ export async function updateLeadStatus(leadId, newStatus) {
             description: `Commission: ${lead.user_name} (${lead.campaigns?.title || 'Lead'})`
           });
 
-        if (ledgerError) throw new Error("Failed to create ledger entry: " + ledgerError.message);
+        if (ledgerError) throw new Error("Failed to create ledger entry.");
 
-        // B. Update Wallet Balance (The Money)
-        // We use a Remote Procedure Call (RPC) or direct increment if you have a simple setup.
-        // Assuming you have a 'balance' or 'wallet_balance' column. I will use the safest method:
-        
-        // Fetch current balance
+        // B. Update Wallet Balance
+        // Get current balance
         const { data: promoter } = await supabaseAdmin
           .from('accounts')
           .select('balance')
@@ -67,12 +62,16 @@ export async function updateLeadStatus(leadId, newStatus) {
       }
     }
 
-    // 3. UPDATE LEAD STATUS (Final Step)
+    // 3. UPDATE LEAD STATUS
+    // ✅ FIX: Only using 'approved_at' which exists in your DB. 
+    // removed 'updated_at' to prevent crashes.
     const updates = {
-      status: newStatus,
-      // If approving, set the timestamp
-      approved_at: newStatus === 'Approved' ? new Date().toISOString() : null
+      status: newStatus
     };
+
+    if (newStatus === 'Approved') {
+      updates.approved_at = new Date().toISOString();
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from('leads')
@@ -81,7 +80,7 @@ export async function updateLeadStatus(leadId, newStatus) {
 
     if (updateError) throw updateError;
 
-    // 4. REFRESH EVERYTHING
+    // 4. REFRESH DATA
     revalidatePath('/admin/leads');
     revalidatePath('/admin/finance');
     revalidatePath('/admin');
