@@ -1,25 +1,47 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // ✅ Added for Server Refresh
 import { formatDistanceToNow } from 'date-fns';
 
 // --- MAIN INTERFACE COMPONENT ---
 export default function LeadsInterface({ initialData, stats, updateStatusAction }) {
-  const [activeTab, setActiveTab] = useState('PENDING'); // PENDING | HISTORY
+  const router = useRouter(); 
+  const [leads, setLeads] = useState(initialData); // ✅ Use Local State for Instant UI Updates
+  const [activeTab, setActiveTab] = useState('PENDING'); 
   const [searchTerm, setSearchTerm] = useState('');
 
-  // FILTER LOGIC
-  const filteredData = initialData.filter(item => {
-    // 1. Tab Filter (✅ FIXED: Case Sensitive Check)
+  // --- HANDLE STATUS UPDATE (The Fix) ---
+  const handleStatusUpdate = async (id, newStatus) => {
+    // 1. Optimistic Update (Update UI Instantly)
+    setLeads(currentLeads => 
+      currentLeads.map(lead => 
+        lead.id === id ? { ...lead, status: newStatus } : lead
+      )
+    );
+
+    // 2. Call Server Action
+    const result = await updateStatusAction(id, newStatus);
+    
+    if (!result.success) {
+      alert("Error: " + result.error);
+      // Revert if failed (Optional safety)
+      router.refresh(); 
+    } else {
+      // 3. Sync with Server
+      router.refresh(); 
+    }
+  };
+
+  // FILTER LOGIC (Uses 'leads' state instead of 'initialData')
+  const filteredData = leads.filter(item => {
     const isPending = item.status === 'Pending';
     
     if (activeTab === 'PENDING' && !isPending) return false;
     if (activeTab === 'HISTORY' && isPending) return false;
 
-    // 2. Search Filter
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
-      // Safety checks added for null values
       return (
         item.campaigns?.title?.toLowerCase().includes(s) ||
         item.accounts?.username?.toLowerCase().includes(s) ||
@@ -84,7 +106,7 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
               <LeadRow 
                 key={lead.id} 
                 lead={lead} 
-                updateStatusAction={updateStatusAction} 
+                onUpdate={handleStatusUpdate} // ✅ Pass the update handler
               />
             ))
           ) : (
@@ -100,18 +122,16 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
 
 // --- SUB-COMPONENTS ---
 
-function LeadRow({ lead, updateStatusAction }) {
+function LeadRow({ lead, onUpdate }) {
   const [loading, setLoading] = useState(false);
 
-  // ✅ FIXED: Sending Capitalized Status to DB
   const handleAction = async (status) => {
     if (!confirm(`Are you sure you want to ${status} this lead?`)) return;
     setLoading(true);
-    await updateStatusAction(lead.id, status);
+    await onUpdate(lead.id, status); // Call Parent Handler
     setLoading(false);
   };
 
-  // ✅ FIXED: Matching Capitalized Status keys
   const statusColor = {
     Pending: '#facc15',
     Approved: '#00ff88',
@@ -140,7 +160,7 @@ function LeadRow({ lead, updateStatusAction }) {
         <div style={{fontSize:'11px', color:'#555'}}>{lead.accounts?.phone}</div>
       </div>
 
-      {/* 4. Data (Parsed properly) */}
+      {/* 4. Data */}
       <div style={{fontFamily: 'monospace', background: '#050505', padding: '6px 10px', borderRadius: '6px', border: '1px solid #222', display: 'inline-block'}}>
         {lead.customer_data?.phone ? `${lead.customer_data.phone} / ${lead.customer_data.upi}` : 'No Data'}
       </div>
