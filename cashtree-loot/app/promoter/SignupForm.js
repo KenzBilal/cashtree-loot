@@ -50,11 +50,11 @@ export default function SignupForm() {
 
       // A. CHECK REFERRER
       let referrerId = null;
-      if (refCode) {
+      if (refCode.trim()) {
         const { data: referrer } = await supabase
           .from('accounts')
           .select('id')
-          .eq('username', refCode)
+          .eq('username', refCode.trim().toUpperCase())
           .single();
         if (referrer) referrerId = referrer.id;
       }
@@ -66,12 +66,13 @@ export default function SignupForm() {
       });
 
       if (authError) throw authError;
+      const newUserId = authData.user.id;
 
       // C. CREATE PROFILE
       const { error: dbError } = await supabase
         .from('accounts')
         .insert({
-          id: authData.user.id,
+          id: newUserId,
           role: 'promoter',
           username: cleanUsername,
           full_name: formData.fullName,
@@ -81,14 +82,24 @@ export default function SignupForm() {
           is_frozen: false
         });
 
-      if (dbError) {
-        console.error("DATABASE ERROR:", dbError);
-        // Preserving your specific alert for debugging
-        alert(`Database Error: ${dbError.message} \nHint: Check RLS Policies!`);
-        throw new Error(dbError.message);
+      if (dbError) throw dbError;
+
+      // D. CONDITIONAL SIGNUP BONUS
+      // Only insert into ledger if a valid referrerId was found
+      if (referrerId) {
+        const { error: bonusError } = await supabase
+          .from('ledger')
+          .insert({
+            account_id: newUserId,
+            amount: 20,
+            type: 'signup_bonus',
+            description: `Signup Bonus (Ref: ${refCode})`
+          });
+        
+        if (bonusError) console.error("Bonus Error:", bonusError);
       }
 
-      alert("Account Created Successfully!");
+      alert(referrerId ? "Account Created & ₹20 Bonus Added!" : "Account Created Successfully!");
       router.push('/login');
 
     } catch (err) {
