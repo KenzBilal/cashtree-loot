@@ -8,8 +8,8 @@ export default function MobileNav() {
 
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: '🏠' },
-    { name: 'Earn', path: '/dashboard/campaigns', icon: '🔥' },
-    { name: 'Team', path: '/dashboard/team', icon: '👑' },
+    { name: 'Cash', path: '/dashboard/campaigns', icon: '💼' },
+    { name: 'Network', path: '/dashboard/team', icon: '👥' },
     { name: 'Wallet', path: '/dashboard/wallet', icon: '💰' },
     { name: 'Profile', path: '/dashboard/profile', icon: '👤' },
   ];

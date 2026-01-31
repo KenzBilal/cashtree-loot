@@ -8,7 +8,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: '🏠' },
-    { name: 'Earn Money', path: '/dashboard/campaigns', icon: '🔥' },
+    { name: 'Earn', path: '/dashboard/campaigns', icon: '🔥' },
     { name: 'Network', path: '/dashboard/team', icon: '🕸' },
     { name: 'My Wallet', path: '/dashboard/wallet', icon: '💰' },
     { name: 'My Profile', path: '/dashboard/profile', icon: '👤' },
