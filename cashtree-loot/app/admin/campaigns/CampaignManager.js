@@ -74,7 +74,7 @@ export default function CampaignManager({ initialCampaigns }) {
     // Server Update
     const res = await updateCampaign(editing.id, formData);
     if (!res.success) {
-      alert("Save failed!");
+      alert("Save failed: " + res.error); // Show real error (e.g. Math Error)
       window.location.reload();
     }
   };
@@ -121,14 +121,14 @@ export default function CampaignManager({ initialCampaigns }) {
               </button>
             </div>
 
-            {/* METRICS */}
+            {/* METRICS (Updated Labels) */}
             <div style={{display: 'flex', gap: '10px', background: '#050505', padding: '12px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #111'}}>
               <div style={{flex: 1}}>
-                <div style={{fontSize: '9px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>PAYOUT</div>
+                <div style={{fontSize: '9px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>TOTAL LIMIT (MAX)</div>
                 <div style={{color: neonGreen, fontWeight: '900', fontSize: '14px'}}>₹{camp.payout_amount}</div>
               </div>
               <div style={{flex: 1}}>
-                <div style={{fontSize: '9px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>USER GETS</div>
+                <div style={{fontSize: '9px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>DEFAULT CASHBACK</div>
                 <div style={{color: '#fff', fontWeight: '900', fontSize: '14px'}}>₹{camp.user_reward}</div>
               </div>
             </div>
@@ -191,10 +191,10 @@ export default function CampaignManager({ initialCampaigns }) {
                 <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
                    <div style={{flex: 1}}>
                       <input 
-                         placeholder="Search new brand..."
-                         value={brandInput}
-                         onChange={(e) => setBrandInput(e.target.value)}
-                         style={{width: '100%', background: '#000', border: '1px solid #333', borderRadius: '10px', padding: '12px', color: '#fff', outline: 'none', fontSize: '13px'}}
+                          placeholder="Search new brand..."
+                          value={brandInput}
+                          onChange={(e) => setBrandInput(e.target.value)}
+                          style={{width: '100%', background: '#000', border: '1px solid #333', borderRadius: '10px', padding: '12px', color: '#fff', outline: 'none', fontSize: '13px'}}
                       />
                    </div>
                    <div style={{
@@ -218,9 +218,10 @@ export default function CampaignManager({ initialCampaigns }) {
               {/* ✅ ADDED: AFFILIATE LINK */}
               <Input label="Target/Affiliate Link" name="affiliate_link" defaultValue={editing.affiliate_link} placeholder="https://tracking..." />
               
+              {/* ✅ UPDATED LABELS FOR CLARITY */}
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                 <Input label="Payout (₹)" name="payout_amount" type="number" defaultValue={editing.payout_amount} />
-                 <Input label="User Reward (₹)" name="user_reward" type="number" defaultValue={editing.user_reward} />
+                 <Input label="Total Limit (Max) ₹" name="payout_amount" type="number" defaultValue={editing.payout_amount} />
+                 <Input label="Default Cashback (₹)" name="user_reward" type="number" defaultValue={editing.user_reward} />
               </div>
 
               <Input label="Category" name="category" defaultValue={editing.category} />

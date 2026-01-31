@@ -23,15 +23,15 @@ export default async function CampaignsPage() {
   if (!user) redirect('/login');
 
   // 2. GET PROMOTER DETAILS (Username needed for referral links)
-  // We try to get the username from metadata, or fallback to the email prefix
   const promoterUsername = user.user_metadata?.username || user.email?.split('@')[0] || 'promoter';
 
-  // 3. FETCH ACTIVE MISSIONS (Using Service Role to guarantee loading)
+  // 3. FETCH DATA (Using Service Role to guarantee loading)
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // A. Get Active Missions
   const { data: campaigns, error } = await supabaseAdmin
     .from('campaigns')
     .select('*')
@@ -42,6 +42,13 @@ export default async function CampaignsPage() {
     console.error("Dashboard Load Error:", error);
     return <div className="p-10 text-center text-red-500">System Error: Could not load missions.</div>;
   }
+
+  // B. ✅ NEW: Get This Promoter's Custom Settings
+  // We need to know if they already customized any payouts
+  const { data: userSettings } = await supabaseAdmin
+    .from('promoter_campaign_settings')
+    .select('campaign_id, user_bonus, promoter_share')
+    .eq('account_id', user.id);
 
   // 4. RENDER THE INTERFACE
   return (
@@ -61,7 +68,8 @@ export default async function CampaignsPage() {
       <CampaignsInterface 
         campaigns={campaigns || []} 
         promoterId={user.id} 
-        promoterUsername={promoterUsername} // ✅ Critical for referral links
+        promoterUsername={promoterUsername} 
+        userSettings={userSettings || []} // ✅ Pass the settings here
       />
       
     </div>

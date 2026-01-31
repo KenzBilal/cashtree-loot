@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createCampaign } from '../actions';
+import { createCampaign } from './actions'; // Ensure this points to the file below
 import { Save, Loader2, Search, Zap } from 'lucide-react';
 
 export default function CreateForm() {
@@ -127,8 +127,6 @@ export default function CreateForm() {
           <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', borderBottom: '1px solid #222', paddingBottom: '8px', letterSpacing: '1px'}}>Core Details</h3>
           
           <Input label="Campaign Title" name="title" placeholder="e.g. Install ByBit App" required />
-          
-          {/* ✅ 1. SLUG INPUT */}
           <Input 
             label="URL Slug (e.g. motwal)" 
             name="landing_url" 
@@ -136,8 +134,6 @@ export default function CreateForm() {
             required 
             hint="This creates: cashttree.online/motwal"
           />
-
-          {/* ✅ 2. AFFILIATE LINK INPUT (ADDED) */}
           <Input 
             label="Target / Affiliate Link" 
             name="affiliate_link" 
@@ -151,12 +147,30 @@ export default function CreateForm() {
           </div>
         </div>
 
-        {/* --- 3. FINANCE --- */}
+        {/* --- 3. FINANCE (UPDATED LABELS) --- */}
         <div style={{marginBottom: '24px'}}>
-          <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', borderBottom: '1px solid #222', paddingBottom: '8px', letterSpacing: '1px'}}>Financials</h3>
+          <h3 style={{color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '16px', borderBottom: '1px solid #222', paddingBottom: '8px', letterSpacing: '1px'}}>
+            Budget & Payouts
+          </h3>
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
-            <Input label="Payout (You Earn) ₹" name="payout_amount" type="number" placeholder="0.00" required />
-            <Input label="User Reward (They Get) ₹" name="user_reward" type="number" placeholder="0.00" required />
+            {/* ✅ FIXED: Renamed to "Total Limit" so you know this is the Ceiling */}
+            <Input 
+              label="Total Limit (Max Budget) ₹" 
+              name="payout_amount" 
+              type="number" 
+              placeholder="100" 
+              required 
+              hint="Max total allowed (User + Promoter)"
+            />
+            {/* ✅ FIXED: Renamed to "Default Cashback" */}
+            <Input 
+              label="Default User Cashback ₹" 
+              name="user_reward" 
+              type="number" 
+              placeholder="20" 
+              required 
+              hint="What users get if Promoter changes nothing"
+            />
           </div>
         </div>
 
@@ -191,7 +205,7 @@ export default function CreateForm() {
   );
 }
 
-// Helper Input Component
+// Helper Input Component (Unchanged)
 function Input({ label, name, type = "text", placeholder, required, hint, value, onChange }) {
   return (
     <div style={{marginBottom: '16px'}}>

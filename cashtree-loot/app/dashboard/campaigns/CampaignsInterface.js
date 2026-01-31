@@ -1,34 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import { X, ChevronRight, Zap, Copy, Check, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ChevronRight, Zap, Copy, Check, Info, Settings, Save, Loader2 } from 'lucide-react';
+import { savePayoutSettings } from './actions'; // ✅ Import the Server Action
 
-export default function CampaignsInterface({ campaigns, promoterId, promoterUsername }) {
+export default function CampaignsInterface({ campaigns, promoterId, promoterUsername, userSettings }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  // --- HELPER: Parse Description into Steps ---
+  // --- NEW STATE FOR PAYOUT EDITING ---
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUserReward, setEditUserReward] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // --- HELPER: Parse Description ---
   const parseSteps = (text) => {
     if (!text) return [];
     return text.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0);
   };
 
-  // --- HELPER: Copy Logic (FIXED 🛠️) ---
+  // --- HELPER: Copy Logic ---
   const handleCopy = () => {
-    // 1. Get the Base URL (Live or Local)
     const origin = window.location.origin;
-    
-    // 2. Determine the path (e.g., /motwal)
-    // If landing_url is full (https://...), we use that. 
-    // If it's short ("motwal"), we append it to origin.
     let targetUrl = selectedTask.landing_url;
     if (!targetUrl.startsWith('http')) {
-      // Clean up slash if needed
       const path = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
       targetUrl = `${origin}${path}`;
     }
-
-    // 3. Append Ref Code
     const separator = targetUrl.includes('?') ? '&' : '?';
     const affiliateLink = `${targetUrl}${separator}ref=${promoterUsername}`;
     
@@ -37,44 +35,102 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // --- ⚡ SMART SPLIT CALCULATOR ---
+  // Determines the real values to show (Custom Settings OR Default)
+  const getSplit = (campaign) => {
+    // 1. Check if user has customized this campaign
+    const custom = userSettings?.find(s => s.campaign_id === campaign.id);
+    
+    // 2. Ceiling (Total Budget)
+    const totalLimit = campaign.payout_amount;
+
+    // 3. User Share (Custom or Default)
+    const userShare = custom ? parseFloat(custom.user_bonus) : campaign.user_reward;
+
+    // 4. Promoter Share (Total - User)
+    const promoterShare = totalLimit - userShare;
+
+    return { totalLimit, userShare, promoterShare };
+  };
+
+  // --- EFFECT: Reset Edit State when opening modal ---
+  useEffect(() => {
+    if (selectedTask) {
+      setIsEditing(false);
+      const { userShare } = getSplit(selectedTask);
+      setEditUserReward(userShare);
+    }
+  }, [selectedTask]);
+
+  // --- HANDLER: Save Payout ---
+  const handleSavePayout = async () => {
+    setIsSaving(true);
+    const { totalLimit } = getSplit(selectedTask);
+    
+    // Validate
+    if (editUserReward > totalLimit) {
+      alert(`Error: Max limit is ₹${totalLimit}`);
+      setIsSaving(false);
+      return;
+    }
+
+    const newPromoterShare = totalLimit - editUserReward;
+
+    const res = await savePayoutSettings(selectedTask.id, editUserReward, newPromoterShare);
+    
+    if (res.success) {
+      setIsEditing(false);
+      // Reload to refresh the 'userSettings' prop from the server
+      window.location.reload(); 
+    } else {
+      alert("Error: " + res.error);
+    }
+    setIsSaving(false);
+  };
+
   return (
     <div className="fade-in">
       
       {/* 1. GRID OF OFFERS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-        {campaigns.map((camp, index) => (
-          <div 
-            key={camp.id} 
-            onClick={() => setSelectedTask(camp)}
-            style={{
-              background: '#0a0a0f', border: '1px solid #1a1a1a', borderRadius: '24px', padding: '24px', cursor: 'pointer',
-              position: 'relative', transition: 'all 0.2s', animation: `slideUp 0.5s ease-out ${index * 0.05}s backwards`
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#333'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
-          >
-            {/* Header */}
-            <div style={{display: 'flex', gap: '16px', alignItems: 'start', marginBottom: '20px'}}>
-              <img src={camp.icon_url} style={{width: '60px', height: '60px', borderRadius: '16px', border: '1px solid #222', objectFit: 'cover'}} />
-              <div>
-                <h3 style={{color: '#fff', fontSize: '16px', fontWeight: '800', lineHeight: '1.2', marginBottom: '6px'}}>{camp.title}</h3>
-                <span style={{fontSize: '11px', background: '#1a1a1a', color: '#888', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', textTransform: 'uppercase'}}>{camp.category || 'Offer'}</span>
-              </div>
-            </div>
+        {campaigns.map((camp, index) => {
+          // Calculate display values for each card
+          const split = getSplit(camp);
 
-            {/* Payout Grid */}
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#111', padding: '12px', borderRadius: '14px'}}>
-              <div>
-                <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>YOU EARN</div>
-                <div style={{color: '#00ff88', fontSize: '18px', fontWeight: '900'}}>₹{camp.payout_amount}</div>
+          return (
+            <div 
+              key={camp.id} 
+              onClick={() => setSelectedTask(camp)}
+              style={{
+                background: '#0a0a0f', border: '1px solid #1a1a1a', borderRadius: '24px', padding: '24px', cursor: 'pointer',
+                position: 'relative', transition: 'all 0.2s', animation: `slideUp 0.5s ease-out ${index * 0.05}s backwards`
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#333'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
+            >
+              {/* Header */}
+              <div style={{display: 'flex', gap: '16px', alignItems: 'start', marginBottom: '20px'}}>
+                <img src={camp.icon_url} style={{width: '60px', height: '60px', borderRadius: '16px', border: '1px solid #222', objectFit: 'cover'}} />
+                <div>
+                  <h3 style={{color: '#fff', fontSize: '16px', fontWeight: '800', lineHeight: '1.2', marginBottom: '6px'}}>{camp.title}</h3>
+                  <span style={{fontSize: '11px', background: '#1a1a1a', color: '#888', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', textTransform: 'uppercase'}}>{camp.category || 'Offer'}</span>
+                </div>
               </div>
-              <div style={{borderLeft: '1px solid #222', paddingLeft: '12px'}}>
-                <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>USER GETS</div>
-                <div style={{color: '#fff', fontSize: '18px', fontWeight: '900'}}>₹{camp.user_reward}</div>
+
+              {/* Payout Grid (Dynamic) */}
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#111', padding: '12px', borderRadius: '14px'}}>
+                <div>
+                  <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>YOU EARN</div>
+                  <div style={{color: '#00ff88', fontSize: '18px', fontWeight: '900'}}>₹{split.promoterShare}</div>
+                </div>
+                <div style={{borderLeft: '1px solid #222', paddingLeft: '12px'}}>
+                  <div style={{fontSize: '10px', color: '#666', fontWeight: '800', textTransform: 'uppercase'}}>USER GETS</div>
+                  <div style={{color: '#fff', fontSize: '18px', fontWeight: '900'}}>₹{split.userShare}</div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 2. ADVANCED POPUP MODAL */}
@@ -105,16 +161,87 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
               <button onClick={() => setSelectedTask(null)} style={{background: '#1a1a1a', border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><X size={20} /></button>
             </div>
 
-            {/* Money Box */}
-            <div style={{display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)', padding: '20px', borderRadius: '20px', marginBottom: '24px', border: '1px solid #222'}}>
-               <div>
-                  <div style={{fontSize: '11px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase'}}>Your Commission</div>
-                  <div style={{fontSize: '24px', color: '#00ff88', fontWeight: '900'}}>₹{selectedTask.payout_amount}</div>
+            {/* --- 💰 THE MONEY BOX (PAYOUT MANAGER) --- */}
+            <div style={{
+               background: isEditing ? '#111' : 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)', 
+               padding: '20px', borderRadius: '20px', marginBottom: '24px', border: isEditing ? '1px solid #333' : '1px solid #222',
+               transition: 'all 0.3s'
+            }}>
+               {/* Toolbar */}
+               <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: isEditing ? '16px' : '0'}}>
+                  {!isEditing && (
+                    <div style={{flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        {/* VIEW MODE */}
+                        <div>
+                          <div style={{fontSize: '11px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase'}}>Your Commission</div>
+                          <div style={{fontSize: '24px', color: '#00ff88', fontWeight: '900'}}>₹{getSplit(selectedTask).promoterShare}</div>
+                        </div>
+                        <div style={{textAlign: 'right'}}>
+                          <div style={{fontSize: '11px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase'}}>User Bonus</div>
+                          <div style={{fontSize: '24px', color: '#fff', fontWeight: '900'}}>₹{getSplit(selectedTask).userShare}</div>
+                        </div>
+                    </div>
+                  )}
+
+                  {/* EDIT TOGGLE BUTTON */}
+                  <button 
+                    onClick={() => setIsEditing(!isEditing)} 
+                    style={{
+                      background: isEditing ? '#222' : 'transparent', border: '1px solid', borderColor: isEditing ? '#444' : 'transparent', 
+                      borderRadius: '8px', width: '30px', height: '30px', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', cursor: 'pointer',
+                      marginLeft: isEditing ? '0' : '10px'
+                    }}
+                    title="Customize Payout"
+                  >
+                    {isEditing ? <X size={16} /> : <Settings size={18} />}
+                  </button>
                </div>
-               <div style={{textAlign: 'right'}}>
-                  <div style={{fontSize: '11px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase'}}>User Bonus</div>
-                  <div style={{fontSize: '24px', color: '#fff', fontWeight: '900'}}>₹{selectedTask.user_reward}</div>
-               </div>
+
+               {/* EDIT MODE INPUTS */}
+               {isEditing && (
+                 <div className="fade-in">
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
+                        {/* 1. User Input */}
+                        <div>
+                           <label style={{fontSize: '10px', color: '#3b82f6', fontWeight: '800', textTransform: 'uppercase', display: 'block', marginBottom: '6px'}}>User Gets</label>
+                           <input 
+                             type="number" 
+                             value={editUserReward}
+                             onChange={(e) => setEditUserReward(parseFloat(e.target.value) || 0)}
+                             style={{width: '100%', background: '#000', border: '1px solid #333', padding: '10px', borderRadius: '8px', color: '#fff', fontWeight: 'bold', outline: 'none'}} 
+                           />
+                        </div>
+                        {/* 2. Auto Calc Promoter */}
+                        <div>
+                           <label style={{fontSize: '10px', color: '#00ff88', fontWeight: '800', textTransform: 'uppercase', display: 'block', marginBottom: '6px'}}>You Keep</label>
+                           <input 
+                             type="number" 
+                             value={getSplit(selectedTask).totalLimit - editUserReward} // Math happens live
+                             disabled
+                             style={{width: '100%', background: '#1a1a1a', border: '1px solid #333', padding: '10px', borderRadius: '8px', color: '#888', fontWeight: 'bold', cursor: 'not-allowed'}} 
+                           />
+                        </div>
+                    </div>
+                    
+                    <div style={{fontSize: '10px', color: '#666', textAlign: 'center', marginBottom: '12px'}}>
+                       Max Total Limit: ₹{getSplit(selectedTask).totalLimit}
+                    </div>
+
+                    <button 
+                      onClick={handleSavePayout}
+                      disabled={isSaving}
+                      style={{
+                        width: '100%', background: '#fff', color: '#000', padding: '12px', borderRadius: '10px',
+                        border: 'none', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px',
+                        cursor: isSaving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                      }}
+                    >
+                       {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                       {isSaving ? 'Saving...' : 'Save New Split'}
+                    </button>
+                 </div>
+               )}
             </div>
 
             {/* Smart Instructions List */}
@@ -142,7 +269,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
               <div style={{fontSize: '11px', color: '#666', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase'}}>YOUR UNIQUE SHARE LINK</div>
               
               <button 
-                onClick={handleCopy} // Fixed: No arguments needed, uses state logic
+                onClick={handleCopy}
                 style={{
                   width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
                   background: copied ? '#00ff88' : '#fff', 

@@ -17,7 +17,7 @@ export async function createCampaign(formData) {
   
   // ✅ FIX: Grab Payout Amount AND force 0 if missing
   const user_reward = parseFloat(formData.get('user_reward')) || 0;
-  const payout_amount = parseFloat(formData.get('payout_amount')) || 0; // <--- WAS MISSING BEFORE
+  const payout_amount = parseFloat(formData.get('payout_amount')) || 0; 
   
   const description = formData.get('description');
   const category = formData.get('category');
@@ -25,6 +25,11 @@ export async function createCampaign(formData) {
 
   if (!title || !landing_url) {
     return { success: false, error: 'Title and URL Slug are required.' };
+  }
+
+  // 🚀 SAFETY CHECK: Prevent payout errors
+  if (user_reward > payout_amount) {
+     return { success: false, error: `Error: User Reward (₹${user_reward}) cannot exceed Total Limit (₹${payout_amount})` };
   }
 
   const { error } = await supabaseAdmin.from('campaigns').insert({
@@ -49,13 +54,21 @@ export async function createCampaign(formData) {
 // --- 2. UPDATE CAMPAIGN (Also updated for safety) ---
 export async function updateCampaign(campaignId, formData) {
   try {
+    const user_reward = parseFloat(formData.get('user_reward')) || 0;
+    const payout_amount = parseFloat(formData.get('payout_amount')) || 0;
+
+    // 🚀 SAFETY CHECK: Prevent math errors during edit
+    if (user_reward > payout_amount) {
+      return { success: false, error: `Error: User Reward (₹${user_reward}) cannot exceed Total Limit (₹${payout_amount})` };
+    }
+
     const updates = {
       title: formData.get('title'),
       description: formData.get('description'), 
       
       // ✅ Safety Check: Never allow null here either
-      user_reward: parseFloat(formData.get('user_reward')) || 0,
-      payout_amount: parseFloat(formData.get('payout_amount')) || 0,
+      user_reward,
+      payout_amount,
       
       landing_url: formData.get('landing_url').trim(),
       affiliate_link: formData.get('affiliate_link'),
