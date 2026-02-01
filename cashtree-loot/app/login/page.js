@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 // ⚠️ REPLACE THIS WITH YOUR ACTUAL TELEGRAM USERNAME
-const ADMIN_TELEGRAM_USER = "YOUR_TELEGRAM_USERNAME"; 
+const ADMIN_TELEGRAM_USER = "@kenzbilal";
 
 export default function LoginPage() {
   const router = useRouter();
