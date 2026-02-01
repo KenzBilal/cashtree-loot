@@ -1,0 +1,23 @@
+{
+  "name": "CashTree Loot",
+  "short_name": "CashTree",
+  "description": "Verified Refer & Earn with Instant UPI Cashback",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b121a",
+  "theme_color": "#0b121a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}
