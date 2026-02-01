@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient'; 
 
-export const revalidate = 5 ; // Revalidate every 5 seconds
+export const revalidate = 20 ; // Revalidate every 5 seconds
 
 export default async function DashboardPage() {
   // 1. AUTH & DATA
