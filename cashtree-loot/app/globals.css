@@ -626,3 +626,42 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* --- 5. STOP THE "WHITE BOUNCE" (Overscroll) --- */
+/* Critical for Dark Mode. Prevents the browser from showing 
+   white space when you scroll past the top/bottom on Mac/Mobile. */
+html, body {
+  overscroll-behavior-y: none;
+  background-color: #050505; /* Ensures the 'void' behind the app is black */
+}
+
+/* --- 6. KILL THE "YELLOW AUTOFILL" BOX --- */
+/* Chrome forces a pale yellow background on saved passwords. 
+   This hack forces it back to your dark theme. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #000 inset !important; /* Masks the yellow */
+    -webkit-text-fill-color: #fff !important; /* Forces text white */
+    caret-color: #00ff88; /* Keeps your neon cursor */
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* --- 7. DISABLE "LONG PRESS" MENUS --- */
+/* Prevents the 'Copy/Save Image' popup when holding down on 
+   links or buttons. Makes it feel like a real UI, not a web page. */
+* {
+  -webkit-touch-callout: none; 
+}
+
+/* But ALLOW it on inputs so they can Paste text */
+input, textarea {
+  -webkit-touch-callout: default;
+  user-select: text; 
+}
+
+/* --- 8. PREVENT IOS ZOOM ON INPUTS --- */
+/* Stops iPhone from zooming in when you tap a text box */
+input, select, textarea {
+  font-size: 16px; /* iOS requires 16px to prevent auto-zoom */
+}
