@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import { Lock, User, CreditCard } from 'lucide-react'; // Added icons for pro feel
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -13,21 +14,37 @@ export default function ProfileForm({ account }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  const [focusedField, setFocusedField] = useState(null); // For Neon Glow effect
+  const [focusedField, setFocusedField] = useState(null);
   
+  // Form State
   const [formData, setFormData] = useState({
     full_name: account.full_name || '',
-    upi_id: account.upi_id || ''
+    upi_id: account.upi_id || '',
+    new_password: '',       // New Field
+    confirm_password: ''    // New Field
   });
 
-  // 1. UPDATE PROFILE FUNCTION
+  // 1. MASTER UPDATE FUNCTION (Handles Profile + Password)
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
+    let successMsg = '✅ Profile details updated!';
+
     try {
-      const { error } = await supabase
+      // A. Validate Password (if user is trying to change it)
+      if (formData.new_password || formData.confirm_password) {
+        if (formData.new_password !== formData.confirm_password) {
+          throw new Error("Passwords do not match.");
+        }
+        if (formData.new_password.length < 6) {
+          throw new Error("Password must be at least 6 characters.");
+        }
+      }
+
+      // B. Update Public Profile (Database)
+      const { error: dbError } = await supabase
         .from('accounts')
         .update({
           full_name: formData.full_name,
@@ -35,12 +52,27 @@ export default function ProfileForm({ account }) {
         })
         .eq('id', account.id);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      setMessage({ type: 'success', text: '✅ Profile updated successfully!' });
+      // C. Update Password (Auth System) - Only if field is filled
+      if (formData.new_password) {
+        const { error: authError } = await supabase.auth.updateUser({
+          password: formData.new_password
+        });
+        
+        if (authError) throw authError;
+        successMsg = '✅ Profile & Password updated successfully!';
+      }
+
+      // Success!
+      setMessage({ type: 'success', text: successMsg });
+      
+      // Clear password fields for security
+      setFormData(prev => ({ ...prev, new_password: '', confirm_password: '' }));
       router.refresh(); 
+
     } catch (err) {
-      setMessage({ type: 'error', text: '❌ Failed to save changes.' });
+      setMessage({ type: 'error', text: `❌ ${err.message}` });
     } finally {
       setLoading(false);
     }
@@ -53,23 +85,18 @@ export default function ProfileForm({ account }) {
     router.push('/login');
   };
 
-  // --- PREMIUM STYLES ---
+  // --- STYLES ---
   const labelStyle = { 
-    display: 'block', 
-    fontSize: '11px', 
-    fontWeight: '800', 
-    color: '#888', 
-    textTransform: 'uppercase', 
-    marginBottom: '8px', 
-    letterSpacing: '1px',
-    paddingLeft: '4px'
+    display: 'flex', alignItems: 'center', gap: '6px',
+    fontSize: '11px', fontWeight: '800', color: '#888', 
+    textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px', paddingLeft: '4px'
   };
 
   const getInputStyle = (fieldName) => ({
     width: '100%', 
     padding: '16px', 
-    background: 'rgba(0, 0, 0, 0.3)', // Dark Glass
-    border: focusedField === fieldName ? '1px solid #00ff88' : '1px solid rgba(255, 255, 255, 0.1)', // Neon Glow on Focus
+    background: 'rgba(0, 0, 0, 0.3)', 
+    border: focusedField === fieldName ? '1px solid #00ff88' : '1px solid rgba(255, 255, 255, 0.1)', 
     borderRadius: '16px', 
     color: '#fff', 
     fontSize: '15px', 
@@ -80,34 +107,18 @@ export default function ProfileForm({ account }) {
   });
 
   const btnStyle = { 
-    width: '100%', 
-    padding: '18px', 
-    background: 'linear-gradient(135deg, #00ff88, #00b36b)', // Neon Gradient
-    color: '#000', 
-    border: 'none', 
-    borderRadius: '16px', 
-    fontWeight: '800', 
-    cursor: loading ? 'wait' : 'pointer', 
-    textTransform: 'uppercase', 
-    letterSpacing: '1px',
-    boxShadow: '0 0 20px rgba(0, 255, 136, 0.3)',
-    marginTop: '10px',
-    transition: 'transform 0.2s'
+    width: '100%', padding: '18px', 
+    background: 'linear-gradient(135deg, #00ff88, #00b36b)', color: '#000', 
+    border: 'none', borderRadius: '16px', fontWeight: '800', 
+    cursor: loading ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '1px',
+    boxShadow: '0 0 20px rgba(0, 255, 136, 0.3)', marginTop: '10px', transition: 'transform 0.2s'
   };
 
   const logoutStyle = {
-    width: '100%', 
-    marginTop: '20px', 
-    padding: '16px', 
-    background: 'rgba(239, 68, 68, 0.05)', 
-    color: '#f87171', 
-    border: '1px solid rgba(239, 68, 68, 0.2)', 
-    borderRadius: '16px', 
-    fontWeight: '700', 
-    cursor: 'pointer', 
-    fontSize: '13px',
-    textTransform: 'uppercase',
-    letterSpacing: '1px'
+    width: '100%', marginTop: '20px', padding: '16px', 
+    background: 'rgba(239, 68, 68, 0.05)', color: '#f87171', 
+    border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px', 
+    fontWeight: '700', cursor: 'pointer', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px'
   };
 
   return (
@@ -126,9 +137,10 @@ export default function ProfileForm({ account }) {
       )}
 
       <form onSubmit={handleUpdate}>
-        {/* FULL NAME */}
-        <div>
-          <label style={labelStyle}>Full Name</label>
+        
+        {/* --- SECTION 1: PUBLIC DETAILS --- */}
+        <div style={{marginBottom: '10px'}}>
+          <label style={labelStyle}><User size={12}/> Full Name</label>
           <input 
             type="text" 
             value={formData.full_name}
@@ -138,11 +150,8 @@ export default function ProfileForm({ account }) {
             placeholder="Enter your name"
             style={getInputStyle('full_name')}
           />
-        </div>
 
-        {/* UPI ID */}
-        <div>
-          <label style={labelStyle}>Default UPI ID (For Payouts)</label>
+          <label style={labelStyle}><CreditCard size={12}/> Default UPI ID</label>
           <input 
             type="text" 
             value={formData.upi_id}
@@ -154,15 +163,61 @@ export default function ProfileForm({ account }) {
           />
         </div>
 
+        {/* --- SECTION 2: SECURITY (Optional) --- */}
+        <div style={{
+          borderTop: '1px dashed rgba(255,255,255,0.1)', 
+          paddingTop: '20px', marginTop: '10px'
+        }}>
+          <div style={{
+            fontSize: '12px', color: '#00ff88', fontWeight: '800', 
+            textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '1px'
+          }}>
+            Security Settings
+          </div>
+
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+            <div>
+              <label style={labelStyle}><Lock size={12}/> New Password</label>
+              <input 
+                type="password" 
+                value={formData.new_password}
+                onChange={(e) => setFormData({...formData, new_password: e.target.value})}
+                onFocus={() => setFocusedField('new_password')}
+                onBlur={() => setFocusedField(null)}
+                placeholder="••••••"
+                style={getInputStyle('new_password')}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}><Lock size={12}/> Confirm</label>
+              <input 
+                type="password" 
+                value={formData.confirm_password}
+                onChange={(e) => setFormData({...formData, confirm_password: e.target.value})}
+                onFocus={() => setFocusedField('confirm_password')}
+                onBlur={() => setFocusedField(null)}
+                placeholder="••••••"
+                style={getInputStyle('confirm_password')}
+              />
+            </div>
+          </div>
+          
+          {formData.new_password && (
+             <div style={{fontSize: '11px', color: '#666', marginTop: '-15px', marginBottom: '20px', textAlign: 'right'}}>
+               *Leave blank to keep current password
+             </div>
+          )}
+        </div>
+
         {/* SAVE BUTTON */}
         <button type="submit" disabled={loading} style={btnStyle}>
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? 'Processing...' : 'Save Changes'}
         </button>
       </form>
 
       {/* LOGOUT BUTTON */}
       <button onClick={handleLogout} style={logoutStyle}>
-        Sign Out
+        Sign Out Securely
       </button>
 
     </div>
