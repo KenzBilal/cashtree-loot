@@ -585,3 +585,44 @@ a, button { pointer-events: auto !important; }
     display: none;
   }
 }
+
+/* --- 1. PREMIUM SCROLLBAR (Dark & Slim) --- */
+/* Works on Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505; /* Matches your deep black bg */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333; /* Dark Grey handle */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff88; /* Turns NEON when you grab it */
+}
+
+/* --- 2. BRANDED TEXT SELECTION --- */
+/* When user highlights text, make it Green instead of Blue */
+::selection {
+  background: #00ff88;
+  color: #000;
+}
+
+/* --- 3. DISABLE "GHOST" IMAGES --- */
+/* Prevents dragging images/logos (makes it feel like an app) */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* --- 4. CRISP TEXT RENDERING --- */
+/* Makes fonts look sharper on dark backgrounds */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
