@@ -47,6 +47,16 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+
+  /* Removes the blue tap highlight on mobile/touch */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optional: Prevents accidental text selection when clicking fast */
+button, a, .clickable {
+  user-select: none;
+}
   
   /* Epic Background Mesh */
   background-image: 
