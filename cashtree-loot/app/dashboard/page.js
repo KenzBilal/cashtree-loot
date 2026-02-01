@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient'; 
 
-export const revalidate = 0;
+export const revalidate = 5;
 
 export default async function DashboardPage() {
   // 1. AUTH & DATA

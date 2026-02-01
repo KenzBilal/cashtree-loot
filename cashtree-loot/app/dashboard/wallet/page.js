@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import WalletInterface from './WalletInterface'; // Use the new UI
 
-export const revalidate = 0; 
+export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function WalletPage() {
   // 1. AUTH

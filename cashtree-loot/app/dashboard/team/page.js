@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import TeamInterface from './TeamInterface';
 
-export const revalidate = 0;
+export const revalidate = 60;// Revalidate this page every 60 seconds
 
 export default async function TeamPage() {
   const cookieStore = await cookies();

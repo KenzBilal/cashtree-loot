@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 
-export const revalidate = 0; // Always fresh data
+export const revalidate = 60;
 
 export default async function LeadsPage() {
   // 1. GET AUTH TOKEN (The Fix)

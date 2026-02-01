@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import ProfileForm from './profile-form';
 
-export const revalidate = 0; // Always fresh data
+export const revalidate = 60; //  fresh every 60 seconds
 
 export default async function ProfilePage() {
   // 1. AUTHENTICATION & SECURITY

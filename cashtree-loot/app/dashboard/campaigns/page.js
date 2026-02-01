@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import CampaignsInterface from './CampaignsInterface';
 
 // Force dynamic ensures users always see new tasks instantly
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function CampaignsPage() {
   // 1. AUTH & SECURITY CHECK
