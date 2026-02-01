@@ -49,20 +49,20 @@ export default function SignupForm() {
       if (formData.password.length < 6) throw new Error("Password must be at least 6 chars.");
 
       // A. CHECK REFERRER
-      // A. CHECK REFERRER
+      
       let referrerId = null;
       if (refCode && refCode.trim()) {
-        const { data: referrer, error: refError } = await supabase
-          .from('accounts')
-          .select('id')
-          .eq('username', refCode.trim().toUpperCase())
-          .single();
+        // Use the secure server function to bypass RLS restrictions
+        const { data: foundId, error: lookupError } = await supabase
+          .rpc('get_promoter_id_by_username', { 
+            lookup_name: refCode.trim() 
+          });
         
-        if (referrer) {
-          referrerId = referrer.id;
+        if (foundId && !lookupError) {
+          referrerId = foundId;
           console.log("✅ Referrer Found:", referrerId);
         } else {
-          console.log("❌ Referrer Not Found:", refError?.message);
+          console.log("❌ Referrer Not Found");
         }
       }
 
