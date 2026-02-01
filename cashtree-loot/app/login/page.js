@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 // ⚠️ REPLACE THIS WITH YOUR ACTUAL TELEGRAM USERNAME
-const ADMIN_TELEGRAM_USER = "@kenzbilal";
+const ADMIN_TELEGRAM_USER = "kenzbilal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
   // 🔵 TELEGRAM REDIRECT LOGIC
   const handleContactAdmin = () => {
-    const text = `Hello Admin, I forgot my CashTree password. My username is: ${formData.username || 'UNKNOWN'}`;
+    const text = `Hello Admin, I forgot my CashTree password. My username is: ${formData.username || 'Type your username here'}`;
     const url = `https://t.me/${ADMIN_TELEGRAM_USER}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
     setShowForgotModal(false);
@@ -209,7 +209,7 @@ export default function LoginPage() {
             {/* 3. Liquid Fill (Center Absolute) */}
             <div style={{
               position: 'absolute', top: 0, 
-              left: '50%', transform: 'translateX(-50%)', // Forces centering
+              left: '50%', transform: 'translateX(-50%)', 
               zIndex: 3, width: 'max-content'
             }}>
                 <h1 className="liquid-text" style={{
@@ -217,7 +217,8 @@ export default function LoginPage() {
                   margin: 0, letterSpacing: '4px', 
                   overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
                   borderRight: '2px solid #00ff88', 
-                  animation: 'fillUp 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+                  /* CHANGED: 'infinite' -> 'forwards' (Runs once and STAYS lit) */
+                  animation: 'fillUp 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                 }}>
                   <span style={{color: '#fff'}}>CASH</span>
                   <span style={{color: '#00ff88'}}>TREE</span>
@@ -289,11 +290,8 @@ export default function LoginPage() {
 
       <style jsx>{`
         @keyframes fillUp {
-          0% { width: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          50% { width: 100%; opacity: 1; }
-          90% { width: 100%; opacity: 1; }
-          100% { width: 0%; opacity: 0; }
+          from { width: 0%; }
+          to { width: 100%; }
         }
       `}</style>
     </div>
