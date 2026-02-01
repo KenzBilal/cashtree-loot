@@ -4,23 +4,28 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AlertTriangle, Send } from 'lucide-react'; // Icons for the popup
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// ⚠️ REPLACE THIS WITH YOUR ACTUAL TELEGRAM USERNAME
+const ADMIN_TELEGRAM_USER = "YOUR_TELEGRAM_USERNAME"; 
+
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showForgotModal, setShowForgotModal] = useState(false); // New Modal State
   
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
 
-  // 🧹 CLEANUP: Automatically clear old sessions when page loads
+  // 🧹 CLEANUP: Automatically clear old sessions
   useEffect(() => {
     const cleanupSession = async () => {
       localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL.split('//')[1].split('.')[0] + '-auth-token');
@@ -75,23 +80,27 @@ export default function LoginPage() {
     }
   };
 
-  // 🔒 FORGOT PASSWORD LOGIC
-  const handleForgot = () => {
-    alert("🔐 ACCOUNT RECOVERY\n\nSince this is a secure partner account, please contact the Admin or Support to reset your password manually.");
+  // 🔵 TELEGRAM REDIRECT LOGIC
+  const handleContactAdmin = () => {
+    const text = `Hello Admin, I forgot my CashTree password. My username is: ${formData.username || 'UNKNOWN'}`;
+    const url = `https://t.me/${ADMIN_TELEGRAM_USER}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    setShowForgotModal(false);
   };
 
   // --- STYLES ---
   const wrapperStyle = {
     minHeight: '100vh',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: '#050505', padding: '20px'
+    background: '#050505', padding: '20px', position: 'relative'
   };
 
   const cardStyle = {
     width: '100%', maxWidth: '400px',
     background: '#0a0a0a',
     border: '1px solid #222', borderRadius: '24px',
-    padding: '40px 30px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
+    padding: '40px 30px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+    zIndex: 10
   };
 
   const inputStyle = {
@@ -101,20 +110,9 @@ export default function LoginPage() {
     outline: 'none', transition: 'border-color 0.2s'
   };
 
-  const labelRowStyle = {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: '6px', marginLeft: '4px'
-  };
-
   const labelStyle = {
     fontSize:'11px', fontWeight:'700', color:'#666', 
-    textTransform:'uppercase', letterSpacing:'1px'
-  };
-
-  const forgotLinkStyle = {
-    fontSize:'11px', fontWeight:'700', color:'#22c55e', 
-    cursor:'pointer', textTransform:'uppercase', letterSpacing:'0.5px',
-    textDecoration: 'none'
+    textTransform:'uppercase', letterSpacing:'1px', marginLeft:'4px', marginBottom:'6px', display:'block'
   };
 
   const btnStyle = {
@@ -125,55 +123,115 @@ export default function LoginPage() {
     marginTop: '10px', opacity: loading ? 0.7 : 1
   };
 
+  // Small Red Link below button
+  const forgotLinkStyle = {
+    display: 'block', width: '100%', textAlign: 'center',
+    fontSize: '11px', fontWeight: '700', color: '#ef4444', // Red
+    cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px',
+    marginTop: '20px', textDecoration: 'none'
+  };
+
+  // --- MODAL STYLES ---
+  const modalOverlayStyle = {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
+  };
+
+  const modalContentStyle = {
+    background: '#111', border: '1px solid #333', borderRadius: '24px',
+    padding: '30px', maxWidth: '320px', width: '90%', textAlign: 'center',
+    boxShadow: '0 0 50px rgba(239, 68, 68, 0.2)' // Red Glow
+  };
+
   return (
     <div style={wrapperStyle}>
+      
+      {/* --- FORGOT PASSWORD MODAL --- */}
+      {showForgotModal && (
+        <div style={modalOverlayStyle} onClick={() => setShowForgotModal(false)}>
+          <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+            <div style={{marginBottom: '20px', display: 'inline-flex', padding: '16px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%'}}>
+              <AlertTriangle size={32} color="#ef4444" />
+            </div>
+            <h3 style={{color: '#fff', margin: '0 0 10px 0', fontSize: '18px'}}>Recovery Mode</h3>
+            <p style={{color: '#888', fontSize: '13px', lineHeight: '1.6', marginBottom: '24px'}}>
+              For security reasons, passwords can only be reset manually by the administrator.
+            </p>
+            
+            <button onClick={handleContactAdmin} style={{
+              width: '100%', padding: '14px', background: '#ef4444', color: '#fff',
+              border: 'none', borderRadius: '12px', fontWeight: 'bold', fontSize: '14px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+            }}>
+              <Send size={16} /> CONTACT ADMIN
+            </button>
+
+            <button onClick={() => setShowForgotModal(false)} style={{
+              background: 'transparent', border: 'none', color: '#666', fontSize: '12px',
+              marginTop: '15px', cursor: 'pointer', textDecoration: 'underline'
+            }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={cardStyle}>
         
-        {/* --- ANIMATED LOGO START --- */}
+        {/* --- FIXED LOGO ALIGNMENT START --- */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', 
-          marginBottom: '30px', position: 'relative'
+          marginBottom: '30px', width: '100%', position: 'relative'
         }}>
           
-          <div style={{position: 'relative', height: '50px', width: '250px', display:'flex', justifyContent:'center'}}>
+          {/* Container with Fixed Width = Perfect Centering */}
+          <div style={{position: 'relative', height: '50px', width: '280px'}}>
             
-            {/* 1. Base Text (Dimmed) */}
+            {/* 1. Base Text (Center) */}
             <h1 style={{
               fontSize: '36px', fontWeight: '900', color: '#111', 
-              margin: 0, letterSpacing: '4px', position: 'absolute', zIndex: 1
+              margin: 0, letterSpacing: '4px', textAlign: 'center', width: '100%',
+              position: 'absolute', top: 0, left: 0, zIndex: 1
             }}>
               CASHTREE
             </h1>
 
-            {/* 2. Outline Overlay */}
+            {/* 2. Outline Overlay (Center) */}
             <h1 style={{
               fontSize: '36px', fontWeight: '900', color: 'transparent', 
               WebkitTextStroke: '1px #333',
-              margin: 0, letterSpacing: '4px', position: 'absolute', zIndex: 2
+              margin: 0, letterSpacing: '4px', textAlign: 'center', width: '100%',
+              position: 'absolute', top: 0, left: 0, zIndex: 2
             }}>
               CASHTREE
             </h1>
 
-            {/* 3. Neon Liquid Fill (Animated) */}
-            <h1 className="liquid-text" style={{
-              fontSize: '36px', fontWeight: '900', 
-              margin: 0, letterSpacing: '4px', position: 'absolute', zIndex: 3,
-              overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
-              borderRight: '2px solid #00ff88', 
-              animation: 'fillUp 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+            {/* 3. Liquid Fill (Center Absolute) */}
+            <div style={{
+              position: 'absolute', top: 0, 
+              left: '50%', transform: 'translateX(-50%)', // Forces centering
+              zIndex: 3, width: 'max-content'
             }}>
-              <span style={{color: '#fff'}}>CASH</span>
-              <span style={{color: '#00ff88'}}>TREE</span>
-            </h1>
+                <h1 className="liquid-text" style={{
+                  fontSize: '36px', fontWeight: '900', 
+                  margin: 0, letterSpacing: '4px', 
+                  overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
+                  borderRight: '2px solid #00ff88', 
+                  animation: 'fillUp 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+                }}>
+                  <span style={{color: '#fff'}}>CASH</span>
+                  <span style={{color: '#00ff88'}}>TREE</span>
+                </h1>
+            </div>
 
           </div>
 
-          <p style={{color: '#666', fontSize: '13px', marginTop: '0px'}}>
+          <p style={{color: '#666', fontSize: '13px', marginTop: '5px'}}>
             Secure Partner Portal
           </p>
 
         </div>
-        {/* --- ANIMATED LOGO END --- */}
+        {/* --- LOGO END --- */}
 
         {/* ERROR MESSAGE */}
         {error && (
@@ -189,11 +247,8 @@ export default function LoginPage() {
         {/* FORM */}
         <form onSubmit={handleLogin}>
           
-          {/* USERNAME */}
           <div>
-            <div style={labelRowStyle}>
-               <label style={labelStyle}>Username</label>
-            </div>
+            <label style={labelStyle}>Username</label>
             <input 
               type="text" required style={inputStyle} placeholder="Enter Username"
               value={formData.username}
@@ -203,15 +258,8 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* PASSWORD */}
           <div>
-            <div style={labelRowStyle}>
-               <label style={labelStyle}>Password</label>
-               {/* Forgot Password Link */}
-               <span onClick={handleForgot} style={forgotLinkStyle}>
-                 Forgot Password?
-               </span>
-            </div>
+             <label style={labelStyle}>Password</label>
             <input 
               type="password" required style={inputStyle} placeholder="••••••••"
               value={formData.password}
@@ -224,6 +272,12 @@ export default function LoginPage() {
           <button type="submit" disabled={loading} style={btnStyle}>
             {loading ? 'Authenticating...' : 'Enter Dashboard'}
           </button>
+          
+          {/* RED FORGOT LINK (Small, Centered, Below Green Button) */}
+          <span onClick={() => setShowForgotModal(true)} style={forgotLinkStyle}>
+             Forgot Password?
+          </span>
+
         </form>
 
         {/* FOOTER */}
@@ -233,7 +287,6 @@ export default function LoginPage() {
 
       </div>
 
-      {/* STYLES FOR ANIMATION */}
       <style jsx>{`
         @keyframes fillUp {
           0% { width: 0%; opacity: 0; }
