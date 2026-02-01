@@ -251,8 +251,16 @@ export default function LoginPage() {
           <div>
             <label style={labelStyle}>Username</label>
             <input 
-              type="text" required style={inputStyle} placeholder="Enter Username"
+              type="text" 
+              required 
+              style={inputStyle} 
+              placeholder="Enter Username"
               value={formData.username}
+              /* --- 1. MOBILE OPTIMIZATION ADDED HERE --- */
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoComplete="username"
+              /* ---------------------------------------- */
               onChange={(e) => setFormData({...formData, username: e.target.value})}
               onFocus={(e) => e.target.style.borderColor = '#22c55e'}
               onBlur={(e) => e.target.style.borderColor = '#222'}
@@ -262,7 +270,10 @@ export default function LoginPage() {
           <div>
              <label style={labelStyle}>Password</label>
             <input 
-              type="password" required style={inputStyle} placeholder="••••••••"
+              type="password" 
+              required 
+              style={inputStyle} 
+              placeholder="••••••••"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               onFocus={(e) => e.target.style.borderColor = '#22c55e'}
@@ -274,7 +285,7 @@ export default function LoginPage() {
             {loading ? 'Authenticating...' : 'Enter Dashboard'}
           </button>
           
-          {/* RED FORGOT LINK (Small, Centered, Below Green Button) */}
+          {/* RED FORGOT LINK */}
           <span onClick={() => setShowForgotModal(true)} style={forgotLinkStyle}>
              Forgot Password?
           </span>
