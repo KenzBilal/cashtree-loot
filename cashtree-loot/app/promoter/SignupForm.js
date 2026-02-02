@@ -49,10 +49,8 @@ export default function SignupForm() {
       if (formData.password.length < 6) throw new Error("Password must be at least 6 chars.");
 
       // A. CHECK REFERRER
-      
       let referrerId = null;
       if (refCode && refCode.trim()) {
-        // Use the secure server function to bypass RLS restrictions
         const { data: foundId, error: lookupError } = await supabase
           .rpc('get_promoter_id_by_username', { 
             lookup_name: refCode.trim() 
@@ -60,9 +58,6 @@ export default function SignupForm() {
         
         if (foundId && !lookupError) {
           referrerId = foundId;
-          console.log("✅ Referrer Found:", referrerId);
-        } else {
-          console.log("❌ Referrer Not Found");
         }
       }
 
@@ -75,7 +70,7 @@ export default function SignupForm() {
       if (authError) throw authError;
       const newUserId = authData.user.id;
 
-      // C. CREATE PROFILE
+      // C. CREATE PROFILE (Database Trigger will catch this and add money!)
       const { error: dbError } = await supabase
         .from('accounts')
         .insert({
@@ -86,27 +81,14 @@ export default function SignupForm() {
           phone: formData.phone, 
           upi_id: formData.upiId || null,
           referred_by: referrerId,
-          is_frozen: false
+          is_frozen: false,
+          signup_bonus_given: false // Default to false, Trigger turns it true
         });
 
       if (dbError) throw dbError;
 
-      // D. CONDITIONAL SIGNUP BONUS
-      // Only insert into ledger if a valid referrerId was found
-      if (referrerId) {
-        const { error: bonusError } = await supabase
-          .from('ledger')
-          .insert({
-            account_id: newUserId,
-            amount: 20,
-            type: 'signup_bonus',
-            description: `Signup Bonus (Ref: ${refCode})`
-          });
-        
-        if (bonusError) console.error("Bonus Error:", bonusError);
-      }
-
-      alert(referrerId ? "Account Created & ₹20 Bonus Added!" : "Account Created Successfully!");
+      // SUCCESS - No manual ledger insert here!
+      alert("Account Created Successfully! Login to check your bonus.");
       router.push('/login');
 
     } catch (err) {
@@ -126,12 +108,12 @@ export default function SignupForm() {
     minHeight: '100vh',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '20px',
-    background: '#030305', // Deep Void
+    background: '#030305',
   };
 
   const glassCard = {
     width: '100%', maxWidth: '500px',
-    background: '#0a0a0f', // Soft Obsidian
+    background: '#0a0a0f',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '24px',
     padding: '40px',
@@ -168,13 +150,8 @@ export default function SignupForm() {
   return (
     <div style={containerStyle}>
       <div style={glassCard}>
-        
-        {/* Decorative Glow */}
         <div style={{position:'absolute', top:'-50%', right:'-50%', width:'300px', height:'300px', background:`radial-gradient(circle, ${neonGreen} 0%, transparent 70%)`, opacity:0.1, filter:'blur(80px)'}}></div>
-
         <div style={{position: 'relative', zIndex: 2}}>
-          
-          {/* Header */}
           <div style={{textAlign: 'center', marginBottom: '30px'}}>
              <div style={{color: neonGreen, fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', marginBottom:'10px'}}>
                Secure Partner Access
@@ -184,7 +161,6 @@ export default function SignupForm() {
              </h1>
           </div>
 
-          {/* Error Banner */}
           {error && (
             <div style={{
               background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', 
@@ -196,89 +172,35 @@ export default function SignupForm() {
           )}
 
           <form onSubmit={handleSignup}>
-            
             <div>
               <label style={labelStyle}>Full Name</label>
-              <input 
-                type="text" style={inputStyle} required 
-                value={formData.fullName} 
-                onChange={e => setFormData({...formData, fullName: e.target.value})} 
-                placeholder="John Doe" 
-              />
+              <input type="text" style={inputStyle} required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="John Doe" />
             </div>
-
             <div>
               <label style={labelStyle}>Username (Unique Login ID)</label>
-              <input 
-                type="text" style={inputStyle} required 
-                value={formData.username} 
-                onChange={e => setFormData({...formData, username: e.target.value.toUpperCase()})} 
-                placeholder="UNIQUE_ID" 
-              />
+              <input type="text" style={inputStyle} required value={formData.username} onChange={e => setFormData({...formData, username: e.target.value.toUpperCase()})} placeholder="UNIQUE_ID" />
             </div>
-
             <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
-              <div>
-                <label style={labelStyle}>Phone</label>
-                <input 
-                  type="tel" style={inputStyle} 
-                  value={formData.phone} 
-                  onChange={e => setFormData({...formData, phone: e.target.value})} 
-                  placeholder="98765..." 
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>UPI ID (Optional)</label>
-                <input 
-                  type="text" style={inputStyle} 
-                  value={formData.upiId} 
-                  onChange={e => setFormData({...formData, upiId: e.target.value})} 
-                  placeholder="user@upi" 
-                />
-              </div>
+              <div><label style={labelStyle}>Phone</label><input type="tel" style={inputStyle} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="98765..." /></div>
+              <div><label style={labelStyle}>UPI ID (Optional)</label><input type="text" style={inputStyle} value={formData.upiId} onChange={e => setFormData({...formData, upiId: e.target.value})} placeholder="user@upi" /></div>
             </div>
-
             <div>
               <label style={labelStyle}>Password</label>
-              <input 
-                type="password" style={inputStyle} required 
-                value={formData.password} 
-                onChange={e => setFormData({...formData, password: e.target.value})} 
-                placeholder="••••••" 
-              />
+              <input type="password" style={inputStyle} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••" />
             </div>
-
             <div>
               <label style={labelStyle}>Referral Code</label>
               <div style={{position: 'relative'}}>
-                <input 
-                  type="text" 
-                  style={{
-                    ...inputStyle, 
-                    fontFamily: 'monospace', letterSpacing: '1px', 
-                    borderColor: refCode ? neonGreen : 'rgba(255,255,255,0.1)',
-                    color: refCode ? neonGreen : '#fff'
-                  }} 
-                  value={refCode} 
-                  onChange={e => setRefCode(e.target.value.toUpperCase())} 
-                  placeholder="OPTIONAL" 
-                />
-                {refCode && (
-                  <span style={{position:'absolute', right:'16px', top:'16px', fontSize:'16px', color: neonGreen}}>✓</span>
-                )}
+                <input type="text" style={{...inputStyle, fontFamily: 'monospace', letterSpacing: '1px', borderColor: refCode ? neonGreen : 'rgba(255,255,255,0.1)', color: refCode ? neonGreen : '#fff'}} value={refCode} onChange={e => setRefCode(e.target.value.toUpperCase())} placeholder="OPTIONAL" />
+                {refCode && <span style={{position:'absolute', right:'16px', top:'16px', fontSize:'16px', color: neonGreen}}>✓</span>}
               </div>
             </div>
-
-            <button type="submit" style={btnStyle} disabled={loading}>
-              {loading ? 'INITIALIZING...' : 'CREATE ACCOUNT'}
-            </button>
-
+            <button type="submit" style={btnStyle} disabled={loading}>{loading ? 'INITIALIZING...' : 'CREATE ACCOUNT'}</button>
           </form>
 
           <div style={{textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#666'}}>
             Already have an account? <Link href="/login" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>Login Here</Link>
           </div>
-
         </div>
       </div>
     </div>
