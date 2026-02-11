@@ -99,6 +99,10 @@ export default function RootLayout({ children }) {
       <head>
         {/* Security Upgrade for HTTPS */}
         <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+
+        {/* Impact.com Verification */}
+        <meta name='impact-site-verification' value='8bc8736a-bb11-4c84-b216-d2c66690cb6d' />
+
       </head>
       <body className={inter.className}>
         
