@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LegalDocs from './LegalDocs';
 
 export default function Home() {
   // --- STATE MANAGEMENT ---
@@ -1008,14 +1009,17 @@ export default function Home() {
         </a>
 
         <button
-  className="cta-close"
-  aria-label="Close"
-  type="button"
-  onClick={closeCta}  // <--- Use the function you created!
->
-  ✕
-</button>
+          className="cta-close"
+          aria-label="Close"
+          type="button"
+          onClick={closeCta}
+        >
+          ✕
+        </button>
       </div>
+
+      {/* ✅ PASTE THIS HERE: The Legal Docs Popup */}
+      <LegalDocs />
       
     </>
   );
