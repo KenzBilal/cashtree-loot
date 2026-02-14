@@ -2,18 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { 
+  ArrowRight, 
+  ShieldCheck, 
+  Zap, 
+  Users, 
+  HelpCircle,
+  Smartphone,
+  CheckCircle2
+} from 'lucide-react';
 import LegalDocs from './LegalDocs';
 
 export default function Home() {
   // --- STATE MANAGEMENT ---
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [activeFaq, setActiveFaq] = useState(null); // New: For FAQ
-  const [isMobileCtaVisible, setIsMobileCtaVisible] = useState(false);
-  const [dashboardLink, setDashboardLink] = useState("/login"); // New: For Dashboard
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [dashboardLink, setDashboardLink] = useState("/login");
 
   // --- LOGIC: Runs once when page loads ---
   useEffect(() => {
-    // 1. Dashboard Link Logic
+    // 1. Dashboard Link Logic (Smart Redirect)
     const partnerId = localStorage.getItem("p_id");
     const oldCode = localStorage.getItem("cashttree_referral");
     if (partnerId) {
@@ -21,1006 +29,273 @@ export default function Home() {
     } else if (oldCode) {
       setDashboardLink(`/dashboard?code=${oldCode}`);
     }
-
-    // 2. Smart CTA Scroll Logic
-    const checkCtaVisibility = () => {
-      const lastClosed = localStorage.getItem("ctaClosedTime");
-      const now = new Date().getTime();
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-      if (lastClosed && (now - lastClosed < ONE_DAY_MS)) return;
-
-      const scrollPercentage = ((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight) * 100;
-      if (scrollPercentage > 50) setIsMobileCtaVisible(true);
-    };
-
-    window.addEventListener("scroll", checkCtaVisibility);
-    return () => window.removeEventListener("scroll", checkCtaVisibility);
   }, []);
-
-  // --- HANDLER: Close CTA ---
-  const closeCta = () => {
-    setIsMobileCtaVisible(false);
-    localStorage.setItem("ctaClosedTime", new Date().getTime());
-  };
 
   return (
     <>
       {/* ================= HEADER ================= */}
-      <header className="nav" role="banner">
-        <div className="nav-inner">
+      <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           
-          <Link href="/" className="brand">
-            <img src="/logo.webp" alt="C" className="brand-logo" />
-            <span className="brand-text">Cash<span>Tree</span></span>
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center">
+              <span className="font-bold text-black text-lg">C</span>
+            </div>
+            <span className="font-bold text-xl tracking-tight text-white">
+              Cash<span className="text-emerald-400">Tree</span>
+            </span>
           </Link>
 
-          <button 
-            id="navToggle" 
-            className="nav-toggle" 
-            aria-label="Toggle navigation"
-            onClick={() => setIsNavOpen(!isNavOpen)}
-          >
-            ☰
-          </button>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+            <a href="#how-it-works" className="hover:text-emerald-400 transition-colors">How it Works</a>
+            <a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
+            <a href="/tools" className="hover:text-emerald-400 transition-colors">Tools</a>
+          </nav>
 
-          <div id="navLinks" className={`nav-links ${isNavOpen ? 'nav-open' : ''}`}>
-            <a href="#how-it-works" onClick={() => setIsNavOpen(false)}>How it Works</a>
-            <a href="#faq" onClick={() => setIsNavOpen(false)}>FAQ</a>
-           <a href={dashboardLink} id="menuDashboardLink"> 📊 Dashboard</a>
+          {/* Actions */}
+          <div className="flex items-center gap-4">
+            <Link 
+              href={dashboardLink}
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-all"
+            >
+              Dashboard <ArrowRight size={14} />
+            </Link>
+
+            {/* Mobile Toggle */}
+            <button 
+              className="md:hidden text-gray-300 p-2"
+              onClick={() => setIsNavOpen(!isNavOpen)}
+            >
+              {isNavOpen ? '✕' : '☰'}
+            </button>
           </div>
-
         </div>
+
+        {/* Mobile Menu */}
+        {isNavOpen && (
+          <div className="md:hidden bg-zinc-900 border-b border-white/10 p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
+            <a href="#how-it-works" className="text-gray-300" onClick={() => setIsNavOpen(false)}>How it Works</a>
+            <a href="#faq" className="text-gray-300" onClick={() => setIsNavOpen(false)}>FAQ</a>
+            <Link href={dashboardLink} className="text-emerald-400 font-semibold" onClick={() => setIsNavOpen(false)}>
+              Go to Dashboard
+            </Link>
+          </div>
+        )}
       </header>
-      
-      {/* ================= AD SANDBOX ================= */}
-      <div className="ad-sandbox">
-        {/* Ad script executed via DangerouslySetInnerHTML to preserve behavior */}
-        <div dangerouslySetInnerHTML={{ __html: `
-          <script>
-            (function () {
-              var s = document.createElement('script');
-              s.dataset.zone = '10337480';
-              s.src = 'https://nap5k.com/tag.min.js';
-              (document.currentScript ? document.currentScript.parentNode : document.body).appendChild(s);
-            })();
-          </script>
-        `}} />
-      </div>
-      {/* ================= END AD SANDBOX ================= */}
 
-      {/* ================= HERO ================= */}
-      <main>
-        <section className="hero" id="hero">
-          <div className="container hero-inner">
-            <div className="hero-left">
-
-              <h1>
-                Fast, verified referral offers<br />
-                <span className="hero-highlight">that actually work</span>
-              </h1>
-
-              <p className="lead">
-                Discover <strong>tested earning campaigns</strong>, clear instructions,
-                and optional tools used by people monetizing traffic online.
-                No false promises. No forced tasks.
-              </p>
-
-              <div className="hero-actions-equal">
-                <a href="#offers" className="hero-btn">Explore Offers</a>
-                <a href="#how-it-works" className="hero-btn">How it works</a>
-                <a href="#faq" className="hero-btn">FAQ</a>
-              </div>
-
-              <div className="cta-center">
-                <a className="create-link-cta" href="#create-link">
-                  🚀 Create your own referral link
-                </a>
-              </div>
-
-              <p className="hero-trust">
-                ✔ One-time access • ✔ No income guarantee • ✔ Telegram support
-              </p>
-
-            </div>
-          </div>
-        </section>
-        {/* ================= END HERO ================= */}
-
-        <section id="offers" className="section">
-          <div className="container">
-
-            <h2 className="section-title">
-              Top Verified Offers
-            </h2>
-
-            <p className="section-sub">
-              Carefully selected official campaigns from trusted platforms.
-              Each offer redirects you to the provider’s own page — we do not host or modify any apps.
-            </p>
-
-            <p className="section-sub" style={{ fontSize: '13px', opacity: 0.8, marginTop: '8px' }}>
-              ✔ No forced tasks &nbsp;•&nbsp; ✔ No income guarantees &nbsp;•&nbsp; ✔ Follow instructions to qualify
-            </p>
-
-            <div className="offer-grid">
-
-              {/* Airtel Thanks */}
-              <article className="offer-card">
-                <div className="offer-head">  
-                  <h3>Airtel Thanks – App Task Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Install & login with Airtel number</li>
-                  <li>Complete simple tasks inside the app</li>
-                  <li>Reward after task approval</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹100</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://lootcampaign.in?camp=Atl&ref=VMIZAvSI"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹100 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Upstox */}
-              <article className="offer-card verified">
-                <div className="offer-head">
-                  <h3>Upstox – Free Demat Account</h3>
-                  <span className="tag success">CashTree Verified</span>
-                </div>
-                <div className="payout">
-                  Earn <strong>₹200</strong>
-                </div>
-                <ul className="offer-points">
-                  <li>Install & sign up via referral</li>
-                  <li>Complete KYC (no deposit)</li>
-                  <li>Reward after approval</li>
-                </ul>
-                <div className="offer-meta">
-                  ⚡ Payout: 24–48 hrs &nbsp;|&nbsp; 👤 New users only
-                </div>
-                <div className="offer-footer">
-                  <a className="btn primary full-width"
-                     href="https://campguruji.in/camp/hw52jghh"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹200 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Angel One */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Angel One – Free Demat Account</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Sign up via referral link</li>
-                  <li>Complete digital KYC (no deposit)</li>
-                  <li>Account approved by Angel One</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹150</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://lootcampaign.in?camp=Aone&ref=SueeEI63"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹150 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Motwal */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Motwal – Install & Earn Offer</h3>
-                  <span className="tag">CashtTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Install the Motwal app using the link</li>
-                  <li>Complete the required in-app steps</li>
-                  <li>No investment required</li>
-                  <li>Earn <strong>₹70</strong> after verification</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹70</strong></div>
-                  <a className="btn primary full-width"
-                     href="/motwal"
-                     rel="noopener noreferrer">
-                     Earn ₹70 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Qoneqt */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Qoneqt – Signup & Refer Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Sign up on Qoneqt via referral link</li>
-                  <li>Apply referral code during signup</li>
-                  <li><strong>Referral Code:</strong> 8424042254214049</li>
-                  <li>Get <strong>₹85</strong> signup bonus</li>
-                  <li>Earn <strong>₹50</strong> for every referral</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹85+</strong></div>
-                  <a className="btn primary full-width"
-                     href="/qoneqt/"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹85 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Tide */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Tide – Business Account Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Open Tide account via referral link</li>
-                  <li>Complete the required task to qualify</li>
-                  <li>Reward after successful verification</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹300</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://rfox.in/l/rmopqjkx"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹300 →
-                  </a>
-                </div>
-              </article>
-      
-              {/* ZebPay */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>ZebPay – Instant UPI Cashback</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Enter UPI ID & mobile number, then submit</li>
-                  <li>Install app & complete registration</li>
-                  <li>Complete KYC (Aadhaar + PAN)</li>
-                  <li>Get instant cashback in UPI</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹40</strong> (Instant)</div>
-                  <a className="btn primary full-width"
-                     href="https://campaigns.fast2cash.in/camp/tp32keOzRAxFzM1"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹40 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Nielsen */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Nielsen – 3 day Cashback</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Enter UPI ID & mobile number, then submit</li>
-                  <li>Complete Survey</li>
-                  <li>Install app</li>
-                  <li>Login for 3 days</li>
-                  <li>Get cashback in UPI</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹70</strong> (within 3 days)</div>
-                  <a className="btn primary full-width"
-                     href="https://lootcampaign.in?camp=nsn3d&ref=OGkUSDyw"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹70 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Royal */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Royal – 2 day Cashback</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Enter UPI ID & mobile number, then submit</li>
-                  <li>Fill simple basic information</li>
-                  <li>That&apos;s It</li>
-                  <li>You will get a call after 2 days</li>
-                  <li>Tell them you are interested in laminates</li>
-                  <li>No need to buy,invest,install app nothing</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹70</strong> (within 3 days)</div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.in/camp/xu6fxt8y"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹70 →
-                  </a>
-                </div>
-              </article>
-
-              {/* IndusInd Indie Account */}
-              <article className="offer-card premium-offer indusind">
-                <div className="premium-badge">EXCLUSIVE</div>
-                <div className="offer-head">
-                  <h3>IndusInd Bank Account</h3>
-                  <span className="tag gold">Premium </span>
-                </div>
-                <ul className="offer-points">
-                  <li>Enter UPI ID & mobile number to start</li>
-                  <li>Open Indie Zero Balance account</li>
-                  <li>Deposit ₹5000 via UPI (withdrawable anytime)</li>
-                  <li>Complete mandatory video KYC</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn premium-earn">
-                    Earn <strong>₹500</strong>
-                  </div>
-                  <a className="btn primary premium-btn"
-                     href="YOUR_INDUSIND_REFERRAL_LINK"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                    Open IndusInd Account
-                  </a>
-                </div>
-              </article>
-
-              {/* Media Rewards */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Media Rewards – Easy Signup Task</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Sign up & verify with Gmail</li>
-                  <li>No Aadhaar • No PAN required</li>
-                  <li>Login daily for 7 days</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹50</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campaign.cashwala.in/campaigns/Sh4sct2s7?as=2n0tg1g1i"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹50 →
-                  </a>
-                </div>
-              </article>
-
-              {/* 5Paisa Offer */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>5Paisa Demat Account</h3>
-                  <span className="tag">High Cashback</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Install & open 5Paisa app</li>
-                  <li>Complete signup</li>
-                  <li>KYC using Aadhaar + PAN</li>
-                  <li>₹80 cashback after approval</li>
-                  <li>Optional bonuses available</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">
-                    Earn Up To <strong>₹380</strong>
-                  </div>
-                  <a className="btn primary full-width"
-                     href="https://clickmudra.co/camp/MBVZJME"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                    Apply Now
-                  </a>
-                </div>
-              </article>
-
-              {/* TimesPrime Xmas */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>TimesPrime – Xmas Flash Sale</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Buy TimesPrime subscription using coupon</li>
-                  <li>Pay ₹749 after instant discount</li>
-                  <li>Get Amazon voucher + cashback benefits</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Benefit <strong>₹750+</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.com/camp/qbjybwmw"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Unlock Deal →
-                  </a>
-                </div>
-              </article>
-
-              {/* CoinSwitch */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>CoinSwitch – New User Crypto Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Sign up & verify via OTP</li>
-                  <li>Complete KYC (PAN + Aadhaar)</li>
-                  <li>Add ₹110+ & make one trade</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹150</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campaigns.fast2cash.in/camp/o3t1X8zCeW9S3W3"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹150 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Bajaj EMI */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Bajaj EMI – Finance App Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Open Bajaj EMI via referral link</li>
-                  <li>Follow the simple on-screen steps</li>
-                  <li>Reward after successful completion</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹125</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://rechargefox.com/camp/rzryyek5"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹125 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Bajaj Demat */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Bajaj Demat – Easy Signup Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Open Bajaj Demat via referral link</li>
-                  <li>Complete the required signup steps</li>
-                  <li>Reward after successful verification</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹60</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.com/camp/kgwnocyl"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹60 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Kotak 811 */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Kotak 811 – Digital Savings Account</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Open Kotak 811 account via referral link</li>
-                  <li>Complete full KYC as required by Kotak</li>
-                  <li>Reward after successful account approval</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹200</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://cgrj.in/c/rnf6yrzd"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹200 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Bajaj EMI Card */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Bajaj EMI Card – Finance Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Apply for Bajaj EMI Card via referral link</li>
-                  <li>Complete the required application steps</li>
-                  <li>Reward after successful approval</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹500</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.in/camp/im6robpt"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹500 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Rio Money */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Rio Money – High Reward Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Open Rio Money via referral link</li>
-                  <li>Complete the required provider steps</li>
-                  <li>Reward after successful verification</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹800</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.in/camp/j8kam6c9"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹800 →
-                  </a>
-                </div>
-              </article>
-
-              {/* AU CC Limit */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>AU Credit Card – Limit Check Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Check AU Credit Card limit via referral link</li>
-                  <li>Complete the required eligibility steps</li>
-                  <li>Reward after successful verification</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹180</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.in/camp/uctpuhvp"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹180 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Credilio Flash */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>Credilio Flash – High Reward Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Open Credilio Flash via referral link</li>
-                  <li>Complete the required provider steps</li>
-                  <li>Reward after successful verification</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹900</strong></div>
-                  <a className="btn primary full-width"
-                     href="https://campguruji.in/camp/u1phzg18"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹900 →
-                  </a>
-                </div>
-              </article>
-
-              {/* Phonepay */}
-              <article className="offer-card">
-                <div className="offer-head">
-                  <h3>PhonePe Signup Offer</h3>
-                  <span className="tag">CashTree Verified</span>
-                </div>
-                <ul className="offer-points">
-                  <li>Install PhonePe via referral link</li>
-                  <li>Complete signup & verification</li>
-                  <li>Bonus credited after success</li>
-                </ul>
-                <div className="offer-footer">
-                  <div className="earn">Earn <strong>₹150</strong></div>
-                  <a className="btn primary full-width"
-                     href="/phonepay/"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     Get ₹150 →
-                  </a>
-                </div>
-              </article>
-
-            </div>
-          </div>
-        </section>
+      <main className="pt-24 pb-20">
         
-        {/* HOW IT WORKS */}
-        <section id="how-it-works" className="section">
-          <div className="container">
+        {/* ================= HERO SECTION ================= */}
+        <section className="relative px-6 py-20 md:py-32 max-w-7xl mx-auto text-center">
+          
+          {/* Background Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 blur-[120px] rounded-full -z-10" />
 
-            <h2 className="section-title">
-              How it works
-            </h2>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-emerald-400 mb-8">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Live Network Status: Online
+          </div>
 
-            <p className="section-sub">
-              A simple, transparent process used across all listed campaigns.
-              Follow the steps carefully to qualify.
-            </p>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+            The Performance <br />
+            <span className="text-emerald-400">Reward Network.</span>
+          </h1>
 
-            <p className="section-sub" style={{ fontSize: '13px', opacity: 0.8, marginTop: '8px' }}>
-              Time to reward varies by provider • No fixed income • Third-party platforms only
-            </p>
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Connect with verified financial and gaming campaigns. 
+            Automated tracking. Transparent payouts. Built for Indian creators.
+          </p>
 
-            <div className="steps">
-              <div className="step">
-                <h3>1. Open the Offer</h3>
-                <p>
-                  Click an offer card to visit the official campaign page.
-                  Review the requirements shown by the provider before proceeding.
-                </p>
-              </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link 
+              href={dashboardLink}
+              className="w-full sm:w-auto px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              Start Earning Now <ArrowRight size={18} />
+            </Link>
+            <a 
+              href="#how-it-works"
+              className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium rounded-xl transition-all"
+            >
+              How it Works
+            </a>
+          </div>
 
-              <div className="step">
-                <h3>2. Complete the Task</h3>
-                <p>
-                  Install, register, verify, or complete the required action
-                  exactly as instructed on the campaign page.
-                </p>
-              </div>
-
-              <div className="step">
-                <h3>3. Receive the Reward</h3>
-                <p>
-                  After successful verification, rewards are credited by the provider.
-                  Processing time depends on the platform.
-                </p>
-              </div>
-            </div>
-
+          {/* Stats Grid */}
+          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-white/10 pt-10">
+            <StatItem label="Active Users" value="5,000+" />
+            <StatItem label="Payout Speed" value="Instant" />
+            <StatItem label="Campaigns" value="Verified" />
+            <StatItem label="Support" value="24/7" />
           </div>
         </section>
 
-        {/* TOOLS PROMO */}
-        <section className="section">
-          <div className="container">
-
-            <h2 className="section-title">
-              Tools Used by People Monetizing Traffic Online
-            </h2>
-
-            <p className="section-sub">
-              Optional platforms commonly used to monetize website visits, referrals,
-              and social traffic. These tools are independent and not required to use
-              the offers listed above.
-            </p>
-
-            <p className="section-sub" style={{ fontSize: '13px', opacity: 0.8, marginTop: '8px' }}>
-              Educational resources • Third-party platforms • Results depend on usage and traffic quality
-            </p>
-
-            <div className="offer-grid">
-              <article className="offer-card">
-                <h3>Traffic & Referral Monetization Tools</h3>
-                <p className="lead">
-                  Explore ad networks and monetization tools used by publishers
-                  to convert traffic into measurable revenue.
-                  Suitable for websites, blogs, and social platforms.
-                </p>
-                <ul className="offer-points">
-                  <li>Ad networks & traffic monetization platforms</li>
-                  <li>Referral & publisher tools</li>
-                  <li>Beginner-friendly setup guides</li>
-                </ul>
-                <a href="/tools" className="btn primary full-width">
-                  Explore Tools & Guides
-                </a>
-              </article>
+        {/* ================= HOW IT WORKS ================= */}
+        <section id="how-it-works" className="py-24 bg-white/5 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold mb-4">The Protocol</h2>
+              <p className="text-gray-400">Three steps to monetize your influence.</p>
             </div>
 
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section id="faq" className="section">
-          <div className="container">
-            <h2 className="section-title">Frequently Asked Questions</h2>
-            <div className="faq">
-
-              {/* Q1 */}
-              <div className={`faq-item ${activeFaq === 1 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 1 ? null : 1)}>
-                  Are these offers legitimate?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    Yes. Every offer listed redirects you to an
-                    <strong> official campaign page</strong> of the respective provider.
-                    We do not host apps, files, or modified links.
-                  </p>
-                </div>
-              </div>
-
-              {/* Q2 */}
-              <div className={`faq-item ${activeFaq === 2 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 2 ? null : 2)}>
-                  Do I need to pay to use these offers?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    Most offers are completely free. Some campaigns may require
-                    a small action such as account verification, installation,
-                    or a minimum activity as specified by the provider.
-                  </p>
-                </div>
-              </div>
-
-              {/* Q3 */}
-              <div className={`faq-item ${activeFaq === 3 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 3 ? null : 3)}>
-                  Is any income or reward guaranteed?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    No income or earnings are guaranteed.
-                    Rewards depend on successful task completion,
-                    provider verification, and campaign rules.
-                  </p>
-                </div>
-              </div>
-
-              {/* Q4 */}
-              <div className={`faq-item ${activeFaq === 4 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 4 ? null : 4)}>
-                  How long does it take to receive rewards?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    Reward timelines vary by platform.
-                    Some campaigns credit rewards instantly,
-                    while others may take a few hours or days
-                    after verification.
-                  </p>
-                </div>
-              </div>
-
-              {/* Q5 */}
-              <div className={`faq-item ${activeFaq === 5 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 5 ? null : 5)}>
-                  What are the monetization tools mentioned on this site?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    Monetization tools are optional third-party platforms
-                    commonly used by publishers to monetize website traffic,
-                    referrals, and social visitors.
-                  </p>
-                  <p>
-                    These tools are independent of CashTree Loot and are shared
-                    for educational purposes only.
-                  </p>
-                </div>
-              </div>
-
-              {/* Q6 */}
-              <div className={`faq-item ${activeFaq === 6 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 6 ? null : 6)}>
-                  Can I monetize my own website or traffic?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    Yes, many people monetize their traffic using ad networks
-                    and referral tools.
-                    One commonly used platform is Monetag.
-                  </p>
-                  <p>
-                    If you’re exploring traffic monetization tools,
-                    you can learn more through their official publisher program:
-                    <br /><br />
-                    <a href="https://monetag.com/?ref_id=zc3e" 
-                       target="_blank" 
-                       rel="noopener noreferrer" 
-                       className="btn secondary">
-                      👉 Explore Monetag Publisher Tools
-                    </a>
-                  </p>
-                </div>
-              </div>
-
-              {/* Q7 */}
-              <div className={`faq-item ${activeFaq === 7 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 7 ? null : 7)}>
-                  Does CashTree Loot collect personal data?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    We do not collect sensitive personal information such as
-                    Aadhaar, PAN, or bank details.
-                    Payments, if any, are processed securely by third-party providers.
-                  </p>
-                </div>
-              </div>
-
-              {/* Q8 */}
-              <div className={`faq-item ${activeFaq === 8 ? 'active' : ''}`}>
-                <button className="faq-question" onClick={() => setActiveFaq(activeFaq === 8 ? null : 8)}>
-                  Who should use this website?
-                </button>
-                <div className="faq-answer">
-                  <p>
-                    This site is intended for users looking to explore
-                    verified referral offers, understand earning mechanisms,
-                    and learn about traffic monetization tools.
-                  </p>
-                </div>
-              </div>
-
+            <div className="grid md:grid-cols-3 gap-8">
+              <FeatureCard 
+                icon={<Zap className="text-yellow-400" size={32} />}
+                title="1. Discover"
+                desc="Browse verified campaigns from top brands like Kotak, Angel One, and Gaming Apps."
+              />
+              <FeatureCard 
+                icon={<Smartphone className="text-blue-400" size={32} />}
+                title="2. Complete"
+                desc="Follow the simple instructions (Install, Register, or KYC) to qualify for the reward."
+              />
+              <FeatureCard 
+                icon={<ShieldCheck className="text-emerald-400" size={32} />}
+                title="3. Earn"
+                desc="Get tracked instantly via our Postback engine. Withdraw to UPI immediately."
+              />
             </div>
           </div>
         </section>
 
-        {/* CREATE LINK / ACCESS SECTION */}
-        <section id="create-link" className="section">
-          <div className="container">
+        {/* ================= ACCESS / COMMUNITY ================= */}
+        <section className="py-24 px-6 max-w-4xl mx-auto text-center">
+          <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden">
+            
+            {/* Decorative BG */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full" />
 
-            <h2 className="section-title">Create Your Own Referral Link</h2>
-            <p className="section-sub">
-              One-time access to referral guidance, verified resources, and private Telegram support.
+            <h2 className="text-3xl font-bold mb-6">Unlock Full Access</h2>
+            <p className="text-gray-400 mb-8 max-w-xl mx-auto">
+              Get lifetime access to our <strong>Private Telegram Community</strong>, verified earning guides, and direct support.
             </p>
 
-            {/* STEP EXPLANATION */}
-            <div className="info-stack">
-              <p>
-                This access is designed for users who want to understand
-                <strong> how referral systems work</strong>, explore verified offers,
-                and learn how people monetize traffic responsibly.
-              </p>
+            <div className="flex flex-col items-center gap-6">
+              
+              {/* Price Tag */}
+              <div className="text-center">
+                <span className="text-gray-500 line-through text-lg">₹99</span>
+                <div className="text-5xl font-bold text-white mt-1">₹49 <span className="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">One-time</span></div>
+              </div>
 
-              <p>
-                After payment, you’ll use our Telegram bot to verify your payment
-                and receive access to the private Telegram group.
-              </p>
-            </div>
-
-            {/* CTA STACK */}
-            <div className="center-stack">
-              {/* PAYMENT */}
-              <a href="https://razorpay.me/@cashttree?amount=rZC5NMufSVtgb9QV3szYxw%3D%3D"
-                 className="pay-btn"
-                 id="payBtn"
-                 target="_blank"
-                 rel="noopener noreferrer">
-
-                <span className="price">
-                  <span className="price-old"><s>₹99</s></span>
-                  <span className="price-new">₹49</span>
-                  <span className="label">Unlock Access</span>
-                </span>
-
-                <img src="/assets/santa-hat.png" alt="" className="santa-hat" />
+              {/* Action Button */}
+              <a 
+                href="https://razorpay.me/@cashttree?amount=rZC5NMufSVtgb9QV3szYxw%3D%3D" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full md:w-auto px-10 py-4 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+              >
+                Pay & Unlock Access
               </a>
 
-              <p style={{ textAlign: 'center', fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>
-                • One-time access • Limited time
-              </p>
-            </div>
-
-            <div className="center-stack">
-              {/* TELEGRAM BOT */}
-              <a className="telegram-btn"
-                 href="https://t.me/CashtTree_bot"
-                 target="_blank"
-                 rel="noopener noreferrer">
-                  Open Telegram Bot
+              <a href="https://t.me/CashtTree_bot" target="_blank" className="text-sm text-gray-400 hover:text-white underline underline-offset-4">
+                Verify Payment via Telegram Bot
               </a>
+
             </div>
 
-            {/* HOW IT WORKS (CLEAR FLOW) */}
-            <div className="steps-box">
-              <h3>How access works</h3>
-              <ol>
-                <li>Pay a one-time access fee of <strong>₹49</strong></li>
-                <li>Open the Telegram bot using the button above</li>
-                <li>Submit your Razorpay Payment ID inside the bot</li>
-                <li>Receive private Telegram group access after verification</li>
-              </ol>
+            <div className="mt-12 pt-8 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-500">
+              <div className="flex items-center justify-center gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Verified Methods</div>
+              <div className="flex items-center justify-center gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Community Support</div>
+              <div className="flex items-center justify-center gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Instant Updates</div>
             </div>
-
-            {/* TRANSPARENCY NOTE */}
-            <p className="small-note">
-              This payment provides access to information and community only.
-              No job, salary, or guaranteed earnings are offered.
-            </p>
 
           </div>
         </section>
 
-        {/* LEGAL / COMPLIANCE BOX */}
-        <div className="legal-box">
-          <h4>Terms, Privacy & Refund Policy</h4>
+        {/* ================= FAQ SECTION ================= */}
+        <section id="faq" className="py-20 px-6 max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold mb-10 text-center">System FAQ</h2>
+          <div className="space-y-4">
+            <FaqItem 
+              question="Is this platform legitimate?" 
+              answer="Yes. We act as a technology partner for major ad networks. All offers redirect to official brand pages. We do not host any files ourselves." 
+              isOpen={activeFaq === 1} onClick={() => setActiveFaq(activeFaq === 1 ? null : 1)}
+            />
+            <FaqItem 
+              question="Do I need to pay to earn?" 
+              answer="No. The campaigns (tasks) are free to do. The ₹49 fee is strictly for access to our premium community and educational guides." 
+              isOpen={activeFaq === 2} onClick={() => setActiveFaq(activeFaq === 2 ? null : 2)}
+            />
+            <FaqItem 
+              question="How do I withdraw?" 
+              answer="We support instant UPI withdrawals (GPay, PhonePe, Paytm). Minimum withdrawal limits apply based on your activity level." 
+              isOpen={activeFaq === 3} onClick={() => setActiveFaq(activeFaq === 3 ? null : 3)}
+            />
+          </div>
+        </section>
 
-          <p>
-            ₹49 is a one-time access fee for referral guidance, tools information,
-            and a private Telegram group. This is <strong>not an investment</strong>
-            and does not guarantee any income.
-          </p>
+        {/* ================= LEGAL FOOTER ================= */}
+        <footer className="border-t border-white/10 pt-16 pb-8 px-6 text-center text-gray-600 text-sm">
+          <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8 mb-12 text-left">
+            <div>
+              <h4 className="text-white font-semibold mb-4">CashTree</h4>
+              <p>The next-gen reward discovery platform for India.</p>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><button className="hover:text-white">Terms of Service</button></li>
+                <li><button className="hover:text-white">Privacy Policy</button></li>
+                <li><button className="hover:text-white">Refund Policy</button></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Contact</h4>
+              <p>Support: help@cashttree.online</p>
+              <p>Telegram: @CashTreeSupport</p>
+            </div>
+          </div>
+          <p>© 2024 CashTree. All rights reserved.</p>
+        </footer>
 
-          <p>
-            Payments are processed securely via Razorpay.
-            We do not store sensitive personal data such as PAN, Aadhaar, or bank details.
-          </p>
-
-          <p>
-            Refunds are issued only if access is not provided after successful payment.
-            Refund requests must be made within 24 hours along with a valid Razorpay
-            Payment ID.
-          </p>
-        </div>
       </main>
 
-      {/* ================= FOOTER ================= */}
-      <footer className="footer">
-        <div className="container footer-inner">
-          <div>© CashTree Loot</div>
-          <div className="footer-links">
-            <a href="#offers">Offers</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#faq">FAQ</a>
-            <a href="/tools">Tools</a>
-          </div>
-        </div>
-      </footer>
-
-      {/* ================= MOBILE FLOATING CTA ================= */}
-      <div
-        id="mobileCta"
-        className={`mobile-cta ${isMobileCtaVisible ? 'visible' : ''}`}
-        role="dialog"
-        aria-label="Join CashTree Telegram"
-        aria-live="polite"
-      >
-        <a
-          href="https://t.me/CashtTree_bot"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="cta-main"
-          aria-label="Open CashTree Telegram Bot"
-        >
-          🚀 Join Telegram & Unlock Access
-        </a>
-
-        <button
-          className="cta-close"
-          aria-label="Close"
-          type="button"
-          onClick={closeCta}
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* ✅ PASTE THIS HERE: The Legal Docs Popup */}
+      {/* Legal Popup Component */}
       <LegalDocs />
       
     </>
+  );
+}
+
+// --- SUB-COMPONENTS (Keep code clean) ---
+
+function StatItem({ label, value }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-2xl md:text-3xl font-bold text-white">{value}</span>
+      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider mt-1">{label}</span>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, desc }) {
+  return (
+    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 hover:border-emerald-500/30 transition-all group">
+      <div className="mb-4 p-3 bg-white/5 w-fit rounded-xl group-hover:scale-110 transition-transform">{icon}</div>
+      <h3 className="text-xl font-bold mb-2 text-white">{title}</h3>
+      <p className="text-gray-400 leading-relaxed text-sm">{desc}</p>
+    </div>
+  );
+}
+
+function FaqItem({ question, answer, isOpen, onClick }) {
+  return (
+    <div className="border border-white/10 rounded-xl overflow-hidden bg-white/5">
+      <button 
+        className="w-full flex items-center justify-between p-4 text-left font-medium text-white hover:bg-white/5 transition-colors"
+        onClick={onClick}
+      >
+        {question}
+        <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+      </button>
+      {isOpen && (
+        <div className="p-4 pt-0 text-gray-400 text-sm leading-relaxed border-t border-white/5">
+          {answer}
+        </div>
+      )}
+    </div>
   );
 }
