@@ -47,40 +47,32 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-
-  /* Removes the blue tap highlight on mobile/touch */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Optional: Prevents accidental text selection when clicking fast */
-button, a, .clickable {
-  user-select: none;
-}
-  
-  /* Epic Background Mesh */
+  -moz-osx-font-smoothing: grayscale; /* Crisp text */
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(0, 255, 136, 0.08), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.08), transparent 25%);
   background-attachment: fixed;
 }
 
+/* Remove blue tap highlight on mobile */
+* { -webkit-tap-highlight-color: transparent; }
+
 a { text-decoration: none; color: inherit; transition: color 0.2s; }
 button { font-family: inherit; cursor: pointer; user-select: none; }
-img { max-width: 100%; display: block; }
+img { max-width: 100%; display: block; -webkit-user-drag: none; user-select: none; }
 
 /* Click Safety (Prevent ads from blocking clicks) */
 a, button { pointer-events: auto !important; }
 
 /* =========================================
-   3. UTILITIES & ANIMATIONS
+   3. UTILITIES & ANIMATIONS (Legacy)
    ========================================= */
 .container {
-  max-width: 1100px; /* Locked width for perfect center */
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px;
   position: relative;
-  z-index: 2; /* Above ads */
+  z-index: 2;
 }
 
 .fade-in {
@@ -98,8 +90,8 @@ a, button { pointer-events: auto !important; }
 .nav {
   position: sticky;
   top: 0;
-  z-index: 99999 !important; /* Always on top */
-  background: rgba(3, 3, 5, 0.85); /* Translucent */
+  z-index: 99999 !important;
+  background: rgba(3, 3, 5, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
@@ -112,7 +104,7 @@ a, button { pointer-events: auto !important; }
   align-items: center;
   justify-content: space-between;
   height: 100%;
-  max-width: 1100px; /* Matches container */
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -159,16 +151,16 @@ a, button { pointer-events: auto !important; }
 .nav-toggle { display: none; background: none; border: none; font-size: 24px; color: #fff; }
 
 /* =========================================
-   5. HERO SECTION (Centered)
+   5. HERO SECTION & BUTTONS
    ========================================= */
 .hero {
   padding: 100px 0 60px;
-  text-align: center; /* STRICTLY CENTERED */
+  text-align: center;
   position: relative;
 }
 
 .hero h1 {
-  font-size: clamp(2.5rem, 5vw, 4rem); /* Responsive Huge Text */
+  font-size: clamp(2.5rem, 5vw, 4rem);
   line-height: 1.1;
   font-weight: 900;
   letter-spacing: -2px;
@@ -191,16 +183,15 @@ a, button { pointer-events: auto !important; }
   font-size: 1.2rem;
   color: var(--text-muted);
   max-width: 600px;
-  margin: 0 auto 40px auto; /* Centered */
+  margin: 0 auto 40px auto;
 }
 
-/* 3-Column Hero Buttons */
 .hero-actions-equal {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   max-width: 500px;
-  margin: 0 auto; /* Centered */
+  margin: 0 auto;
 }
 
 .hero-btn {
@@ -223,16 +214,9 @@ a, button { pointer-events: auto !important; }
   color: var(--accent);
 }
 
-/* Center CTA */
-.cta-center {
-  margin-top: 40px;
-  text-align: center;
-  display: flex; justify-content: center;
-}
+.cta-center { margin-top: 40px; text-align: center; display: flex; justify-content: center; }
 .create-link-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  display: inline-flex; align-items: center; gap: 10px;
   padding: 16px 32px;
   background: rgba(0, 255, 136, 0.1);
   border: 1px solid rgba(0, 255, 136, 0.3);
@@ -242,29 +226,24 @@ a, button { pointer-events: auto !important; }
   transition: all 0.3s;
 }
 .create-link-cta:hover {
-  background: var(--accent);
-  color: #000;
-  box-shadow: 0 0 40px rgba(0, 255, 136, 0.4);
+  background: var(--accent); color: #000; box-shadow: 0 0 40px rgba(0, 255, 136, 0.4);
 }
 
 .hero-trust { 
-  margin-top: 20px; 
-  font-size: 13px; color: #555; font-weight: 600; 
-  text-transform: uppercase; letter-spacing: 1px;
-  text-align: center;
+  margin-top: 20px; font-size: 13px; color: #555; font-weight: 600; 
+  text-transform: uppercase; letter-spacing: 1px; text-align: center;
 }
 
 /* =========================================
-   6. OFFER GRID (The Layout Logic)
+   6. OFFER GRID & CARDS
    ========================================= */
 .section { padding: 80px 0; }
 .section-title { font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: #fff; text-align: center; }
 .section-sub { color: var(--text-muted); margin-bottom: 40px; text-align: center; }
 
-/* THE FIX: 2 Columns on Desktop, 1 on Mobile */
 .offer-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Default Desktop: 2 Columns */
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   max-width: 900px;
   margin: 0 auto;
@@ -277,8 +256,7 @@ a, button { pointer-events: auto !important; }
   padding: 28px;
   position: relative;
   transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
+  display: flex; flex-direction: column;
 }
 .offer-card:hover {
   transform: translateY(-5px);
@@ -297,17 +275,12 @@ a, button { pointer-events: auto !important; }
 }
 .tag.success { background: rgba(0, 255, 136, 0.15); color: var(--accent); }
 
-.offer-points { 
-  margin: 0 0 20px 0; padding-left: 20px; 
-  color: var(--text-muted); font-size: 0.9rem; 
-}
+.offer-points { margin: 0 0 20px 0; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem; }
 .offer-points li { margin-bottom: 6px; }
 
 .offer-footer {
   margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   background: rgba(0,0,0,0.2);
   padding: 8px;
   border-radius: 16px;
@@ -317,20 +290,12 @@ a, button { pointer-events: auto !important; }
 .earn strong { color: #fff; font-size: 1.2rem; display: block; }
 
 .btn.primary {
-  background: var(--accent);
-  color: #000;
-  font-weight: 800;
-  padding: 12px 24px;
-  border-radius: 12px;
-  border: none;
-  transition: all 0.2s;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+  background: var(--accent); color: #000; font-weight: 800;
+  padding: 12px 24px; border-radius: 12px; border: none;
+  transition: all 0.2s; box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
   display: flex; justify-content: center;
 }
-.btn.primary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
-}
+.btn.primary:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 255, 136, 0.5); }
 
 .premium-offer { border: 1px solid rgba(245, 158, 11, 0.3); background: linear-gradient(180deg, rgba(245, 158, 11, 0.08), rgba(4,6,10,0.5)); }
 .premium-badge { position: absolute; top: 14px; right: 14px; background: var(--gold); color: #3a2200; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
@@ -338,354 +303,157 @@ a, button { pointer-events: auto !important; }
 /* =========================================
    7. HOW IT WORKS & FAQ
    ========================================= */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-}
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 .step {
   background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0));
-  border: 1px solid var(--border);
-  padding: 30px;
-  border-radius: 24px;
-  text-align: center;
+  border: 1px solid var(--border); padding: 30px; border-radius: 24px; text-align: center;
 }
 .step h3 { font-size: 1.1rem; color: #fff; margin-bottom: 10px; }
 .step p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
 
-/* FAQ Styles */
-.faq-item {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
+.faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
 .faq-question {
-  width: 100%; text-align: left; padding: 20px;
-  background: none; border: none; color: #fff;
-  font-weight: 600; font-size: 1.1rem; cursor: pointer;
-  display: flex; justify-content: space-between;
+  width: 100%; text-align: left; padding: 20px; background: none; border: none; color: #fff;
+  font-weight: 600; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: space-between;
 }
-.faq-answer {
-  max-height: 0;
-  overflow: hidden;
-  padding: 0 20px;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  transition: all 0.3s ease;
-}
-.faq-item.active .faq-answer {
-  max-height: 500px;
-  padding-bottom: 20px;
-}
+.faq-answer { max-height: 0; overflow: hidden; padding: 0 20px; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; transition: all 0.3s ease; }
+.faq-item.active .faq-answer { max-height: 500px; padding-bottom: 20px; }
 
 /* =========================================
-   8. MOBILE RESPONSIVENESS (1 Column Grid)
+   8. MOBILE RESPONSIVENESS
    ========================================= */
 @media (max-width: 768px) {
-  /* Fix Header Height */
   :root { --nav-height: 60px; }
-
-  /* Hero Text */
   .hero h1 { font-size: 2.2rem; }
-  
-  /* GRID: Force 1 Column on Mobile */
-  .offer-grid { 
-    grid-template-columns: 1fr; /* This is the fix you wanted */
-  }
-  
+  .offer-grid { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; }
   
-  /* Navigation Drawer */
   .nav-toggle { display: block; }
   .nav-links {
-    position: fixed;
-    top: var(--nav-height); right: 0; bottom: 0;
-    width: 250px;
-    background: #050505;
-    border-left: 1px solid var(--border);
-    flex-direction: column;
-    padding: 30px;
-    align-items: flex-start;
-    transform: translateX(100%);
-    transition: transform 0.3s;
-    z-index: 2000;
+    position: fixed; top: var(--nav-height); right: 0; bottom: 0;
+    width: 250px; background: #050505; border-left: 1px solid var(--border);
+    flex-direction: column; padding: 30px; align-items: flex-start;
+    transform: translateX(100%); transition: transform 0.3s; z-index: 2000;
   }
   .nav-links.nav-open { transform: translateX(0); }
   .nav-links a { width: 100%; border-radius: 8px; }
 
-  /* Chunky Mobile Buttons */
-  .hero-actions-equal { 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 8px; 
-    max-width: 100%;
-  }
-  .hero-btn { 
-    font-size: 11px; padding: 15px 5px; 
-    border-radius: 14px; min-height: 80px;
-  }
+  .hero-actions-equal { grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 100%; }
+  .hero-btn { font-size: 11px; padding: 15px 5px; border-radius: 14px; min-height: 80px; }
   
   .footer-inner { flex-direction: column; text-align: center; gap: 20px; }
 }
 
-/* Footer */
 .footer {
-  margin-top: 100px;
-  padding: 40px 0;
-  border-top: 1px solid var(--border);
-  text-align: center;
-  color: #666;
-  font-size: 0.9rem;
-  background: rgba(4, 6, 10, 0.5);
+  margin-top: 100px; padding: 40px 0; border-top: 1px solid var(--border);
+  text-align: center; color: #666; font-size: 0.9rem; background: rgba(4, 6, 10, 0.5);
 }
 .footer-inner { display: flex; justify-content: space-between; color: var(--muted); }
 .footer-links a { margin-left: 20px; }
 
 /* =========================================
-   OG THEME: CHUNKY RECTANGULAR BUTTONS
+   9. CUSTOM BUTTONS & CTA (Legacy)
    ========================================= */
-.center-stack {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  margin: 20px 0; width: 100%;
-}
+.center-stack { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px 0; width: 100%; }
 
-/* 1. Main Payment Button (Green Rectangle) */
 .pay-btn {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
   background: linear-gradient(180deg, var(--accent), var(--accent-dark));
-  color: #000 !important; /* Force Black Text */
-  font-weight: 800;
-  padding: 20px 40px;
-  border-radius: 8px; /* Sharp Rectangle */
-  text-decoration: none;
-  box-shadow: 0 10px 30px -5px var(--accent-glow);
-  min-width: 300px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid rgba(255,255,255,0.2);
-  cursor: pointer;
+  color: #000 !important; font-weight: 800; padding: 20px 40px; border-radius: 8px;
+  text-decoration: none; box-shadow: 0 10px 30px -5px var(--accent-glow);
+  min-width: 300px; transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
 }
-
-.pay-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 15px 40px -5px var(--accent-glow);
-}
+.pay-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 40px -5px var(--accent-glow); }
 
 .price { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; }
 .price-old { text-decoration: line-through; opacity: 0.6; font-size: 0.9em; }
 .price-new { font-size: 1.6em; font-weight: 900; }
 .label { text-transform: uppercase; font-size: 0.8em; font-weight: 900; letter-spacing: 1px; }
 
-/* 2. Telegram/Secondary Button (Blue Rectangle) */
 .telegram-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--blue);
-  color: white !important;
-  font-weight: 800;
-  padding: 16px 40px;
-  border-radius: 8px; /* Sharp Rectangle */
-  text-decoration: none;
-  box-shadow: 0 8px 25px -5px var(--blue-glow);
-  min-width: 300px;
-  transition: transform 0.2s ease;
-  margin-top: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--blue); color: white !important; font-weight: 800;
+  padding: 16px 40px; border-radius: 8px; text-decoration: none;
+  box-shadow: 0 8px 25px -5px var(--blue-glow); min-width: 300px;
+  transition: transform 0.2s ease; margin-top: 12px;
+  text-transform: uppercase; letter-spacing: 1px;
 }
+.telegram-btn:hover { transform: translateY(-3px); background: #2563eb; }
 
-.telegram-btn:hover {
-  transform: translateY(-3px);
-  background: #2563eb; /* Slightly darker blue */
-}
-
-/* =========================================
-   TERMINAL ACCESS & MOBILE CTA (OG THEME)
-   ========================================= */
-
-/* 1. Steps & Legal Box Inside Card */
 .steps-box, .legal-box {
-  background: rgba(255, 255, 255, 0.02);
-  padding: 30px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.8;
-  text-align: left;
-  margin-top: 30px;
+  background: rgba(255, 255, 255, 0.02); padding: 30px; border-radius: 12px;
+  border: 1px solid var(--border); color: var(--text-muted); font-size: 13px;
+  line-height: 1.8; text-align: left; margin-top: 30px;
 }
 
-/* 2. Mobile Floating CTA Logic */
 .mobile-cta {
-  position: fixed;
-  bottom: 20px; 
-  left: 16px; 
-  right: 16px;
-  z-index: 2000;
-  display: flex; 
-  gap: 10px;
-  /* Hidden by default with your specific transition */
-  transform: translateY(150%);
+  position: fixed; bottom: 20px; left: 16px; right: 16px; z-index: 2000;
+  display: flex; gap: 10px; transform: translateY(150%);
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+.mobile-cta.visible { transform: translateY(0); }
 
-/* Triggered by Next.js Scroll State */
-.mobile-cta.visible { 
-  transform: translateY(0); 
-}
-
-/* Main Promoter Button */
 .cta-main {
-  flex: 1;
-  background: var(--accent); /* Cyber Green */
-  color: #000 !important;   /* High Contrast Black */
-  font-weight: 800;
-  padding: 16px;
-  border-radius: 16px;
-  text-align: center;
-  text-decoration: none;
-  text-transform: uppercase;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex: 1; background: var(--accent); color: #000 !important; font-weight: 800;
+  padding: 16px; border-radius: 16px; text-align: center; text-decoration: none;
+  text-transform: uppercase; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
 }
-
-/* Square Close Button */
 .cta-close {
-  width: 50px;
-  background: #111;
-  color: #fff;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  font-size: 20px;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s;
+  width: 50px; background: #111; color: #fff; border: 1px solid var(--border);
+  border-radius: 16px; font-size: 20px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.2s;
 }
 .cta-close:hover { background: #1a1a1a; }
 
-/* Ad Sandbox Fix */
 .ad-sandbox { pointer-events: none; }
 .ad-sandbox iframe, .ad-sandbox div { z-index: 1 !important; pointer-events: auto; }
 
-@media (max-width: 768px) {
-  .admin-main {
-    margin-left: 0 !important;
-  }
-  .admin-sidebar {
-    display: none;
-  }
-}
+/* =========================================
+   10. SCROLLBARS & APP LOCK (Security)
+   ========================================= */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #00ff88; }
 
-/* --- 1. PREMIUM SCROLLBAR (Dark & Slim) --- */
-/* Works on Chrome, Edge, Safari */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+::selection { background: #00ff88; color: #000; }
 
-::-webkit-scrollbar-track {
-  background: #050505; /* Matches your deep black bg */
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333; /* Dark Grey handle */
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #00ff88; /* Turns NEON when you grab it */
-}
-
-/* --- 2. BRANDED TEXT SELECTION --- */
-/* When user highlights text, make it Green instead of Blue */
-::selection {
-  background: #00ff88;
-  color: #000;
-}
-
-/* --- 3. DISABLE "GHOST" IMAGES --- */
-/* Prevents dragging images/logos (makes it feel like an app) */
-img {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* --- 4. CRISP TEXT RENDERING --- */
-/* Makes fonts look sharper on dark backgrounds */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-/* --- 5. STOP THE "WHITE BOUNCE" (Overscroll) --- */
-/* Critical for Dark Mode. Prevents the browser from showing 
-   white space when you scroll past the top/bottom on Mac/Mobile. */
-html, body {
-  overscroll-behavior-y: none;
-  background-color: #050505; /* Ensures the 'void' behind the app is black */
-}
-
-/* --- 6. KILL THE "YELLOW AUTOFILL" BOX --- */
-/* Chrome forces a pale yellow background on saved passwords. 
-   This hack forces it back to your dark theme. */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
-input:-webkit-autofill:active{
-    -webkit-box-shadow: 0 0 0 30px #000 inset !important; /* Masks the yellow */
-    -webkit-text-fill-color: #fff !important; /* Forces text white */
-    caret-color: #00ff88; /* Keeps your neon cursor */
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #000 inset !important;
+    -webkit-text-fill-color: #fff !important;
+    caret-color: #00ff88;
     transition: background-color 5000s ease-in-out 0s;
 }
 
-/* --- 7. DISABLE "LONG PRESS" MENUS --- */
-/* Prevents the 'Copy/Save Image' popup when holding down on 
-   links or buttons. Makes it feel like a real UI, not a web page. */
-* {
-  -webkit-touch-callout: none; 
+/* APP LOCK: Disable Copy/Paste (Except Inputs) */
+* { -webkit-touch-callout: none; }
+input, textarea { -webkit-touch-callout: default; user-select: text !important; -webkit-user-select: text !important; }
+input, select, textarea { font-size: 16px; }
+
+* { user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
+.allow-copy { user-select: text !important; -webkit-user-select: text !important; cursor: text; }
+
+/* =========================================
+   11. FLUENT ANIMATIONS (THE NEW ENGINE) ⚡
+   ========================================= */
+/* This is the magic part for the new landing page */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* But ALLOW it on inputs so they can Paste text */
-input, textarea {
-  -webkit-touch-callout: default;
-  user-select: text; 
+.animate-fluent {
+  animation: fadeInUp 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  opacity: 0; /* Ensures elements are hidden before animation starts */
 }
 
-/* --- 8. PREVENT IOS ZOOM ON INPUTS --- */
-/* Stops iPhone from zooming in when you tap a text box */
-input, select, textarea {
-  font-size: 16px; /* iOS requires 16px to prevent auto-zoom */
-}
-
-/* --- 9. THE "APP LOCK" SYSTEM (Prevent Copying) --- */
-
-/* 1. LOCK EVERYTHING: Default state is "You can't touch this" */
-* {
-  user-select: none;           /* Standard */
-  -webkit-user-select: none;   /* Safari/Chrome */
-  -moz-user-select: none;      /* Firefox */
-  -ms-user-select: none;       /* IE/Edge */
-}
-
-/* 2. UNLOCK INPUTS: Users MUST be able to type */
-input, textarea {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-/* 3. UNLOCK SELECTABLE DATA: Create a special class for things 
-   users MIGHT want to copy (like Transaction IDs or Referral Codes) */
-.allow-copy {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  cursor: text;
-}
+/* Staggered Delays for the "Wave" Effect */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
