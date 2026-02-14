@@ -9,14 +9,22 @@ export default function PayoutRow({ item, actions }) {
 
   const isUser = item.type === 'USER';
 
-  // --- 1. GENERATE SMART UPI LINK ---
-  // This creates the deep link that opens PhonePe/GPay directly
+  // --- 1. GENERATE SMART UPI LINK (Fixed for Auto-Fill) ---
   const generateDeepLink = () => {
-    const payeeName = encodeURIComponent(item.name.replace(/[^a-zA-Z0-9 ]/g, '')); // Sanitize name
-    const note = encodeURIComponent(isUser ? `CashTree Cashback - Ref #${item.id.slice(0,4)}` : `CashTree Payout - ${item.name}`);
+    // Sanitize Name (Letters and spaces only)
+    const payeeName = encodeURIComponent(item.name.replace(/[^a-zA-Z0-9 ]/g, '')); 
     
-    // The standard UPI Deep Link format
-    return `upi://pay?pa=${item.upi_id}&pn=${payeeName}&am=${item.amount}&cu=INR&tn=${note}`;
+    // FORMAT AMOUNT: Must be a string with 2 decimal places (e.g., "500.00")
+    // This is the most common reason auto-fill fails in GPay/PhonePe
+    const formattedAmount = parseFloat(item.amount).toFixed(2);
+
+    // CREATE TRANSACTION NOTE
+    const note = encodeURIComponent(
+      isUser 
+        ? `CashTree Cashback - Ref #${item.id.slice(0, 4)}` 
+        : `CashTree Payout - ${item.name}`
+    );
+    return `upi://pay?pa=${item.upi_id}&pn=${payeeName}&am=${formattedAmount}&cu=INR&tn=${note}`;
   };
 
   // --- 2. HANDLE ACTIONS ---
