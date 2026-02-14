@@ -220,36 +220,42 @@ export default function Home() {
             <div>
               <h4 style={{color: '#fff', fontSize: '1rem', marginBottom: '20px', fontWeight: '700'}}>Support</h4>
               <div style={{display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9rem', color: '#888'}}>
+                
+                {/* NEW: Link to Contact Page */}
+                <Link href="/contact" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa', transition: 'color 0.2s'}}>
+                   📞 Contact Us
+                </Link>
+
                 <a href="mailto:help@cashttree.online" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>
                    📧 help@cashttree.online
                 </a>
+                
                 <a href="https://t.me/CashtTree_bot" target="_blank" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>
                    ✈️ Telegram Support
                 </a>
               </div>
             </div>
-          </div>
 
-          {/* Bottom Bar (Legal + Copyright) */}
-          <div style={{
-            borderTop: '1px solid #222', 
-            paddingTop: '30px', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            gap: '20px'
-          }}>
-            
-            {/* This Component Renders the "Terms | Privacy | Refund" buttons automatically */}
-            <LegalDocs />
-            
-            <div style={{color: '#444', fontSize: '0.8rem'}}>
-              © 2026 CashTree Network. All rights reserved.
-            </div>
-          </div>
-
+            {/* Bottom Bar (Legal + Copyright) */}
+            <div style={{
+              borderTop: '1px solid #222', 
+              paddingTop: '30px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              gap: '20px'
+            }}>
+              
+              {/* This Component Renders the "Terms | Privacy | Refund" buttons automatically */}
+              <LegalDocs />
+              
+              <div style={{color: '#444', fontSize: '0.8rem'}}>
+                © 2026 CashTree Network. All rights reserved.
               </div>
-            </footer>
+            </div>
+              </div>
+            </div>
+          </footer>
           </main>
           </div>
         );

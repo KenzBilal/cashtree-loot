@@ -693,3 +693,76 @@ input, select, textarea { font-size: 16px; }
   cursor: pointer; transition: 0.2s; 
 }
 .copy-btn:hover { opacity: 1; transform: scale(1.1); color: var(--accent); }
+
+/* --- CONTACT PAGE STYLES --- */
+
+.contact-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 120px 20px 80px;
+  align-items: start;
+}
+
+.contact-left h1 {
+  font-size: 3.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 20px;
+  background: linear-gradient(to right, #fff, #888);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.contact-left p { color: #888; font-size: 1.1rem; margin-bottom: 40px; }
+
+.contact-methods { display: flex; flex-direction: column; gap: 20px; }
+.method-item {
+  display: flex; align-items: center; gap: 15px;
+  padding: 20px; border: 1px solid var(--border); border-radius: 16px;
+  background: rgba(255,255,255,0.02); transition: 0.3s;
+}
+.method-item:hover { border-color: var(--accent); background: rgba(255,255,255,0.05); }
+.method-icon { color: var(--accent); }
+.method-text h4 { margin: 0; color: #fff; font-size: 1rem; }
+.method-text span { color: #666; font-size: 0.9rem; }
+
+/* The Form Card */
+.contact-form-card {
+  background: #0a0a0f;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5);
+}
+
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; color: #ccc; font-size: 0.9rem; margin-bottom: 8px; font-weight: 600; }
+
+.form-input, .form-textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  border-radius: 10px;
+  color: white;
+  font-size: 1rem;
+  transition: 0.3s;
+  font-family: inherit;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.1);
+  background: rgba(0, 255, 136, 0.02);
+}
+.form-textarea { min-height: 120px; resize: vertical; }
+
+.btn-send {
+  width: 100%; padding: 16px; background: white; color: black;
+  font-weight: 800; border: none; border-radius: 12px; cursor: pointer;
+  font-size: 1rem; transition: 0.3s;
+}
+.btn-send:hover { background: var(--accent); transform: scale(1.02); }
+
+@media (max-width: 768px) {
+  .contact-split { grid-template-columns: 1fr; gap: 40px; padding-top: 100px; }
+  .contact-left h1 { font-size: 2.5rem; }
+}
