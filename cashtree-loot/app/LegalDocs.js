@@ -6,102 +6,147 @@ import { X, Shield, FileText, RefreshCcw } from 'lucide-react';
 export default function LegalDocs() {
   const [activePolicy, setActivePolicy] = useState(null);
 
+  // --- CONTENT DATA ---
   const policies = {
     privacy: {
       title: "Privacy Policy",
-      icon: <Shield size={24} className="text-neon" />,
+      icon: <Shield size={28} className="text-neon" />,
       content: (
-        <div className="space-y-4 text-sm text-gray-300">
-          <p><strong>Last Updated: February 2026</strong></p>
-          <p>At CashTree, we take your privacy seriously. This policy explains how we handle your data.</p>
-          
-          <h4 className="text-white font-bold mt-4">1. Data Collection</h4>
-          <p>We collect your Name, Phone Number, and UPI ID solely for the purpose of tracking your referral tasks and processing your payouts. We do NOT share this data with third parties for marketing purposes.</p>
-
-          <h4 className="text-white font-bold mt-4">2. Cookies & Tracking</h4>
-          <p>We use cookies and tracking parameters (such as 'sub_aff_id') to attribute your tasks to our affiliate partners (like Uprise Media). This is essential for the service to function.</p>
-
-          <h4 className="text-white font-bold mt-4">3. Data Security</h4>
-          <p>Your data is stored securely using Supabase with Row Level Security (RLS) encryption. We do not store sensitive bank passwords or OTPs.</p>
+        <div className="policy-content">
+          <p className="policy-date">Last Updated: February 2026</p>
+          <p>At CashTree, we prioritize user privacy. We collect minimal data (Phone/UPI) solely to process payouts.</p>
+          <h4>1. Data Collection</h4>
+          <p>We do not sell your data. We only track task completion via secure server-to-server postbacks.</p>
+          <h4>2. Security</h4>
+          <p>All data is encrypted via SSL and stored in secure Supabase clusters with Row Level Security (RLS).</p>
         </div>
       )
     },
     terms: {
-      title: "Terms & Conditions",
-      icon: <FileText size={24} className="text-neon" />,
+      title: "Terms of Service",
+      icon: <FileText size={28} className="text-neon" />,
       content: (
-        <div className="space-y-4 text-sm text-gray-300">
-          <h4 className="text-white font-bold">1. Independent Contractor</h4>
-          <p>By using CashTree, you agree that you are an independent contractor, not an employee. You are responsible for your own taxes on any earnings.</p>
-
-          <h4 className="text-white font-bold mt-4">2. No Earnings Guarantee</h4>
-          <p>We provide access to third-party offers. We do not guarantee that you will earn a specific amount of money. Earnings depend entirely on your successful completion of tasks as verified by our partners.</p>
-
-          <h4 className="text-white font-bold mt-4">3. Fraud & Bans</h4>
-          <p>Any attempt to use VPNs, emulators, or fake identities to complete tasks will result in an immediate permanent ban and forfeiture of all wallet balances.</p>
+        <div className="policy-content">
+          <h4>1. User Agreement</h4>
+          <p>By using CashTree, you agree to act as an independent publisher. You are not an employee.</p>
+          <h4>2. Prohibited Activity</h4>
+          <p>VPNs, Emulators, and Bot traffic are strictly banned. Accounts flagged for fraud will be frozen immediately.</p>
         </div>
       )
     },
     refund: {
-      title: "Refund & Cancellation Policy",
-      icon: <RefreshCcw size={24} className="text-neon" />,
+      title: "Refund Policy",
+      icon: <RefreshCcw size={28} className="text-neon" />,
       content: (
-        <div className="space-y-4 text-sm text-gray-300">
-          <h4 className="text-white font-bold">1. The Access Fee</h4>
-          <p>The ₹49 fee is a <strong>one-time access fee</strong> for our platform and community. It is NOT an investment.</p>
-
-          <h4 className="text-white font-bold mt-4">2. Refund Eligibility</h4>
-          <p> refunds are ONLY granted if you are unable to access the platform due to a technical error on our side within 24 hours of payment.</p>
-          
-          <h4 className="text-white font-bold mt-4">3. No Refunds for "Change of Mind"</h4>
-          <p>Once you have logged in and accessed the dashboard or Telegram group, the service is considered "delivered" and no refund will be issued.</p>
+        <div className="policy-content">
+          <h4>1. Access Fee</h4>
+          <p>The ₹49 fee grants lifetime access to our community. It is a digital service, deemed "consumed" upon login.</p>
+          <h4>2. Eligibility</h4>
+          <p>Refunds are only issued if a technical error prevents access within 24 hours of payment.</p>
         </div>
       )
     }
   };
 
+  // --- RENDER: THE SLEEK FOOTER MENU ---
   if (!activePolicy) return (
-    <div className="flex gap-4 justify-center text-xs text-gray-500 mt-8">
-      <button onClick={() => setActivePolicy('privacy')} className="hover:text-neon transition">Privacy Policy</button>
-      <span>•</span>
-      <button onClick={() => setActivePolicy('terms')} className="hover:text-neon transition">Terms of Service</button>
-      <span>•</span>
-      <button onClick={() => setActivePolicy('refund')} className="hover:text-neon transition">Refund Policy</button>
+    <div className="legal-menu">
+      <button onClick={() => setActivePolicy('privacy')}>Privacy Policy</button>
+      <span className="divider">•</span>
+      <button onClick={() => setActivePolicy('terms')}>Terms of Service</button>
+      <span className="divider">•</span>
+      <button onClick={() => setActivePolicy('refund')}>Refund Policy</button>
+
+      <style jsx>{`
+        .legal-menu {
+          display: flex; gap: 15px; justify-content: center; align-items: center;
+          margin-bottom: 20px; font-size: 0.85rem;
+        }
+        .legal-menu button {
+          background: none; border: none; color: #666; cursor: pointer;
+          font-weight: 500; transition: color 0.3s; padding: 0;
+        }
+        .legal-menu button:hover { color: #00ff88; text-decoration: underline; text-underline-offset: 4px; }
+        .divider { color: #333; }
+      `}</style>
     </div>
   );
 
+  // --- RENDER: THE POPUP MODAL ---
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#0a0a0f] border border-gray-800 w-full max-w-lg rounded-2xl p-6 relative shadow-2xl">
-        <button 
-          onClick={() => setActivePolicy(null)}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
-        >
-          <X size={20} />
-        </button>
-
-        <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
-          {policies[activePolicy].icon}
-          <h2 className="text-xl font-bold text-white">{policies[activePolicy].title}</h2>
+    <div className="modal-overlay">
+      <div className="modal-card animate-fluent">
+        
+        {/* Header */}
+        <div className="modal-header">
+          <div className="modal-title-box">
+            {policies[activePolicy].icon}
+            <h2>{policies[activePolicy].title}</h2>
+          </div>
+          <button onClick={() => setActivePolicy(null)} className="close-btn">
+            <X size={24} />
+          </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+        {/* Content */}
+        <div className="modal-body custom-scrollbar">
           {policies[activePolicy].content}
         </div>
 
-        <div className="mt-6 pt-4 border-t border-gray-800 text-center">
-          <button 
-            onClick={() => setActivePolicy(null)}
-            className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-lg text-sm font-semibold transition"
-          >
+        {/* Footer */}
+        <div className="modal-footer">
+          <button onClick={() => setActivePolicy(null)} className="done-btn">
             Close Document
           </button>
         </div>
+
       </div>
-      <style jsx global>{`
+
+      {/* --- CSS FOR MODAL --- */}
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed; inset: 0; z-index: 10000;
+          background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+          display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-card {
+          background: #0a0a0f; border: 1px solid rgba(255,255,255,0.1);
+          width: 100%; max-width: 550px; border-radius: 24px;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.7); overflow: hidden;
+          display: flex; flex-direction: column; max-height: 80vh;
+        }
+        .modal-header {
+          padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05);
+          display: flex; justify-content: space-between; align-items: center;
+          background: rgba(255,255,255,0.02);
+        }
+        .modal-title-box { display: flex; align-items: center; gap: 12px; }
+        .modal-title-box h2 { font-size: 1.2rem; font-weight: 700; color: white; margin: 0; }
         .text-neon { color: #00ff88; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; borderRadius: 4px; }
+        
+        .close-btn {
+          background: none; border: none; color: #666; cursor: pointer; transition: 0.2s;
+          padding: 8px; border-radius: 50%;
+        }
+        .close-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        .modal-body { padding: 30px; overflow-y: auto; color: #ccc; line-height: 1.7; font-size: 0.95rem; }
+        .policy-content h4 { color: white; margin-top: 20px; margin-bottom: 8px; font-weight: 700; }
+        .policy-date { font-size: 0.8rem; color: #666; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .modal-footer {
+          padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); text-align: right;
+        }
+        .done-btn {
+          background: white; color: black; font-weight: 700; border: none;
+          padding: 12px 24px; border-radius: 12px; cursor: pointer; transition: 0.2s;
+        }
+        .done-btn:hover { background: #ccc; }
+
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0a0a0f; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
       `}</style>
     </div>
   );
