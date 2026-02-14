@@ -179,42 +179,88 @@ export default function Home() {
             </div>
           </div>
         </section>
+      
 
-        {/* --- FOOTER --- */}
-        <footer className="footer">
-          <div className="container">
-            <div className="footer-inner">
-              <div style={{textAlign: 'left'}}>
-                <h4 style={{color: '#fff', marginBottom: '10px'}}>CashTree</h4>
-                <p>The performance reward layer for the modern internet.</p>
-              </div>
-              <div className="footer-links">
-                <button style={{background:'none', border:'none', color:'#666', marginRight:'20px', cursor: 'pointer'}}>Terms</button>
-                <button style={{background:'none', border:'none', color:'#666', marginRight:'20px', cursor: 'pointer'}}>Privacy</button>
-                <button style={{background:'none', border:'none', color:'#666', cursor: 'pointer'}}>Refunds</button>
+
+        {/* --- 10/10 FOOTER --- */}
+      <footer className="footer" style={{borderTop: '1px solid #222', marginTop: 'auto', background: '#020202', padding: '80px 0 40px'}}>
+        <div className="container">
+          
+          {/* Top Grid Section */}
+          <div style={{
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gap: '40px', 
+            marginBottom: '60px', 
+            textAlign: 'left'
+          }}>
+            
+            {/* Column 1: Brand */}
+            <div>
+              <Link href="/" className="brand" style={{fontSize: '1.5rem', marginBottom: '15px', display: 'block'}}>
+                Cash<span style={{color: '#00ff88'}}>Tree</span>
+              </Link>
+              <p style={{color: '#666', fontSize: '0.9rem', lineHeight: '1.6', maxWidth: '300px'}}>
+                The performance reward layer for the modern internet. 
+                Connecting creators with instant liquidity.
+              </p>
+            </div>
+
+            {/* Column 2: Platform Links */}
+            <div>
+              <h4 style={{color: '#fff', fontSize: '1rem', marginBottom: '20px', fontWeight: '700'}}>Platform</h4>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9rem', color: '#888'}}>
+                <Link href="/campaigns" style={{transition: '0.2s', color: '#aaa'}}>Live Inventory</Link>
+                <a href="#how-it-works" style={{transition: '0.2s', color: '#aaa'}}>The Protocol</a>
+                <Link href="/login" style={{transition: '0.2s', color: '#aaa'}}>Partner Login</Link>
               </div>
             </div>
-            <div style={{marginTop: '40px', fontSize: '0.8rem', opacity: 0.5}}>© 2024 CashTree. All rights reserved.</div>
+
+            {/* Column 3: Support */}
+            <div>
+              <h4 style={{color: '#fff', fontSize: '1rem', marginBottom: '20px', fontWeight: '700'}}>Support</h4>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9rem', color: '#888'}}>
+                <a href="mailto:help@cashttree.online" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>
+                   📧 help@cashttree.online
+                </a>
+                <a href="https://t.me/CashtTree_bot" target="_blank" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>
+                   ✈️ Telegram Support
+                </a>
+              </div>
+            </div>
           </div>
-        </footer>
-      </main>
 
-      <LegalDocs />
-    </div>
-  );
-}
+          {/* Bottom Bar (Legal + Copyright) */}
+          <div style={{
+            borderTop: '1px solid #222', 
+            paddingTop: '30px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            gap: '20px'
+          }}>
+            
+            {/* This Component Renders the "Terms | Privacy | Refund" buttons automatically */}
+            <LegalDocs />
+            
+            <div style={{color: '#444', fontSize: '0.8rem'}}>
+              © 2026 CashTree Network. All rights reserved.
+            </div>
+          </div>
 
-// --- SUB-COMPONENT (Helper) ---
-function FaqItem({ question, answer, isOpen, onClick }) {
-  return (
-    <div className={`faq-item ${isOpen ? 'active' : ''}`}>
-      <button className="faq-question" onClick={onClick}>
-        {question}
-        <span style={{color: '#00ff88'}}>{isOpen ? '−' : '+'}</span>
-      </button>
-      <div className="faq-answer" style={{maxHeight: isOpen ? '500px' : '0', paddingBottom: isOpen ? '20px' : '0'}}>
-        <p>{answer}</p>
-      </div>
-    </div>
-  );
-}
+              </div>
+            </footer>
+          </main>
+          </div>
+        );
+      }
+      
+      function FaqItem({ question, answer, isOpen, onClick }) {
+        return (
+          <div className="faq-item" onClick={onClick} style={{ cursor: 'pointer' }}>
+            <div className="faq-question">{question}</div>
+            {isOpen && <div className="faq-answer">{answer}</div>}
+          </div>
+        );
+      }
+  
