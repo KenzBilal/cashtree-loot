@@ -226,8 +226,8 @@ export default function Home() {
                    📞 Contact Us
                 </Link>
 
-                <a href="mailto:help@cashttree.online" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>
-                   📧 help@cashttree.online
+                <a href="mailto:cashttree@gmail.com" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>
+                   📧 cashttree@gmail.com
                 </a>
                 
                 <a href="https://t.me/CashtTree_bot" target="_blank" style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa'}}>

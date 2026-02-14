@@ -44,11 +44,11 @@ export default function ContactPage() {
           </p>
 
           <div className="contact-methods">
-            <a href="mailto:help@cashttree.online" className="method-item">
+            <a href="mailto:cashttree@gmail.com" className="method-item">
               <div className="method-icon"><Mail /></div>
               <div className="method-text">
                 <h4>Email Support</h4>
-                <span>help@cashttree.online</span>
+                <span>cashttree@gmail.com</span>
               </div>
             </a>
             
