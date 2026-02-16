@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css"; 
 import Script from "next/script";
+import CookieConsent from '../components/CookieConsent';
 
 // 1. FONT OPTIMIZATION
 const inter = Inter({ subsets: ["latin"], display: 'swap' });
@@ -101,7 +102,7 @@ export default function RootLayout({ children }) {
     "description": "Performance marketing network connecting publishers with financial and gaming brands.",
     "sameAs": [
       "https://t.me/CashtTree_bot",
-      "https://instagram.com/cashttree_official" // Add if you have it
+      "https://instagram.com/cashttree_official" 
     ],
     "contactPoint": {
       "@type": "ContactPoint",
@@ -129,8 +130,11 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         
-        {/* MAIN APP */}
+        {/* MAIN APP CONTENT */}
         {children}
+
+        {/* LEGAL: COOKIE CONSENT BANNER */}
+        <CookieConsent />
         
       </body>
     </html>
