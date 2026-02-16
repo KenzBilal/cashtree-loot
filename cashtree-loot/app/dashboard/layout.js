@@ -1,7 +1,8 @@
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { ShieldAlert, Clock, RefreshCw } from 'lucide-react'; // ✅ Added Icons
+import Link from 'next/link'; // ✅ Added Link
 import MobileNav from './MobileNav';
 import Sidebar from './Sidebar';
 
@@ -14,8 +15,7 @@ export default async function DashboardLayout({ children }) {
     redirect('/login');
   }
 
-  // 2. CREATE AUTHENTICATED CLIENT (Crucial Fix)
-  // We inject the token into headers so Supabase knows WHO is asking.
+  // 2. CREATE AUTHENTICATED CLIENT
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -29,14 +29,12 @@ export default async function DashboardLayout({ children }) {
   );
 
   // 3. VERIFY USER & FETCH ACCOUNT
-  // We fetch user and account status in parallel for max speed
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
     redirect('/login');
   }
 
-  // Fetch Account Details (Role, Frozen Status)
   const { data: account, error: accountError } = await supabase
     .from('accounts')
     .select('role, is_frozen')
@@ -44,13 +42,12 @@ export default async function DashboardLayout({ children }) {
     .single();
 
   if (accountError || !account) {
-    // If auth exists but account row is missing, force login (or signup)
     redirect('/login');
   }
 
   // 4. SECURITY GATES
   
-  // A. Check Freeze Status (Ban Hammer)
+  // A. Check Freeze Status
   if (account.is_frozen) {
     redirect('/login?error=Account_Suspended');
   }
@@ -69,7 +66,7 @@ export default async function DashboardLayout({ children }) {
       .single();
 
     if (config?.maintenance_mode) {
-      return <MaintenanceScreen />;
+      return <MaintenanceScreen />; // ✅ Renders the new 10/10 screen
     }
   }
 
@@ -77,12 +74,12 @@ export default async function DashboardLayout({ children }) {
   return (
     <div style={{minHeight: '100vh', background: '#030305', color: '#fff'}}>
       
-      {/* --- DESKTOP: SIDEBAR (Hidden on Mobile) --- */}
+      {/* --- DESKTOP: SIDEBAR --- */}
       <div className="sidebar-wrapper">
         <Sidebar />
       </div>
 
-      {/* --- MOBILE: TOP BAR (Optional, for brand) --- */}
+      {/* --- MOBILE: TOP BAR --- */}
       <div className="mobile-header">
         <div style={{fontWeight: '900', fontSize: '18px', letterSpacing: '-1px'}}>
           Cash<span style={{color: '#00ff88'}}>Tree</span>
@@ -96,14 +93,13 @@ export default async function DashboardLayout({ children }) {
         </div>
       </div>
 
-      {/* --- MOBILE: BOTTOM NAV (Hidden on Desktop) --- */}
+      {/* --- MOBILE: BOTTOM NAV --- */}
       <div className="mobile-nav-wrapper">
         <MobileNav />
       </div>
 
-      {/* --- RESPONSIVE CSS LOGIC --- */}
+      {/* --- RESPONSIVE CSS --- */}
       <style>{`
-        /* MOBILE FIRST (Default) */
         .sidebar-wrapper { display: none; }
         .mobile-nav-wrapper { display: block; }
         .mobile-header {
@@ -113,19 +109,17 @@ export default async function DashboardLayout({ children }) {
           position: sticky; top: 0; z-index: 40;
         }
         .main-content { 
-          padding: 20px 20px 100px 20px; /* Bottom padding for nav */
+          padding: 20px 20px 100px 20px; 
           min-height: 100vh;
         }
 
-        /* DESKTOP (Screens larger than 768px) */
         @media (min-width: 768px) {
           .sidebar-wrapper { display: block; }
           .mobile-nav-wrapper { display: none; }
           .mobile-header { display: none; }
-          
           .main-content {
             padding: 40px;
-            padding-left: 300px; /* Push content right of sidebar */
+            padding-left: 300px; 
           }
         }
       `}</style>
@@ -135,47 +129,87 @@ export default async function DashboardLayout({ children }) {
 }
 
 // ---------------------------------------------------------
-// COMPONENT: MAINTENANCE SCREEN (Animated)
+// COMPONENT: 10/10 MAINTENANCE SCREEN (Neon Red Glass)
 // ---------------------------------------------------------
 function MaintenanceScreen() {
   return (
     <div style={{
-      height: '100vh', 
-      background: '#050505', 
-      color: '#fff', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      textAlign: 'center', 
-      padding: '20px'
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', background: '#050505',
+      color: 'white', fontFamily: '"Inter", sans-serif', padding: '20px',
+      position: 'relative', overflow: 'hidden'
     }}>
+      
+      {/* Background Glow FX */}
       <div style={{
-        fontSize: '60px', marginBottom: '20px', 
-        filter: 'drop-shadow(0 0 20px rgba(234, 179, 8, 0.4))',
-        animation: 'bounce 2s infinite'
-      }}>🛠️</div>
-      
-      <h1 style={{fontSize: '28px', fontWeight: '900', marginBottom: '10px', color: '#fff'}}>System Upgrade</h1>
-      <p style={{color: '#888', maxWidth: '320px', lineHeight: '1.6', fontSize: '14px'}}>
-        We are pushing a security update to the CashTree servers.
-        <br/><br/>
-        <span style={{
-          color: '#eab308', fontSize: '11px', fontWeight: '800', 
-          textTransform: 'uppercase', letterSpacing: '1px',
-          padding: '6px 12px', background: 'rgba(234, 179, 8, 0.1)',
-          borderRadius: '12px', border: '1px solid rgba(234, 179, 8, 0.2)'
+        position: 'absolute', width: '600px', height: '600px',
+        background: 'radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, rgba(0,0,0,0) 70%)',
+        top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 0
+      }} />
+
+      {/* Glass Card */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        background: 'rgba(10, 10, 15, 0.6)', backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '24px',
+        padding: '60px 40px', maxWidth: '480px', width: '100%', textAlign: 'center',
+        boxShadow: '0 20px 50px -10px rgba(0,0,0,0.8)'
+      }}>
+        
+        {/* Animated Icon */}
+        <div style={{
+          width: '80px', height: '80px', margin: '0 auto 30px',
+          background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          boxShadow: '0 0 30px rgba(239, 68, 68, 0.2)'
         }}>
-          Estimated Time: 15 Mins
-        </span>
-      </p>
-      
+          <ShieldAlert size={40} color="#ef4444" className="pulse-icon" />
+        </div>
+
+        <h1 style={{fontSize: '2rem', fontWeight: '800', marginBottom: '10px', color: '#fff', letterSpacing: '-1px'}}>
+          System Under Maintenance
+        </h1>
+        
+        <p style={{color: '#888', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '30px'}}>
+          Our engineers are currently pushing a critical security update. 
+          Access is temporarily restricted to ensure data integrity.
+        </p>
+
+        {/* Status Box */}
+        <div style={{
+          background: '#000', border: '1px solid #222', borderRadius: '12px',
+          padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+          marginBottom: '30px'
+        }}>
+          <Clock size={16} color="#ef4444" />
+          <span style={{fontSize: '0.9rem', color: '#ccc', fontWeight: '600'}}>
+            Estimated Downtime: <span style={{color: '#fff'}}>~30 Mins</span>
+          </span>
+        </div>
+
+        {/* Manual Reload Button */}
+        <a 
+          href="/dashboard"
+          style={{
+            background: '#fff', color: '#000', border: 'none', padding: '14px 28px',
+            borderRadius: '10px', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: '8px', transition: '0.2s',
+            textDecoration: 'none'
+          }}
+        >
+          <RefreshCw size={16} /> Check Status
+        </a>
+
+      </div>
+
       <style>{`
-        @keyframes bounce { 
-          0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 
-          40% {transform: translateY(-20px);} 
-          60% {transform: translateY(-10px);} 
+        @keyframes pulse { 
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 
+          70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
         }
+        .pulse-icon { animation: pulse 2s infinite; }
       `}</style>
     </div>
   );
