@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, MessageCircle, MapPin, CheckCircle2, ArrowRight, ShieldAlert, Briefcase, HelpCircle } from 'lucide-react';
+import { Mail, MessageCircle, ChevronDown, CheckCircle2, ShieldAlert, Briefcase } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ 
@@ -14,16 +14,38 @@ export default function ContactPage() {
     message: '' 
   });
   
-  const [status, setStatus] = useState('idle'); // idle | submitting | success
+  const [status, setStatus] = useState('idle'); // idle | submitting | success | error
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Controls the custom dropdown
 
-  const handleSubmit = (e) => {
+  // Custom Options List
+  const categories = [
+    "General Inquiry",
+    "Advertiser Partnership (Traffic Source)",
+    "Publisher Support (Tracking/Payouts)",
+    "Bug Bounty / Security Report",
+    "Legal & Compliance"
+  ];
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('submitting');
-    // Simulate API call
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({ name: '', email: '', phone: '', company: '', category: 'General Inquiry', message: '' });
-    }, 2000);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (res.ok) {
+        setStatus('success');
+        setFormData({ name: '', email: '', phone: '', company: '', category: 'General Inquiry', message: '' });
+      } else {
+        setStatus('error');
+      }
+    } catch (err) {
+      setStatus('error');
+    }
   };
 
   return (
@@ -39,7 +61,7 @@ export default function ContactPage() {
         </div>
       </header>
 
-      {/* --- HERO / BACKGROUND FX --- */}
+      {/* --- HERO FX --- */}
       <div style={{
         position: 'fixed', top: '20%', left: '50%', transform: 'translate(-50%, -50%)',
         width: '600px', height: '600px', background: 'rgba(0, 255, 136, 0.05)',
@@ -62,7 +84,6 @@ export default function ContactPage() {
           </p>
 
           <div className="contact-methods">
-            {/* Method 1 */}
             <div className="method-item">
               <div className="method-icon"><Briefcase /></div>
               <div className="method-text">
@@ -71,16 +92,6 @@ export default function ContactPage() {
               </div>
             </div>
             
-            {/* Method 2 */}
-            <div className="method-item">
-              <div className="method-icon"><ShieldAlert /></div>
-              <div className="method-text">
-                <h4 style={{color: 'white', marginBottom: '4px'}}>Security & Fraud</h4>
-                <span style={{color: '#666', fontSize: '0.9rem'}}>security@cashttree.online</span>
-              </div>
-            </div>
-
-            {/* Method 3 */}
             <a href="https://t.me/CashtTree_bot" target="_blank" className="method-item" style={{borderColor: 'rgba(34, 158, 217, 0.3)', background: 'rgba(34, 158, 217, 0.05)'}}>
               <div className="method-icon" style={{color: '#229ED9'}}><MessageCircle /></div>
               <div className="method-text">
@@ -147,19 +158,50 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className="form-group">
+              {/* --- CUSTOM GLASS DROPDOWN --- */}
+              <div className="form-group" style={{position: 'relative', zIndex: 50}}>
                 <label className="form-label">Department</label>
-                <select 
+                
+                {/* The Trigger Button */}
+                <div 
                   className="form-input"
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  style={{
+                    cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: isDropdownOpen ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)'
+                  }}
                 >
-                  <option>General Inquiry</option>
-                  <option>Advertiser Partnership (Traffic Source)</option>
-                  <option>Publisher Support (Tracking/Payouts)</option>
-                  <option>Bug Bounty / Security Report</option>
-                  <option>Legal & Compliance</option>
-                </select>
+                  <span style={{color: 'white'}}>{formData.category}</span>
+                  <ChevronDown size={16} color="#666" style={{transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s'}} />
+                </div>
+
+                {/* The Dropdown List (Absolute Positioned) */}
+                {isDropdownOpen && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
+                    background: '#0a0a0f', border: '1px solid #333', borderRadius: '12px',
+                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.8)', overflow: 'hidden',
+                    animation: 'fadeIn 0.15s ease-out'
+                  }}>
+                    {categories.map((option) => (
+                      <div 
+                        key={option}
+                        onClick={() => {
+                          setFormData({...formData, category: option});
+                          setIsDropdownOpen(false);
+                        }}
+                        style={{
+                          padding: '12px 16px', color: '#ccc', cursor: 'pointer', fontSize: '0.95rem',
+                          transition: '0.2s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                        }}
+                        onMouseOver={(e) => {e.target.style.background = '#00ff88'; e.target.style.color = '#000'; e.target.style.fontWeight = '600'}}
+                        onMouseOut={(e) => {e.target.style.background = 'transparent'; e.target.style.color = '#ccc'; e.target.style.fontWeight = '400'}}
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -167,14 +209,14 @@ export default function ContactPage() {
                 <textarea 
                   required
                   className="form-textarea"
-                  placeholder="Please provide specific details, error codes, or proposal outlines..."
+                  placeholder="Please provide specific details..."
                   value={formData.message}
                   onChange={(e) => setFormData({...formData, message: e.target.value})}
                 ></textarea>
               </div>
 
               <button type="submit" className="btn-send" disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'Processing Request...' : 'Initiate Ticket'}
+                {status === 'submitting' ? 'Processing...' : status === 'error' ? 'Error. Try Again.' : 'Initiate Ticket'}
               </button>
             </form>
           )}
@@ -182,14 +224,20 @@ export default function ContactPage() {
 
       </div>
 
-      {/* --- FOOTER --- */}
       <footer style={{
         textAlign: 'center', padding: '40px', borderTop: '1px solid #222', 
         color: '#444', fontSize: '0.8rem', marginTop: 'auto', background: '#020202'
       }}>
         © 2026 CashTree Network. Secured by 256-bit SSL.
       </footer>
-
+      
+      {/* Animation for the Dropdown */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
