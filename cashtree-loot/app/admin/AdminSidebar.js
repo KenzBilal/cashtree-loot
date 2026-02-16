@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
