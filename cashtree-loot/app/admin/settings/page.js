@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import SettingsForm from './SettingsForm';
+import { Settings, Sliders } from 'lucide-react';
 
-export const revalidate = 0; // Always fresh data
+export const revalidate = 0; 
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,45 +10,36 @@ const supabaseAdmin = createClient(
 );
 
 export default async function AdminSettingsPage() {
-  // 1. FETCH CONFIG
   const { data: config, error } = await supabaseAdmin
     .from('system_config')
     .select('*')
     .eq('id', 1)
     .single();
 
-  // If table is missing, show a clean error instead of crashing
   if (error || !config) {
     return (
-      <div style={{padding: '40px', color: '#ef4444', border: '1px solid #333', borderRadius: '16px', background: '#0a0a0a'}}>
-        <h2 style={{fontSize: '18px', fontWeight: 'bold', marginBottom: '8px'}}>System Config Missing</h2>
-        <p style={{fontSize: '13px', color: '#888'}}>
-          Please run the SQL setup command to create the 'system_config' table.
-        </p>
+      <div style={{ padding: '40px', color: '#ef4444', background: '#0a0a0f', border: '1px solid #333', borderRadius: '16px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>Configuration Error</h3>
+        <p style={{ fontSize: '13px', color: '#888' }}>Database table 'system_config' not found. Please run the setup SQL.</p>
       </div>
     );
   }
 
-  // --- STYLES ---
-  const headerStyle = { marginBottom: '40px' };
-
   return (
-    <div className="fade-in">
+    <div style={{ fontFamily: '"Inter", sans-serif', color: 'white', minHeight: '100vh', padding: '40px', background: '#050505' }}>
       
       {/* HEADER */}
-      <div style={headerStyle}>
-        <h1 style={{fontSize: '32px', fontWeight: '900', color: '#fff', margin: '0 0 5px 0', letterSpacing: '-1px'}}>
-          System <span style={{color: '#666'}}>Control</span>
+      <div style={{ marginBottom: '40px', maxWidth: '800px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <Settings color="#fff" /> System Settings
         </h1>
-        <p style={{color: '#888', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px'}}>
-          Global Configuration & Status
+        <p style={{ color: '#666', fontSize: '14px' }}>
+          Configure global parameters, maintenance mode, and support channels.
         </p>
       </div>
 
-      {/* RENDER FORM */}
-      <div style={{maxWidth: '700px'}}>
-        <SettingsForm config={config} />
-      </div>
+      {/* FORM */}
+      <SettingsForm config={config} />
 
     </div>
   );
