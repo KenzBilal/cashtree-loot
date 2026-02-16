@@ -1,9 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { 
+  LayoutDashboard, 
+  Target, 
+  CheckCircle2, 
+  Banknote, 
+  Users, 
+  Shield, 
+  Mail, 
+  Settings 
+} from 'lucide-react';
 
 export default function AdminSidebar({ adminName, logoutAction }) {
   const pathname = usePathname();
@@ -11,14 +20,14 @@ export default function AdminSidebar({ adminName, logoutAction }) {
 
   // --- NAVIGATION CONFIG ---
   const navItems = [
-    { name: 'Overview', path: '/admin', icon: '📊' },
-    { name: 'Campaigns', path: '/admin/campaigns', icon: '🎯' },
-    { name: 'Approvals', path: '/admin/leads', icon: '✅' },
-    { name: 'Finance', path: '/admin/finance', icon: '💰' },
-    { name: 'Promoters', path: '/admin/users', icon: '👥' },
-    { name: 'Audit Logs', path: '/admin/audit', icon: '🛡️' },
-    { name: 'Inquiries', path: '/admin/inquiries', icon: <Mail size={18} /> },
-    { name: 'Settings', path: '/admin/settings', icon: '⚙️' },
+   { name: 'Overview', path: '/admin', icon: <LayoutDashboard size={18} /> },
+  { name: 'Campaigns', path: '/admin/campaigns', icon: <Target size={18} /> },
+  { name: 'Approvals', path: '/admin/leads', icon: <CheckCircle2 size={18} /> },
+  { name: 'Finance', path: '/admin/finance', icon: <Banknote size={18} /> },
+  { name: 'Promoters', path: '/admin/users', icon: <Users size={18} /> },
+  { name: 'Audit Logs', path: '/admin/audit', icon: <Shield size={18} /> },
+  { name: 'Inquiries', path: '/admin/inquiries', icon: <Mail size={18} /> },
+  { name: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> },
   ];
 
   // --- STYLES ---
