@@ -2,21 +2,28 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, MessageCircle, MapPin, Send, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, MessageCircle, MapPin, CheckCircle2, ArrowRight, ShieldAlert, Briefcase, HelpCircle } from 'lucide-react';
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: 'Support', message: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    phone: '', 
+    company: '',
+    category: 'General Inquiry', 
+    message: '' 
+  });
+  
   const [status, setStatus] = useState('idle'); // idle | submitting | success
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setStatus('submitting');
-    
     // Simulate API call
     setTimeout(() => {
       setStatus('success');
-      setFormData({ name: '', email: '', subject: 'Support', message: '' });
-    }, 1500);
+      setFormData({ name: '', email: '', phone: '', company: '', category: 'General Inquiry', message: '' });
+    }, 2000);
   };
 
   return (
@@ -32,108 +39,142 @@ export default function ContactPage() {
         </div>
       </header>
 
-      {/* --- MAIN CONTENT --- */}
+      {/* --- HERO / BACKGROUND FX --- */}
+      <div style={{
+        position: 'fixed', top: '20%', left: '50%', transform: 'translate(-50%, -50%)',
+        width: '600px', height: '600px', background: 'rgba(0, 255, 136, 0.05)',
+        filter: 'blur(120px)', zIndex: -1, pointerEvents: 'none'
+      }} />
+
+      {/* --- MAIN SPLIT LAYOUT --- */}
       <div className="contact-split animate-fluent">
         
-        {/* LEFT SIDE: INFO */}
+        {/* LEFT SIDE: CORPORATE INFO */}
         <div className="contact-left">
-          <span className="tag success" style={{marginBottom: '20px', display: 'inline-block'}}>● 24/7 Priority Support</span>
-          <h1>Let's scale your <br/> traffic together.</h1>
-          <p>
-            Whether you are a publisher looking for custom rates or a brand wanting to list an offer, our team is ready to deploy.
+          <div className="tag success" style={{marginBottom: '24px', display: 'inline-block'}}>
+            ● Enterprise Support
+          </div>
+          <h1 style={{fontSize: '3.5rem', fontWeight: '900', lineHeight: '1.1', marginBottom: '20px', color: 'white'}}>
+            Scale with <br/> <span style={{color: '#00ff88'}}>Certainty.</span>
+          </h1>
+          <p style={{color: '#888', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '50px', maxWidth: '450px'}}>
+            Connect directly with our network operations team. Whether you are an advertiser seeking traffic or a publisher reporting a tracking anomaly, we prioritize your ticket.
           </p>
 
           <div className="contact-methods">
-            <a href="mailto:cashttree@gmail.com" className="method-item">
-              <div className="method-icon"><Mail /></div>
-              <div className="method-text">
-                <h4>Email Support</h4>
-                <span>cashttree@gmail.com</span>
-              </div>
-            </a>
-            
-            <a href="https://t.me/CashtTree_bot" target="_blank" className="method-item">
-              <div className="method-icon"><MessageCircle /></div>
-              <div className="method-text">
-                <h4>Telegram Live</h4>
-                <span>@CashTreeSupport</span>
-              </div>
-            </a>
-
+            {/* Method 1 */}
             <div className="method-item">
-              <div className="method-icon"><MapPin /></div>
+              <div className="method-icon"><Briefcase /></div>
               <div className="method-text">
-                <h4>Headquarters</h4>
-                <span>Bengaluru, India</span>
+                <h4 style={{color: 'white', marginBottom: '4px'}}>Business Partnerships</h4>
+                <span style={{color: '#666', fontSize: '0.9rem'}}>partners@cashttree.online</span>
               </div>
             </div>
+            
+            {/* Method 2 */}
+            <div className="method-item">
+              <div className="method-icon"><ShieldAlert /></div>
+              <div className="method-text">
+                <h4 style={{color: 'white', marginBottom: '4px'}}>Security & Fraud</h4>
+                <span style={{color: '#666', fontSize: '0.9rem'}}>security@cashttree.online</span>
+              </div>
+            </div>
+
+            {/* Method 3 */}
+            <a href="https://t.me/CashtTree_bot" target="_blank" className="method-item" style={{borderColor: 'rgba(34, 158, 217, 0.3)', background: 'rgba(34, 158, 217, 0.05)'}}>
+              <div className="method-icon" style={{color: '#229ED9'}}><MessageCircle /></div>
+              <div className="method-text">
+                <h4 style={{color: '#229ED9', marginBottom: '4px'}}>Telegram Live Chat</h4>
+                <span style={{color: '#666', fontSize: '0.9rem'}}>@CashTreeSupport (24/7)</span>
+              </div>
+            </a>
           </div>
         </div>
 
-        {/* RIGHT SIDE: FORM */}
+        {/* RIGHT SIDE: GLASS FORM */}
         <div className="contact-form-card">
           {status === 'success' ? (
-            <div style={{textAlign: 'center', padding: '40px 0'}}>
-              <CheckCircle2 size={60} color="#00ff88" style={{margin: '0 auto 20px'}}/>
-              <h3 style={{color: 'white', fontSize: '1.5rem', marginBottom: '10px'}}>Message Received</h3>
-              <p style={{color: '#888', marginBottom: '30px'}}>Our team will contact you within 4 hours.</p>
-              <button onClick={() => setStatus('idle')} className="btn-send">Send Another</button>
+            <div style={{textAlign: 'center', padding: '60px 20px'}}>
+              <div style={{
+                width: '80px', height: '80px', background: 'rgba(0, 255, 136, 0.1)', 
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 30px'
+              }}>
+                <CheckCircle2 size={40} color="#00ff88"/>
+              </div>
+              <h3 style={{color: 'white', fontSize: '1.8rem', marginBottom: '15px', fontWeight: '800'}}>Ticket Created</h3>
+              <p style={{color: '#888', marginBottom: '40px', lineHeight: '1.6'}}>
+                Reference ID: #CT-{Math.floor(Math.random() * 10000)}<br/>
+                Our compliance team will review your submission shortly.
+              </p>
+              <button onClick={() => setStatus('idle')} className="btn-send">Submit New Request</button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <h3 style={{color: 'white', fontSize: '1.5rem', marginBottom: '25px'}}>Send a Request</h3>
+              <h3 style={{color: 'white', fontSize: '1.5rem', marginBottom: '30px', fontWeight: '800'}}>Submit Ticket</h3>
               
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input 
-                  type="text" 
-                  required
-                  className="form-input"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                />
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input 
+                    type="text" required className="form-input" placeholder="Enter Name"
+                    value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Business Email</label>
+                  <input 
+                    type="email" required className="form-input" placeholder="name@company.com"
+                    value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+                <div className="form-group">
+                  <label className="form-label">Phone Number (Optional)</label>
+                  <input 
+                    type="tel" className="form-input" placeholder="+91 XXXXX XXXXX"
+                    value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company / Network</label>
+                  <input 
+                    type="text" className="form-input" placeholder="Agency Name"
+                    value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})}
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input 
-                  type="email" 
-                  required
-                  className="form-input"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Inquiry Type</label>
+                <label className="form-label">Department</label>
                 <select 
                   className="form-input"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
                 >
-                  <option value="Support">Publisher Support</option>
-                  <option value="Payment">Payment Issue</option>
-                  <option value="Partnership">Brand Partnership</option>
-                  <option value="Other">Other</option>
+                  <option>General Inquiry</option>
+                  <option>Advertiser Partnership (Traffic Source)</option>
+                  <option>Publisher Support (Tracking/Payouts)</option>
+                  <option>Bug Bounty / Security Report</option>
+                  <option>Legal & Compliance</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Message</label>
+                <label className="form-label">Detailed Description</label>
                 <textarea 
                   required
                   className="form-textarea"
-                  placeholder="Tell us how we can help..."
+                  placeholder="Please provide specific details, error codes, or proposal outlines..."
                   value={formData.message}
                   onChange={(e) => setFormData({...formData, message: e.target.value})}
                 ></textarea>
               </div>
 
               <button type="submit" className="btn-send" disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'Sending...' : 'Submit Request'}
+                {status === 'submitting' ? 'Processing Request...' : 'Initiate Ticket'}
               </button>
             </form>
           )}
@@ -141,9 +182,12 @@ export default function ContactPage() {
 
       </div>
 
-      {/* --- FOOTER (Simplified) --- */}
-      <footer style={{textAlign: 'center', padding: '40px', borderTop: '1px solid #222', color: '#666', fontSize: '0.9rem'}}>
-        © 2026 CashTree Network. All rights reserved.
+      {/* --- FOOTER --- */}
+      <footer style={{
+        textAlign: 'center', padding: '40px', borderTop: '1px solid #222', 
+        color: '#444', fontSize: '0.8rem', marginTop: 'auto', background: '#020202'
+      }}>
+        © 2026 CashTree Network. Secured by 256-bit SSL.
       </footer>
 
     </div>
