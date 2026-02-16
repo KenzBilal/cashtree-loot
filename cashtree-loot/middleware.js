@@ -3,37 +3,28 @@ import { NextResponse } from 'next/server';
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   
-  // 1. CHECK FOR SESSION
-  // We look for the "ct_session" cookie you set in page.js line 70
+  // 1. Get the session cookie
   const session = request.cookies.get('ct_session')?.value;
 
-  // 2. DEFINE PROTECTED ZONES
-  // This covers /admin, /admin/files, /admin/inquiries, etc.
-  // I added /dashboard too so users can't skip login to see that either.
-  const isProtected = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
+  // 2. Define Protected Zones
+  const isProtectedPath = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
 
-  // 3. SECURITY GATE
-  // If trying to enter a protected zone WITHOUT a session -> Kick to Login
-  if (isProtected && !session) {
+  // 3. SECURITY GATE: If trying to access protected area WITHOUT session -> Kick to Login
+  if (isProtectedPath && !session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 4. CONVENIENCE REDIRECT
-  // If they are ALREADY logged in but try to go to /login -> Send to Dashboard
-  if (pathname === '/login' && session) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  // --- LOOP FIX: REMOVED THE AUTO-REDIRECT FROM LOGIN ---
+  // We removed the block that said "If at /login and session exists, go to /dashboard".
+  // This prevents the infinite loop if the dashboard rejects the token.
 
   return NextResponse.next();
 }
 
 export const config = {
-  // 5. MATCHER CONFIGURATION
-  // This tells Next.js to ONLY run this check on these specific paths.
-  // It ignores your API, images, and static files so the site stays fast.
   matcher: [
-    '/admin/:path*',     // Locks Admin & all sub-pages
-    '/dashboard/:path*', // Locks Dashboard & all sub-pages
-    '/login'             // Checks login page for redirect
+    '/admin/:path*', 
+    '/dashboard/:path*', 
+    '/login'
   ],
 };
