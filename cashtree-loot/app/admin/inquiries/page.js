@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Mail, Search, CheckCircle2, Trash2, RefreshCw, 
-  ShieldAlert, Building, Clock, User
+  ShieldAlert, Building, Clock, X, AlertTriangle
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -17,7 +17,10 @@ export default function InquiriesPage() {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all'); // 'all' | 'unread' | 'partnership'
+  const [filter, setFilter] = useState('all'); 
+  
+  // NEW STATE: For the custom delete modal
+  const [deleteTarget, setDeleteTarget] = useState(null); // Stores the ID of ticket to delete
 
   useEffect(() => {
     fetchInquiries();
@@ -34,19 +37,30 @@ export default function InquiriesPage() {
     setLoading(false);
   }
 
-  // --- ACTIONS ---
   const markAsRead = async (id) => {
     setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: 'read' } : i));
     await supabase.from('contact_inquiries').update({ status: 'read' }).eq('id', id);
   };
 
-  const deleteInquiry = async (id) => {
-    if (!confirm('Permanently delete this ticket?')) return;
-    setInquiries(prev => prev.filter(i => i.id !== id));
-    await supabase.from('contact_inquiries').delete().eq('id', id);
+  // 1. OPEN MODAL (Instead of window.confirm)
+  const requestDelete = (id) => {
+    setDeleteTarget(id);
   };
 
-  // --- FILTER LOGIC ---
+  // 2. ACTUAL DELETE ACTION
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    
+    // Optimistic remove
+    setInquiries(prev => prev.filter(i => i.id !== deleteTarget));
+    
+    // DB remove
+    await supabase.from('contact_inquiries').delete().eq('id', deleteTarget);
+    
+    // Close modal
+    setDeleteTarget(null);
+  };
+
   const filteredData = inquiries.filter(item => {
     const term = search.toLowerCase();
     const matchesSearch = 
@@ -69,7 +83,8 @@ export default function InquiriesPage() {
       background: '#050505', 
       color: 'white', 
       padding: '40px', 
-      fontFamily: '"Inter", sans-serif'
+      fontFamily: '"Inter", sans-serif',
+      position: 'relative' // Needed for modal positioning
     }}>
       
       {/* --- HEADER --- */}
@@ -96,14 +111,13 @@ export default function InquiriesPage() {
         </button>
       </div>
 
-      {/* --- CONTROLS BAR --- */}
+      {/* --- CONTROLS --- */}
       <div style={{
         maxWidth: '1000px', margin: '0 auto 30px', 
         background: '#0a0a0f', border: '1px solid #222', borderRadius: '16px', 
         padding: '20px', display: 'flex', gap: '20px', alignItems: 'center',
         boxShadow: '0 20px 50px -10px rgba(0,0,0,0.5)'
       }}>
-        {/* Search */}
         <div style={{flex: 1, position: 'relative'}}>
           <Search size={18} color="#666" style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)'}}/>
           <input 
@@ -121,7 +135,6 @@ export default function InquiriesPage() {
           />
         </div>
 
-        {/* Filters */}
         <div style={{display: 'flex', gap: '10px'}}>
           {['all', 'unread', 'partnership'].map(f => (
             <button 
@@ -143,16 +156,12 @@ export default function InquiriesPage() {
         </div>
       </div>
 
-      {/* --- TICKET LIST --- */}
+      {/* --- LIST --- */}
       <div style={{maxWidth: '1000px', margin: '0 auto', display: 'grid', gap: '20px'}}>
-        
         {loading ? (
            <div style={{textAlign: 'center', padding: '60px', color: '#444'}}>Loading Secure Data...</div>
         ) : filteredData.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: '60px', border: '2px dashed #222', 
-            borderRadius: '16px', color: '#444'
-          }}>
+          <div style={{textAlign: 'center', padding: '60px', border: '2px dashed #222', borderRadius: '16px', color: '#444'}}>
             <ShieldAlert size={48} style={{opacity: 0.2, marginBottom: '20px'}}/>
             <h3>No tickets found matching your criteria.</h3>
           </div>
@@ -167,8 +176,6 @@ export default function InquiriesPage() {
               boxShadow: item.status === 'unread' ? '0 0 30px -10px rgba(0,255,136,0.1)' : 'none',
               transition: '0.2s'
             }}>
-              
-              {/* Badge */}
               {item.status === 'unread' && (
                 <div style={{
                   position: 'absolute', top: '20px', right: '20px',
@@ -179,7 +186,6 @@ export default function InquiriesPage() {
                 </div>
               )}
 
-              {/* Top Row: User Info */}
               <div style={{display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '20px'}}>
                 <div style={{
                   width: '50px', height: '50px', borderRadius: '50%', 
@@ -194,10 +200,7 @@ export default function InquiriesPage() {
                 <div style={{flex: 1}}>
                   <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px'}}>
                     <h3 style={{fontSize: '1.1rem', fontWeight: '700', color: 'white', margin: 0}}>{item.name}</h3>
-                    <span style={{
-                      fontSize: '0.75rem', background: '#111', padding: '2px 8px', 
-                      borderRadius: '4px', border: '1px solid #333', color: '#888'
-                    }}>
+                    <span style={{fontSize: '0.75rem', background: '#111', padding: '2px 8px', borderRadius: '4px', border: '1px solid #333', color: '#888'}}>
                       {item.category || 'General'}
                     </span>
                   </div>
@@ -210,7 +213,6 @@ export default function InquiriesPage() {
                 </div>
               </div>
 
-              {/* Message Box */}
               <div style={{
                 background: '#000', padding: '20px', borderRadius: '12px', border: '1px solid #222',
                 color: '#ccc', lineHeight: '1.6', fontSize: '0.95rem', marginBottom: '20px'
@@ -218,7 +220,6 @@ export default function InquiriesPage() {
                 {item.message}
               </div>
 
-              {/* Action Buttons */}
               <div style={{display: 'flex', justifyContent: 'flex-end', gap: '10px'}}>
                 {item.status !== 'read' && (
                   <button 
@@ -235,7 +236,7 @@ export default function InquiriesPage() {
                   </button>
                 )}
                 <button 
-                  onClick={() => deleteInquiry(item.id)}
+                  onClick={() => requestDelete(item.id)} // <--- TRIGGER MODAL
                   onMouseOver={(e) => {e.target.style.background = 'rgba(255,0,0,0.15)'; e.target.style.borderColor = 'rgba(255,0,0,0.4)'}}
                   onMouseOut={(e) => {e.target.style.background = 'rgba(255,0,0,0.1)'; e.target.style.borderColor = 'rgba(255,0,0,0.2)'}}
                   style={{
@@ -247,16 +248,75 @@ export default function InquiriesPage() {
                   <Trash2 size={16}/> Delete
                 </button>
               </div>
-
             </div>
           ))
         )}
       </div>
 
-      {/* Animation Styles */}
+      {/* --- CUSTOM 10/10 DELETE MODAL --- */}
+      {deleteTarget && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            width: '90%', maxWidth: '400px', background: '#0a0a0f',
+            border: '1px solid #333', borderRadius: '20px', padding: '30px',
+            textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+            transform: 'scale(1)', animation: 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+            <div style={{
+              width: '60px', height: '60px', background: 'rgba(255,0,0,0.1)',
+              color: '#ff4444', borderRadius: '50%', display: 'flex', 
+              alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
+              border: '1px solid rgba(255,0,0,0.2)'
+            }}>
+              <AlertTriangle size={28} />
+            </div>
+
+            <h3 style={{color: 'white', fontSize: '1.4rem', fontWeight: '800', marginBottom: '10px'}}>
+              Delete Ticket?
+            </h3>
+            <p style={{color: '#888', marginBottom: '30px', fontSize: '0.95rem', lineHeight: '1.5'}}>
+              This action cannot be undone. This inquiry will be permanently removed from the database.
+            </p>
+
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+              <button 
+                onClick={() => setDeleteTarget(null)}
+                style={{
+                  background: 'transparent', border: '1px solid #333', color: '#ccc',
+                  padding: '14px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: '600',
+                  cursor: 'pointer', transition: '0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.background = '#111'}
+                onMouseOut={(e) => e.target.style.background = 'transparent'}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                style={{
+                  background: '#ff4444', border: 'none', color: '#000',
+                  padding: '14px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: '700',
+                  cursor: 'pointer', boxShadow: '0 5px 20px rgba(255, 68, 68, 0.3)'
+                }}
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- ANIMATIONS --- */}
       <style jsx global>{`
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin { animation: spin 1s linear infinite; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
       `}</style>
     </div>
   );
