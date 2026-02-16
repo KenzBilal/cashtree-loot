@@ -16,6 +16,7 @@ export default function AdminSidebar({ adminName, logoutAction }) {
     { name: 'Finance', path: '/admin/finance', icon: '💰' },
     { name: 'Promoters', path: '/admin/users', icon: '👥' },
     { name: 'Audit Logs', path: '/admin/audit', icon: '🛡️' },
+    { name: 'Inquiries', path: '/admin/inquiries', icon: <Mail size={18} /> },
     { name: 'Settings', path: '/admin/settings', icon: '⚙️' },
   ];
 
