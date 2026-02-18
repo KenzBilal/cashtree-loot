@@ -7,16 +7,12 @@ import {
   Target, 
   Clock, 
   ArrowRight, 
-  MoreHorizontal, 
-  TrendingUp,
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
 
-// ⚡ FORCE DYNAMIC: Ensure admin always sees fresh data
 export const revalidate = 0;
 
-// 🔐 MASTER KEY CLIENT (Bypasses RLS)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -28,7 +24,6 @@ export default async function AdminDashboard() {
 
   if (!token) redirect('/login');
 
-  // 1. DATA FETCHING (Parallel for Speed)
   const [
     { count: totalUsers },
     { count: totalLeads },
@@ -46,177 +41,238 @@ export default async function AdminDashboard() {
       .limit(10)
   ]);
 
-  // --- 10/10 STYLING CONSTANTS ---
-  const glassCard = {
-    background: 'rgba(20, 20, 25, 0.6)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '16px',
-    overflow: 'hidden',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
-  };
-
   return (
-    <div style={{ padding: '40px', minHeight: '100vh', background: '#050505', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       
-      {/* 1. HEADER SECTION */}
-      <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+      {/* HEADER */}
+      <div style={{ 
+        marginBottom: '48px', 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-end', 
+        gap: '20px' 
+      }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-1px', margin: '0 0 8px 0', background: 'linear-gradient(to right, #fff, #888)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <h1 style={{ 
+            fontSize: 'clamp(24px, 4vw, 32px)', 
+            fontWeight: '800', 
+            letterSpacing: '-1px', 
+            margin: '0 0 8px 0', 
+            color: '#fff' 
+          }}>
             Dashboard Overview
           </h1>
-          <p style={{ color: '#666', fontSize: '15px', fontWeight: '500' }}>
-            Real-time network performance and pending tasks.
+          <p style={{ color: '#888', fontSize: '14px', fontWeight: '500' }}>
+            Network performance and pending approvals.
           </p>
         </div>
-        <div style={{ fontSize: '13px', color: '#444', fontWeight: '600', border: '1px solid #222', padding: '8px 16px', borderRadius: '20px' }}>
-          Updated: {new Date().toLocaleTimeString()}
-        </div>
-      </div>
-
-      {/* 2. STATS GRID (Neon Glow Effects) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '48px' }}>
-        
-        {/* Card 1: Users */}
-        <div style={{ ...glassCard, padding: '24px', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, right: 0, padding: '20px', opacity: 0.1 }}>
-            <Users size={64} color="#3b82f6" />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', color: '#3b82f6' }}>
-              <Users size={20} />
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Promoters</span>
-          </div>
-          <div style={{ fontSize: '36px', fontWeight: '800', color: '#fff' }}>
-            {totalUsers || 0}
-          </div>
-        </div>
-
-        {/* Card 2: Leads */}
-        <div style={{ ...glassCard, padding: '24px', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, right: 0, padding: '20px', opacity: 0.1 }}>
-            <Target size={64} color="#8b5cf6" />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ padding: '10px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px', color: '#8b5cf6' }}>
-              <Target size={20} />
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Conversions</span>
-          </div>
-          <div style={{ fontSize: '36px', fontWeight: '800', color: '#fff' }}>
-            {totalLeads || 0}
-          </div>
-        </div>
-
-        {/* Card 3: Pending Action (Critical) */}
         <div style={{ 
-          ...glassCard, 
-          padding: '24px', 
-          border: pendingCount > 0 ? '1px solid rgba(234, 179, 8, 0.4)' : glassCard.border,
-          boxShadow: pendingCount > 0 ? '0 0 30px rgba(234, 179, 8, 0.1)' : glassCard.boxShadow
+          fontSize: '12px', color: '#666', fontWeight: '600', 
+          border: '1px solid #222', padding: '8px 16px', borderRadius: '100px',
+          background: 'rgba(255,255,255,0.02)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ padding: '10px', background: pendingCount > 0 ? 'rgba(234, 179, 8, 0.2)' : '#222', borderRadius: '10px', color: pendingCount > 0 ? '#fbbf24' : '#666' }}>
-              <AlertCircle size={20} />
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: pendingCount > 0 ? '#fbbf24' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Action Required</span>
-          </div>
-          <div style={{ fontSize: '36px', fontWeight: '800', color: pendingCount > 0 ? '#fbbf24' : '#fff' }}>
-            {pendingCount || 0}
-          </div>
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Pending reviews waiting</div>
+          Live System
         </div>
       </div>
 
-      {/* 3. TABLE SECTION */}
-      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Clock size={20} color="#00ff88" />
-          Recent Pending Approvals
+      {/* STATS GRID */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', 
+        gap: '24px', 
+        marginBottom: '48px' 
+      }}>
+        <StatsCard 
+          title="Total Promoters" 
+          value={totalUsers || 0} 
+          icon={<Users size={20} />} 
+          color="#3b82f6" 
+        />
+        <StatsCard 
+          title="Total Conversions" 
+          value={totalLeads || 0} 
+          icon={<Target size={20} />} 
+          color="#8b5cf6" 
+        />
+        <StatsCard 
+          title="Action Required" 
+          value={pendingCount || 0} 
+          icon={<AlertCircle size={20} />} 
+          color="#fbbf24" 
+          isCritical={pendingCount > 0}
+          sub="Pending Reviews"
+        />
+      </div>
+
+      {/* PENDING APPROVALS SECTION */}
+      <div style={{ 
+        marginBottom: '24px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between' 
+      }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', color: '#fff' }}>
+          <Clock size={18} color="#00ff88" />
+          Pending Approvals
         </h2>
         {pendingCount > 0 && (
-          <Link href="/admin/leads" style={{ fontSize: '13px', color: '#00ff88', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            View All <ArrowRight size={14} />
+          <Link href="/admin/leads" style={{ 
+            fontSize: '13px', color: '#00ff88', textDecoration: 'none', 
+            fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '6px 12px', borderRadius: '8px', background: 'rgba(0,255,136,0.05)',
+            border: '1px solid rgba(0,255,136,0.1)'
+          }}>
+            View Queue <ArrowRight size={14} />
           </Link>
         )}
       </div>
 
-      <div style={glassCard}>
+      <div style={{
+        background: '#0a0a0f',
+        border: '1px solid #222',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)'
+      }}>
         {pendingLeads && pendingLeads.length > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #222', background: 'rgba(255,255,255,0.02)' }}>
-                <th style={{ padding: '16px 24px', textAlign: 'left', color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Date</th>
-                <th style={{ padding: '16px 24px', textAlign: 'left', color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Promoter</th>
-                <th style={{ padding: '16px 24px', textAlign: 'left', color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Campaign</th>
-                <th style={{ padding: '16px 24px', textAlign: 'left', color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Evidence</th>
-                <th style={{ padding: '16px 24px', textAlign: 'right', color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingLeads.map((lead) => (
-                <tr key={lead.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }}>
-                  
-                  {/* Date */}
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ color: '#fff', fontWeight: '500' }}>{new Date(lead.created_at).toLocaleDateString()}</div>
-                    <div style={{ color: '#444', fontSize: '12px' }}>{new Date(lead.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                  </td>
-                  
-                  {/* Promoter */}
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#222', color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                        {lead.accounts?.username?.charAt(0).toUpperCase()}
-                      </div>
-                      <span style={{ color: '#ddd' }}>{lead.accounts?.username}</span>
-                    </div>
-                  </td>
-                  
-                  {/* Campaign */}
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ color: '#fff' }}>{lead.campaigns?.title}</div>
-                    <div style={{ color: '#00ff88', fontSize: '12px', fontWeight: '600', marginTop: '2px' }}>
-                      + ₹{lead.campaigns?.payout_amount}
-                    </div>
-                  </td>
-
-                  {/* Evidence / Data */}
-                  <td style={{ padding: '16px 24px' }}>
-                    <code style={{ background: '#111', border: '1px solid #222', padding: '4px 8px', borderRadius: '6px', color: '#888', fontSize: '12px', fontFamily: 'monospace' }}>
-                      {lead.metadata?.user_phone || "No Metadata"}
-                    </code>
-                  </td>
-
-                  {/* Status Badge */}
-                  <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                    <span style={{ 
-                      display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      padding: '6px 12px', borderRadius: '20px', 
-                      background: 'rgba(234, 179, 8, 0.1)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.2)',
-                      fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px'
-                    }}>
-                      <Clock size={12} /> PENDING
-                    </span>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '600px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #1a1a1a', background: 'rgba(255,255,255,0.01)' }}>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Promoter</th>
+                  <th style={thStyle}>Campaign</th>
+                  <th style={thStyle}>Meta Data</th>
+                  <th style={{...thStyle, textAlign: 'right'}}>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div style={{ padding: '80px', textAlign: 'center', background: 'rgba(0,0,0,0.2)' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', border: '1px solid #222' }}>
-              <CheckCircle2 size={30} color="#222" />
-            </div>
-            <h3 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '18px' }}>All Caught Up</h3>
-            <p style={{ color: '#666', fontSize: '14px', maxWidth: '300px', margin: '0 auto' }}>
-              Great job! There are no pending leads requiring your attention right now.
-            </p>
+              </thead>
+              <tbody>
+                {pendingLeads.map((lead) => (
+                  <tr key={lead.id} style={{ borderBottom: '1px solid #161616', transition: 'background 0.1s' }} className="hover:bg-white/5">
+                    
+                    {/* Date */}
+                    <td style={tdStyle}>
+                      <div style={{ color: '#ddd', fontWeight: '500' }}>{new Date(lead.created_at).toLocaleDateString()}</div>
+                      <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{new Date(lead.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </td>
+                    
+                    {/* Promoter */}
+                    <td style={tdStyle}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#1a1a1a', color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', border: '1px solid #222' }}>
+                          {lead.accounts?.username?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <span style={{ color: '#eee', fontWeight: '500' }}>{lead.accounts?.username || 'Unknown'}</span>
+                      </div>
+                    </td>
+                    
+                    {/* Campaign */}
+                    <td style={tdStyle}>
+                      <div style={{ color: '#fff', fontWeight: '500' }}>{lead.campaigns?.title}</div>
+                      <div style={{ color: '#00ff88', fontSize: '11px', fontWeight: '600', marginTop: '2px' }}>
+                        ₹{lead.campaigns?.payout_amount} Payout
+                      </div>
+                    </td>
+
+                    {/* Meta */}
+                    <td style={tdStyle}>
+                      {lead.metadata?.user_phone ? (
+                        <code style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', padding: '4px 8px', borderRadius: '6px', color: '#888', fontSize: '11px', fontFamily: 'monospace' }}>
+                          {lead.metadata.user_phone}
+                        </code>
+                      ) : (
+                        <span style={{color: '#444'}}>-</span>
+                      )}
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ ...tdStyle, textAlign: 'right' }}>
+                      <span style={{ 
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        padding: '4px 10px', borderRadius: '20px', 
+                        background: 'rgba(234, 179, 8, 0.08)', color: '#fbbf24', 
+                        border: '1px solid rgba(234, 179, 8, 0.15)',
+                        fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px'
+                      }}>
+                        PENDING
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        ) : (
+          <EmptyState />
         )}
       </div>
-
     </div>
   );
 }
+
+// --- SUB COMPONENTS FOR CLEAN CODE ---
+
+function StatsCard({ title, value, icon, color, isCritical, sub }) {
+  return (
+    <div style={{ 
+      background: '#0a0a0f',
+      border: isCritical ? `1px solid ${color}40` : '1px solid #222',
+      borderRadius: '16px',
+      padding: '24px',
+      position: 'relative',
+      overflow: 'hidden',
+      boxShadow: isCritical ? `0 0 40px ${color}10` : 'none'
+    }}>
+      {/* Icon Badge */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
+        <div style={{ 
+          padding: '10px', borderRadius: '12px', 
+          background: `${color}15`, color: color 
+        }}>
+          {icon}
+        </div>
+      </div>
+      
+      {/* Value */}
+      <div style={{ fontSize: '32px', fontWeight: '800', color: isCritical ? color : '#fff', letterSpacing: '-1px' }}>
+        {value}
+      </div>
+      
+      {/* Label */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+        <span style={{ fontSize: '13px', fontWeight: '600', color: '#666' }}>{title}</span>
+        {sub && <span style={{ fontSize: '11px', color: color }}>{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div style={{ padding: '64px 20px', textAlign: 'center', background: 'rgba(0,0,0,0.2)' }}>
+      <div style={{ 
+        width: '64px', height: '64px', borderRadius: '50%', 
+        background: '#111', border: '1px solid #222',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        margin: '0 auto 20px', color: '#333' 
+      }}>
+        <CheckCircle2 size={32} />
+      </div>
+      <h3 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600' }}>All Caught Up</h3>
+      <p style={{ color: '#555', fontSize: '13px', maxWidth: '280px', margin: '0 auto' }}>
+        No pending leads requiring review.
+      </p>
+    </div>
+  );
+}
+
+// Styles
+const thStyle = {
+  padding: '16px 24px', textAlign: 'left', color: '#555', 
+  fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px'
+};
+
+const tdStyle = {
+  padding: '16px 24px'
+};
