@@ -3,91 +3,194 @@
 import { useState } from 'react';
 import PayoutRow from './payout-row';
 
+const NEON = '#00ff88';
+
 export default function FinanceInterface({ queue, stats, actions }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // FILTER LOGIC
   const filteredData = queue.filter(item => {
-    if (searchTerm) {
-      const s = searchTerm.toLowerCase();
-      return (
-        item.name?.toLowerCase().includes(s) ||
-        item.upi_id?.toLowerCase().includes(s) ||
-        String(item.amount).includes(s)
-      );
-    }
-    return true;
+    if (!searchTerm) return true;
+    const s = searchTerm.toLowerCase();
+    return (
+      item.name?.toLowerCase().includes(s) ||
+      item.upi_id?.toLowerCase().includes(s) ||
+      String(item.amount).includes(s)
+    );
   });
 
-  // --- STYLES ---
-  const glassPanel = {
-    background: '#0a0a0f', border: '1px solid #222', borderRadius: '16px', overflow: 'hidden',
-    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.6)'
-  };
-
   return (
-    <div>
-      {/* 1. STATS DECK */}
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '30px'}}>
-        <StatCard label="TOTAL LIABILITY" value={`₹${stats.liability.toLocaleString()}`} sub={`${stats.count} Pending Payments`} color="#facc15" />
-        <StatCard label="USER PAYOUTS" value={stats.userCount} sub="Direct Leads" color="#3b82f6" />
-        <StatCard label="PROMOTER REQUESTS" value={stats.promoterCount} sub="Withdrawals" color="#a855f7" />
-      </div>
+    <div style={{ paddingBottom: '100px' }}>
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin   { to { transform: rotate(360deg); } }
+        .finance-search:focus { border-color: #333 !important; }
+        .finance-search::placeholder { color: #333; }
+      `}</style>
 
-      {/* 2. CONTROLS */}
-      <div style={{display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px'}}>
-        <input 
-          type="text" 
-          placeholder="Search UPI, Name, or Amount..." 
+      {/* ── HEADER ── */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        gap: '20px',
+        marginBottom: '28px',
+        paddingBottom: '24px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div>
+          <h1 style={{
+            fontSize: 'clamp(24px, 4vw, 32px)',
+            fontWeight: '900',
+            color: '#fff',
+            margin: '0 0 4px 0',
+            letterSpacing: '-0.8px',
+          }}>
+            Finance <span style={{ color: '#444' }}>Control</span>
+          </h1>
+          <p style={{
+            margin: 0, fontSize: '11px', fontWeight: '700',
+            color: '#444', textTransform: 'uppercase', letterSpacing: '1px',
+          }}>
+            Pending Payouts &amp; Withdrawals
+          </p>
+        </div>
+
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search name, UPI, amount…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          className="finance-search"
           style={{
-            background: '#050505', border: '1px solid #222', borderRadius: '10px', 
-            padding: '10px 16px', color: '#fff', fontSize: '13px', outline: 'none', width: '300px'
+            background: '#0a0a0a',
+            border: '1px solid #1e1e1e',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            color: '#fff',
+            fontSize: '13px',
+            outline: 'none',
+            width: 'clamp(200px, 100%, 300px)',
+            transition: 'border-color 0.18s',
+            fontWeight: '600',
           }}
         />
       </div>
 
-      {/* 3. DATA GRID */}
-      <div style={glassPanel}>
+      {/* ── STATS ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '12px',
+        marginBottom: '28px',
+      }}>
+        <StatCard
+          label="Total Liability"
+          value={`₹${stats.liability.toLocaleString()}`}
+          sub={`${stats.count} pending`}
+          color="#facc15"
+        />
+        <StatCard
+          label="User Payouts"
+          value={stats.userCount}
+          sub="Direct leads"
+          color="#3b82f6"
+        />
+        <StatCard
+          label="Promoter Requests"
+          value={stats.promoterCount}
+          sub="Withdrawals"
+          color="#a855f7"
+        />
+      </div>
+
+      {/* ── TABLE ── */}
+      <div style={{
+        background: '#050505',
+        border: '1px solid #1a1a1a',
+        borderRadius: '20px',
+        overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)',
+      }}>
+        {/* Desktop header */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr 2fr 1.5fr', // Added column for Type
-          background: '#111', padding: '16px 24px', borderBottom: '1px solid #222',
-          fontSize: '11px', fontWeight: '800', color: '#666', textTransform: 'uppercase', letterSpacing: '1px'
-        }}>
-          <div>Timeline</div>
+          display: 'grid',
+          gridTemplateColumns: '120px 1fr 90px 1fr auto',
+          padding: '12px 20px',
+          background: '#0a0a0a',
+          borderBottom: '1px solid #1a1a1a',
+          fontSize: '9px',
+          color: '#444',
+          fontWeight: '800',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+        }} className="finance-desktop-header">
+          <style>{`
+            .finance-desktop-header { display: none !important; }
+            @media (min-width: 640px) { .finance-desktop-header { display: grid !important; } }
+          `}</style>
+          <div>Date</div>
           <div>Beneficiary</div>
           <div>Type</div>
-          <div>Banking Details</div>
-          <div style={{textAlign: 'right'}}>Action</div>
+          <div>Banking</div>
+          <div style={{ textAlign: 'right' }}>Action</div>
         </div>
 
         <div>
           {filteredData.length > 0 ? (
-            filteredData.map(item => (
-              <PayoutRow 
-                key={`${item.type}-${item.id}`} 
-                item={item} 
-                actions={actions} // Pass actions down
+            filteredData.map((item, i) => (
+              <PayoutRow
+                key={`${item.type}-${item.id}`}
+                item={item}
+                actions={actions}
+                index={i}
               />
             ))
           ) : (
-            <div style={{padding: '60px', textAlign: 'center', color: '#444', fontSize: '13px'}}>
-              ✅ All caught up! No pending payments.
+            <div style={{ padding: '60px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', marginBottom: '10px' }}>✅</div>
+              <div style={{ color: '#444', fontSize: '13px', fontWeight: '700' }}>
+                All caught up — no pending payments.
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Count */}
+      {filteredData.length > 0 && (
+        <div style={{ marginTop: '14px', textAlign: 'right', fontSize: '10px', color: '#333', fontWeight: '700' }}>
+          {filteredData.length} item{filteredData.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   );
 }
 
 function StatCard({ label, value, sub, color }) {
   return (
-    <div style={{background: '#0a0a0f', border: '1px solid #222', borderRadius: '16px', padding: '20px'}}>
-      <div style={{fontSize: '10px', fontWeight: '800', color: '#666', marginBottom: '8px', letterSpacing: '1px'}}>{label}</div>
-      <div style={{fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '4px', letterSpacing: '-1px'}}>{value}</div>
-      <div style={{fontSize: '11px', fontWeight: '600', color: color}}>{sub}</div>
+    <div style={{
+      background: '#0a0a0a',
+      border: '1px solid #1a1a1a',
+      borderRadius: '16px',
+      padding: '18px 20px',
+      animation: 'fadeIn 0.4s ease-out',
+    }}>
+      <div style={{
+        fontSize: '9px', fontWeight: '800', color: '#444',
+        marginBottom: '10px', letterSpacing: '1px', textTransform: 'uppercase',
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 'clamp(20px, 4vw, 26px)',
+        fontWeight: '900', color: '#fff',
+        marginBottom: '4px', letterSpacing: '-0.5px',
+      }}>
+        {value}
+      </div>
+      <div style={{ fontSize: '11px', fontWeight: '600', color }}>{sub}</div>
     </div>
   );
 }

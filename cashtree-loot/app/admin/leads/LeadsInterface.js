@@ -3,56 +3,40 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Search, Filter, CheckCircle2, XCircle, Clock, 
-  AlertTriangle, TrendingUp, DollarSign, X, Check
-} from 'lucide-react';
+import { Search, Clock, TrendingUp, DollarSign, XCircle, CheckCircle2, X, Check, Filter } from 'lucide-react';
+
+const NEON = '#00ff88';
 
 export default function LeadsInterface({ initialData, stats, updateStatusAction }) {
-  const router = useRouter(); 
-  const [leads, setLeads] = useState(initialData); 
-  const [activeTab, setActiveTab] = useState('PENDING'); 
+  const router = useRouter();
+  const [leads, setLeads]           = useState(initialData);
+  const [activeTab, setActiveTab]   = useState('PENDING');
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // --- CUSTOM MODAL STATE ---
-  const [confirmModal, setConfirmModal] = useState(null); // { id, status }
+  const [confirmModal, setConfirmModal] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // --- ACTIONS ---
-  const openConfirmModal = (id, status) => {
-    setConfirmModal({ id, status });
-  };
+  const openConfirmModal = (id, status) => setConfirmModal({ id, status });
 
   const executeStatusUpdate = async () => {
     if (!confirmModal) return;
-    
     setIsProcessing(true);
     const { id, status } = confirmModal;
-
-    // 1. Optimistic Update
-    setLeads(current => current.map(l => l.id === id ? { ...l, status } : l));
-
-    // 2. Server Action
+    setLeads(cur => cur.map(l => l.id === id ? { ...l, status } : l));
     const result = await updateStatusAction(id, status);
-
     if (!result.success) {
-      // Revert on failure
-      alert("System Error: " + result.error); // You can replace this with a toast if you want
+      alert('System Error: ' + result.error);
       router.refresh();
     } else {
       router.refresh();
     }
-    
     setIsProcessing(false);
     setConfirmModal(null);
   };
 
-  // --- FILTER LOGIC ---
   const filteredData = leads.filter(item => {
     const isPending = item.status === 'Pending';
     if (activeTab === 'PENDING' && !isPending) return false;
-    if (activeTab === 'HISTORY' && isPending) return false;
-
+    if (activeTab === 'HISTORY' && isPending)  return false;
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       return (
@@ -64,237 +48,391 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
     return true;
   });
 
-  return (
-    <div style={{ fontFamily: '"Inter", sans-serif', color: 'white', minHeight: '100vh', padding: '40px', background: '#050505' }}>
-      
-      {/* 1. HEADER & STATS */}
-      <div style={{ marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <CheckCircle2 color="#00ff88" /> Lead Approvals
-        </h1>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-          <StatCard icon={<Clock size={20}/>} label="PENDING REVIEW" value={stats.pendingCount} sub="Action Required" color="#facc15" />
-          <StatCard icon={<DollarSign size={20}/>} label="LIABILITY" value={`₹${stats.pendingValue.toLocaleString()}`} sub="Pending Payouts" color="#fff" />
-          <StatCard icon={<TrendingUp size={20}/>} label="APPROVED" value={stats.approvedCount} sub="Successful Leads" color="#00ff88" />
-          <StatCard icon={<XCircle size={20}/>} label="REJECTED" value={stats.rejectedCount} sub="Filtered / Fraud" color="#ef4444" />
-        </div>
-      </div>
+  const isApproving = confirmModal?.status === 'Approved';
 
-      {/* 2. TOOLBAR */}
-      <div style={{ 
-        background: '#0a0a0f', border: '1px solid #222', borderRadius: '16px', padding: '16px', 
-        marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center' 
+  return (
+    <div style={{ paddingBottom: '100px' }}>
+      <style>{`
+        @keyframes fadeIn  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes popIn   { from { transform:scale(0.94); opacity:0; } to { transform:scale(1); opacity:1; } }
+        @keyframes spin    { to { transform:rotate(360deg); } }
+        .leads-search:focus { border-color: #333 !important; }
+        .leads-search::placeholder { color: #333; }
+        .lead-card:hover { border-color: #2a2a2a !important; }
+        .tab-btn:hover { color: #fff !important; }
+        .action-btn-reject:hover  { background: rgba(239,68,68,0.15) !important; }
+        .action-btn-approve:hover { background: rgba(0,255,136,0.15) !important; }
+      `}</style>
+
+      {/* ── HEADER ── */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        gap: '20px',
+        marginBottom: '28px',
+        paddingBottom: '24px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}>
-        
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '4px', background: '#000', padding: '4px', borderRadius: '10px', border: '1px solid #222' }}>
-           <TabButton label="⚡ PENDING QUEUE" active={activeTab === 'PENDING'} onClick={() => setActiveTab('PENDING')} />
-           <TabButton label="🗄️ ARCHIVES" active={activeTab === 'HISTORY'} onClick={() => setActiveTab('HISTORY')} />
+        <div>
+          <h1 style={{
+            fontSize: 'clamp(24px, 4vw, 32px)',
+            fontWeight: '900',
+            color: '#fff',
+            margin: '0 0 4px 0',
+            letterSpacing: '-0.8px',
+          }}>
+            Lead <span style={{ color: '#444' }}>Approvals</span>
+          </h1>
+          <p style={{
+            margin: 0, fontSize: '11px', fontWeight: '700',
+            color: '#444', textTransform: 'uppercase', letterSpacing: '1px',
+          }}>
+            Review &amp; Process Submissions
+          </p>
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-          <input 
-            type="text" 
-            placeholder="Search Campaign, Promoter, or Data..." 
+        <div style={{ position: 'relative', width: 'clamp(200px, 100%, 340px)' }}>
+          <Search size={14} style={{
+            position: 'absolute', left: '13px', top: '50%',
+            transform: 'translateY(-50%)', color: '#444', pointerEvents: 'none',
+          }} />
+          <input
+            type="text"
+            placeholder="Search campaign, promoter, data…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="leads-search"
             style={{
-              width: '100%', background: '#000', border: '1px solid #333', borderRadius: '8px', 
-              padding: '10px 12px 10px 36px', color: '#fff', fontSize: '13px', outline: 'none',
-              transition: 'border 0.2s'
+              width: '100%', background: '#0a0a0a',
+              border: '1px solid #1e1e1e', borderRadius: '12px',
+              padding: '12px 14px 12px 36px',
+              color: '#fff', fontSize: '13px', outline: 'none',
+              fontWeight: '600', transition: 'border-color 0.18s',
             }}
-            onFocus={(e) => e.target.style.borderColor = '#00ff88'}
-            onBlur={(e) => e.target.style.borderColor = '#333'}
           />
         </div>
       </div>
 
-      {/* 3. DATA GRID */}
-      <div style={{ display: 'grid', gap: '12px' }}>
+      {/* ── STATS ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        gap: '12px',
+        marginBottom: '28px',
+      }}>
+        <StatCard icon={<Clock size={14}/>}         label="Pending"  value={stats.pendingCount}                        sub="Action required"   color="#facc15" />
+        <StatCard icon={<DollarSign size={14}/>}    label="Liability" value={`₹${stats.pendingValue.toLocaleString()}`} sub="Pending payouts"  color="#fff" />
+        <StatCard icon={<CheckCircle2 size={14}/>}  label="Approved" value={stats.approvedCount}                       sub="Successful leads"  color={NEON} />
+        <StatCard icon={<XCircle size={14}/>}       label="Rejected" value={stats.rejectedCount}                       sub="Filtered / fraud"  color="#ef4444" />
+      </div>
+
+      {/* ── TABS ── */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '20px',
+      }}>
+        <div style={{
+          display: 'flex', gap: '4px',
+          background: '#0a0a0a', padding: '4px',
+          borderRadius: '12px', border: '1px solid #1a1a1a',
+        }}>
+          {[
+            { key: 'PENDING', label: '⚡ Pending Queue' },
+            { key: 'HISTORY', label: '🗄 Archives' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              className="tab-btn"
+              onClick={() => setActiveTab(key)}
+              style={{
+                background: activeTab === key ? '#1e1e1e' : 'transparent',
+                color: activeTab === key ? '#fff' : '#555',
+                border: 'none', padding: '9px 16px',
+                borderRadius: '9px', fontSize: '10px',
+                fontWeight: '800', cursor: 'pointer',
+                textTransform: 'uppercase', letterSpacing: '0.8px',
+                transition: 'all 0.18s', whiteSpace: 'nowrap',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <span style={{ fontSize: '10px', color: '#333', fontWeight: '700' }}>
+          {filteredData.length} result{filteredData.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* ── LEAD CARDS ── */}
+      <div style={{ display: 'grid', gap: '10px' }}>
         {filteredData.length > 0 ? (
-          filteredData.map(lead => (
-            <LeadRow 
-              key={lead.id} 
-              lead={lead} 
-              onAction={openConfirmModal} // Pass modal trigger
+          filteredData.map((lead, i) => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onAction={openConfirmModal}
+              delay={Math.min(i * 25, 300)}
             />
           ))
         ) : (
-          <div style={{ padding: '80px', textAlign: 'center', border: '1px dashed #333', borderRadius: '16px', color: '#666' }}>
-            <div style={{ marginBottom: '16px', opacity: 0.3 }}><Filter size={48} className="mx-auto" /></div>
-            {activeTab === 'PENDING' ? '✨ All clear! No pending leads.' : 'No history found.'}
+          <div style={{
+            padding: '60px 20px', textAlign: 'center',
+            border: '1px dashed #1a1a1a', borderRadius: '16px',
+          }}>
+            <Filter size={32} color="#222" style={{ marginBottom: '12px' }} />
+            <div style={{ color: '#444', fontSize: '13px', fontWeight: '700' }}>
+              {activeTab === 'PENDING' ? '✨ All clear — no pending leads.' : 'No history found.'}
+            </div>
           </div>
         )}
       </div>
 
-      {/* 4. CUSTOM CONFIRMATION MODAL */}
+      {/* ── CONFIRMATION MODAL ── */}
       {confirmModal && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px',
         }}>
           <div style={{
-            background: '#0a0a0f', border: '1px solid #333', borderRadius: '20px', 
-            width: '90%', maxWidth: '400px', padding: '30px', textAlign: 'center',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.8)', animation: 'popIn 0.2s ease-out'
+            background: '#0a0a0a',
+            border: `1px solid ${isApproving ? 'rgba(0,255,136,0.2)' : 'rgba(239,68,68,0.2)'}`,
+            borderRadius: '24px',
+            width: '100%', maxWidth: '380px',
+            padding: '32px 28px',
+            textAlign: 'center',
+            boxShadow: `0 40px 80px rgba(0,0,0,0.8), 0 0 60px ${isApproving ? 'rgba(0,255,136,0.05)' : 'rgba(239,68,68,0.05)'}`,
+            animation: 'popIn 0.2s ease-out',
           }}>
+            {/* Icon */}
             <div style={{
-              width: '60px', height: '60px', borderRadius: '50%', margin: '0 auto 20px',
-              background: confirmModal.status === 'Approved' ? 'rgba(0,255,136,0.1)' : 'rgba(239,68,68,0.1)',
-              color: confirmModal.status === 'Approved' ? '#00ff88' : '#ef4444',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid currentColor'
+              width: '64px', height: '64px', borderRadius: '20px',
+              margin: '0 auto 20px',
+              background: isApproving ? 'rgba(0,255,136,0.08)' : 'rgba(239,68,68,0.08)',
+              border: `1px solid ${isApproving ? 'rgba(0,255,136,0.25)' : 'rgba(239,68,68,0.25)'}`,
+              color: isApproving ? NEON : '#ef4444',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {confirmModal.status === 'Approved' ? <Check size={32} /> : <X size={32} />}
+              {isApproving ? <Check size={28} strokeWidth={2.5} /> : <X size={28} strokeWidth={2.5} />}
             </div>
 
-            <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '10px' }}>
-              {confirmModal.status === 'Approved' ? 'Approve Lead?' : 'Reject Lead?'}
+            <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', margin: '0 0 10px', letterSpacing: '-0.5px' }}>
+              {isApproving ? 'Approve Lead?' : 'Reject Lead?'}
             </h3>
-            <p style={{ color: '#888', marginBottom: '30px', fontSize: '0.9rem', lineHeight: '1.5' }}>
-              {confirmModal.status === 'Approved' 
-                ? 'This will instantly credit the payout to the user\'s wallet.' 
+            <p style={{ color: '#555', margin: '0 0 28px', fontSize: '13px', lineHeight: '1.6' }}>
+              {isApproving
+                ? "This will instantly credit the payout to the user's wallet."
                 : 'This will mark the lead as invalid. No payout will be given.'}
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <button 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <button
                 onClick={() => setConfirmModal(null)}
                 style={{
-                  padding: '12px', borderRadius: '10px', background: 'transparent', 
-                  border: '1px solid #333', color: '#ccc', fontWeight: '600', cursor: 'pointer'
+                  padding: '13px', borderRadius: '12px',
+                  background: 'transparent', border: '1px solid #222',
+                  color: '#666', fontWeight: '800', cursor: 'pointer',
+                  fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                  transition: 'border-color 0.18s, color 0.18s',
                 }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={executeStatusUpdate}
                 disabled={isProcessing}
                 style={{
-                  padding: '12px', borderRadius: '10px', border: 'none',
-                  background: confirmModal.status === 'Approved' ? '#00ff88' : '#ef4444',
-                  color: confirmModal.status === 'Approved' ? '#000' : '#fff', 
-                  fontWeight: '800', cursor: 'pointer',
-                  opacity: isProcessing ? 0.7 : 1
+                  padding: '13px', borderRadius: '12px', border: 'none',
+                  background: isApproving ? NEON : '#ef4444',
+                  color: isApproving ? '#000' : '#fff',
+                  fontWeight: '900', cursor: isProcessing ? 'wait' : 'pointer',
+                  fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                  opacity: isProcessing ? 0.7 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  transition: 'opacity 0.18s',
                 }}
               >
-                {isProcessing ? 'Processing...' : 'Confirm'}
+                {isProcessing ? (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                      style={{ animation: 'spin 0.8s linear infinite' }}>
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    Processing…
+                  </>
+                ) : 'Confirm'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      <style jsx global>{`
-        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-      `}</style>
     </div>
   );
 }
 
-// --- SUB-COMPONENTS ---
+// ── LEAD CARD ──
+function LeadCard({ lead, onAction, delay }) {
+  const isPending = lead.status === 'Pending';
 
-function LeadRow({ lead, onAction }) {
-  const statusConfig = {
-    Pending: { color: '#facc15', bg: 'rgba(250, 204, 21, 0.1)' },
-    Approved: { color: '#00ff88', bg: 'rgba(0, 255, 136, 0.1)' },
-    Rejected: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' }
-  }[lead.status] || { color: '#888', bg: '#222' };
+  const statusMeta = {
+    Pending:  { color: '#facc15', bg: 'rgba(250,204,21,0.08)',  border: 'rgba(250,204,21,0.2)'  },
+    Approved: { color: '#00ff88', bg: 'rgba(0,255,136,0.08)',   border: 'rgba(0,255,136,0.2)'   },
+    Rejected: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)'   },
+  }[lead.status] || { color: '#888', bg: '#111', border: '#222' };
+
+  const submittedData = lead.customer_data?.phone
+    || lead.customer_data?.upi
+    || JSON.stringify(lead.customer_data);
+
+  const timeAgo = (() => {
+    try { return formatDistanceToNow(new Date(lead.created_at), { addSuffix: true }); }
+    catch { return '—'; }
+  })();
 
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) 2fr 1fr', gap: '20px',
-      background: '#0a0a0f', border: '1px solid #222', borderRadius: '12px', padding: '20px',
-      alignItems: 'center', transition: 'border 0.2s', position: 'relative'
-    }}>
-      {/* LEFT: Info */}
-      <div>
-        <div style={{ color: '#fff', fontWeight: '700', fontSize: '15px' }}>{lead.campaigns?.title || 'Unknown'}</div>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', fontSize: '12px', color: '#666' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={12} /> {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
-          </span>
-          <span>•</span>
-          <span>{lead.accounts?.username}</span>
+    <div
+      className="lead-card"
+      style={{
+        background: '#080808',
+        border: '1px solid #1a1a1a',
+        borderRadius: '16px',
+        padding: '18px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+        transition: 'border-color 0.2s',
+        animation: `fadeIn 0.3s ease-out ${delay}ms both`,
+      }}
+    >
+      {/* Top row: campaign title + status badge */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ color: '#fff', fontWeight: '800', fontSize: '15px', marginBottom: '5px' }}>
+            {lead.campaigns?.title || 'Unknown Campaign'}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11px', color: '#555' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Clock size={11} /> {timeAgo}
+            </span>
+            {lead.accounts?.username && (
+              <span style={{ color: '#777', fontWeight: '600' }}>
+                via {lead.accounts.username}
+              </span>
+            )}
+            {lead.payout && (
+              <span style={{ color: '#facc15', fontWeight: '700' }}>
+                ₹{parseFloat(lead.payout).toLocaleString()}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* MIDDLE: Data */}
-      <div style={{ background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #1a1a1a' }}>
-        <div style={{ fontSize: '11px', color: '#444', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Submitted Data</div>
-        <div style={{ fontFamily: 'monospace', color: '#00ff88', fontSize: '13px' }}>
-          {lead.customer_data?.phone || lead.customer_data?.upi || JSON.stringify(lead.customer_data)}
-        </div>
-      </div>
-
-      {/* RIGHT: Actions */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-        {lead.status === 'Pending' ? (
-          <>
-            <button 
-              onClick={() => onAction(lead.id, 'Rejected')}
-              style={{
-                background: 'rgba(239, 68, 68, 0.05)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
-                padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                transition: '0.2s'
-              }}
-              onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
-              onMouseOut={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.05)'}
-            >
-              REJECT
-            </button>
-            <button 
-              onClick={() => onAction(lead.id, 'Approved')}
-              style={{
-                background: 'rgba(0, 255, 136, 0.05)', color: '#00ff88', border: '1px solid rgba(0, 255, 136, 0.2)',
-                padding: '8px 20px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                transition: '0.2s', boxShadow: '0 0 15px rgba(0, 255, 136, 0.05)'
-              }}
-              onMouseOver={(e) => e.target.style.background = 'rgba(0, 255, 136, 0.2)'}
-              onMouseOut={(e) => e.target.style.background = 'rgba(0, 255, 136, 0.05)'}
-            >
-              APPROVE
-            </button>
-          </>
-        ) : (
+        {/* Status badge (non-pending) */}
+        {!isPending && (
           <span style={{
-            color: statusConfig.color, background: statusConfig.bg,
-            padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '800',
-            border: `1px solid ${statusConfig.color}40`, textTransform: 'uppercase'
+            fontSize: '9px', fontWeight: '900',
+            padding: '5px 10px', borderRadius: '8px',
+            background: statusMeta.bg,
+            border: `1px solid ${statusMeta.border}`,
+            color: statusMeta.color,
+            textTransform: 'uppercase', letterSpacing: '0.5px',
+            flexShrink: 0,
           }}>
             {lead.status}
           </span>
         )}
       </div>
+
+      {/* Data row */}
+      <div style={{
+        background: '#000',
+        border: '1px solid #141414',
+        borderRadius: '10px',
+        padding: '10px 14px',
+      }}>
+        <div style={{ fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '5px' }}>
+          Submitted Data
+        </div>
+        <div style={{ fontFamily: 'monospace', color: '#00ff88', fontSize: '13px', fontWeight: '600', wordBreak: 'break-all' }}>
+          {submittedData}
+        </div>
+      </div>
+
+      {/* Action buttons (pending only) */}
+      {isPending && (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="action-btn-reject"
+            onClick={() => onAction(lead.id, 'Rejected')}
+            style={{
+              flex: 1,
+              padding: '11px',
+              borderRadius: '10px',
+              background: 'rgba(239,68,68,0.06)',
+              color: '#ef4444',
+              border: '1px solid rgba(239,68,68,0.2)',
+              fontSize: '10px', fontWeight: '900',
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.8px',
+              transition: 'background 0.18s',
+            }}
+          >
+            Reject
+          </button>
+          <button
+            className="action-btn-approve"
+            onClick={() => onAction(lead.id, 'Approved')}
+            style={{
+              flex: 2,
+              padding: '11px',
+              borderRadius: '10px',
+              background: 'rgba(0,255,136,0.06)',
+              color: '#00ff88',
+              border: '1px solid rgba(0,255,136,0.2)',
+              fontSize: '10px', fontWeight: '900',
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.8px',
+              transition: 'background 0.18s',
+              boxShadow: '0 0 16px rgba(0,255,136,0.08)',
+            }}
+          >
+            ✓ Approve
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
+// ── STAT CARD ──
 function StatCard({ icon, label, value, sub, color }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '16px', padding: '20px',
-      position: 'relative', overflow: 'hidden'
+      background: '#0a0a0a',
+      border: '1px solid #1a1a1a',
+      borderRadius: '16px',
+      padding: '18px 20px',
+      position: 'relative',
+      overflow: 'hidden',
+      animation: 'fadeIn 0.4s ease-out',
     }}>
-      <div style={{ position: 'absolute', top: '10px', right: '10px', opacity: 0.1, color: color }}>{icon}</div>
-      <div style={{ fontSize: '11px', fontWeight: '700', color: '#666', marginBottom: '8px', letterSpacing: '0.5px' }}>{label}</div>
-      <div style={{ fontSize: '24px', fontWeight: '800', color: '#fff', marginBottom: '4px' }}>{value}</div>
-      <div style={{ fontSize: '12px', fontWeight: '500', color: color }}>{sub}</div>
+      <div style={{ position: 'absolute', top: '14px', right: '14px', color, opacity: 0.12 }}>{icon}</div>
+      <div style={{ fontSize: '9px', fontWeight: '800', color: '#444', marginBottom: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 'clamp(20px, 4vw, 26px)', fontWeight: '900', color: '#fff', marginBottom: '4px', letterSpacing: '-0.5px' }}>
+        {value}
+      </div>
+      <div style={{ fontSize: '11px', fontWeight: '600', color }}>{sub}</div>
     </div>
-  );
-}
-
-function TabButton({ label, active, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      background: active ? '#222' : 'transparent', color: active ? '#fff' : '#666',
-      border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', 
-      cursor: 'pointer', transition: 'all 0.2s'
-    }}>
-      {label}
-    </button>
   );
 }
