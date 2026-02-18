@@ -9,35 +9,37 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- 1. CREATE CAMPAIGN ---
+// ── 1. CREATE CAMPAIGN ──
 export async function createCampaign(formData) {
-  const title = formData.get('title');
-  const landing_url = formData.get('landing_url');
-  const affiliate_link = formData.get('affiliate_link');
-  
-  // ✅ FIX: Grab Payout Amount AND force 0 if missing
-  const user_reward = parseFloat(formData.get('user_reward')) || 0;
-  const payout_amount = parseFloat(formData.get('payout_amount')) || 0; 
-  
-  const description = formData.get('description');
-  const category = formData.get('category');
-  const icon_url = formData.get('icon_url');
+  const title         = formData.get('title')?.trim();
+  const landing_url   = formData.get('landing_url')?.trim();
+  const affiliate_link = formData.get('affiliate_link')?.trim() || null;
+  const description   = formData.get('description')?.trim() || null;
+  const category      = formData.get('category')?.trim() || null;
+  const icon_url      = formData.get('icon_url')?.trim() || null;
 
+  const user_reward   = parseFloat(formData.get('user_reward'))   || 0;
+  const payout_amount = parseFloat(formData.get('payout_amount')) || 0;
+
+  // Basic validation
   if (!title || !landing_url) {
     return { success: false, error: 'Title and URL Slug are required.' };
   }
 
-  // 🚀 SAFETY CHECK: Prevent payout errors
+  // Finance safety check
   if (user_reward > payout_amount) {
-     return { success: false, error: `Error: User Reward (₹${user_reward}) cannot exceed Total Limit (₹${payout_amount})` };
+    return {
+      success: false,
+      error: `User Reward (₹${user_reward}) cannot exceed Total Limit (₹${payout_amount}).`,
+    };
   }
 
   const { error } = await supabaseAdmin.from('campaigns').insert({
     title,
-    landing_url: landing_url.trim(),
+    landing_url,
     affiliate_link,
-    user_reward,   
-    payout_amount, // ✅ Now sends 0 instead of null
+    user_reward,
+    payout_amount,
     description,
     category,
     icon_url,
@@ -45,36 +47,45 @@ export async function createCampaign(formData) {
     created_at: new Date().toISOString(),
   });
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    // Duplicate slug — surface a human-readable message
+    if (error.code === '23505') {
+      return { success: false, error: 'That URL slug is already taken. Choose another.' };
+    }
+    return { success: false, error: error.message };
+  }
 
   revalidatePath('/admin/campaigns');
   redirect('/admin/campaigns');
 }
 
-// --- 2. UPDATE CAMPAIGN (Also updated for safety) ---
+// ── 2. UPDATE CAMPAIGN ──
 export async function updateCampaign(campaignId, formData) {
   try {
-    const user_reward = parseFloat(formData.get('user_reward')) || 0;
+    const user_reward   = parseFloat(formData.get('user_reward'))   || 0;
     const payout_amount = parseFloat(formData.get('payout_amount')) || 0;
 
-    // 🚀 SAFETY CHECK: Prevent math errors during edit
     if (user_reward > payout_amount) {
-      return { success: false, error: `Error: User Reward (₹${user_reward}) cannot exceed Total Limit (₹${payout_amount})` };
+      return {
+        success: false,
+        error: `User Reward (₹${user_reward}) cannot exceed Total Limit (₹${payout_amount}).`,
+      };
+    }
+
+    const landing_url = formData.get('landing_url')?.trim();
+    if (!landing_url) {
+      return { success: false, error: 'URL Slug is required.' };
     }
 
     const updates = {
-      title: formData.get('title'),
-      description: formData.get('description'), 
-      
-      // ✅ Safety Check: Never allow null here either
+      title:           formData.get('title')?.trim(),
+      description:     formData.get('description')?.trim() || null,
       user_reward,
       payout_amount,
-      
-      landing_url: formData.get('landing_url').trim(),
-      affiliate_link: formData.get('affiliate_link'),
-
-      category: formData.get('category'),
-      icon_url: formData.get('icon_url'),
+      landing_url,
+      affiliate_link:  formData.get('affiliate_link')?.trim() || null,
+      category:        formData.get('category')?.trim()       || null,
+      icon_url:        formData.get('icon_url')?.trim()       || null,
     };
 
     const { error } = await supabaseAdmin
@@ -86,14 +97,14 @@ export async function updateCampaign(campaignId, formData) {
 
     revalidatePath('/admin/campaigns');
     return { success: true };
-    
+
   } catch (e) {
-    console.error("Update Failed:", e);
+    console.error('updateCampaign failed:', e);
     return { success: false, error: e.message };
   }
 }
 
-// --- 3. TOGGLE STATUS ---
+// ── 3. TOGGLE STATUS ──
 export async function toggleCampaignStatus(campaignId, currentStatus) {
   try {
     const { error } = await supabaseAdmin
@@ -111,7 +122,7 @@ export async function toggleCampaignStatus(campaignId, currentStatus) {
   }
 }
 
-// --- 4. DELETE CAMPAIGN ---
+// ── 4. DELETE CAMPAIGN ──
 export async function deleteCampaign(campaignId) {
   try {
     const { error } = await supabaseAdmin
@@ -123,6 +134,7 @@ export async function deleteCampaign(campaignId) {
 
     revalidatePath('/admin/campaigns');
     return { success: true };
+
   } catch (e) {
     return { success: false, error: e.message };
   }

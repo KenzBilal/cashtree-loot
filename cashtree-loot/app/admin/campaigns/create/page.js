@@ -8,30 +8,62 @@ export const metadata = {
 
 export default function CreateCampaignPage() {
   return (
-    <div style={{animation: 'fadeIn 0.6s ease-out'}}>
-      
-      {/* 1. MISSION HEADER */}
-      <div style={{marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '20px'}}>
-        <Link href="/admin/campaigns" style={{
-          width: '44px', height: '44px', borderRadius: '12px', background: '#1a1a1a', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-          border: '1px solid #333', transition: 'all 0.2s'
-        }}>
-          <ArrowLeft size={20} />
+    <div>
+
+      {/* ── HEADER ── */}
+      <div style={{
+        marginBottom: '40px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+      }}>
+        <Link
+          href="/admin/campaigns"
+          style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: '#111',
+            border: '1px solid #222',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#888',
+            textDecoration: 'none',
+            flexShrink: 0,
+            transition: 'border-color 0.2s, color 0.2s',
+          }}
+          aria-label="Back to campaigns"
+        >
+          <ArrowLeft size={18} />
         </Link>
+
         <div>
-          <h1 style={{fontSize: '32px', fontWeight: '900', color: '#fff', margin: 0, letterSpacing: '-1px'}}>
-            Deploy <span style={{color: '#666'}}>Mission</span>
+          <h1 style={{
+            fontSize: 'clamp(22px, 4vw, 30px)',
+            fontWeight: '900',
+            color: '#fff',
+            margin: 0,
+            letterSpacing: '-0.8px',
+          }}>
+            Deploy <span style={{ color: '#444' }}>Mission</span>
           </h1>
-          <p style={{color: '#888', fontSize: '12px', marginTop: '4px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px'}}>
-             CONFIGURE NEW OFFER PARAMETERS
+          <p style={{
+            color: '#444',
+            fontSize: '11px',
+            marginTop: '4px',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+          }}>
+            Configure New Offer Parameters
           </p>
         </div>
       </div>
 
-      {/* 2. RENDER THE INTERACTIVE FORM */}
+      {/* ── FORM ── */}
       <CreateForm />
-      
+
     </div>
   );
 }

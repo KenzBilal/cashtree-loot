@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Plus, BarChart3, Radio, Users } from 'lucide-react';
-import CampaignManager from './CampaignManager'; // ✅ The interactive manager
+import CampaignManager from './CampaignManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,111 +14,123 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// ── Style constants outside component ──
+const headerStyle = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  alignItems: 'flex-end',
+  gap: '20px',
+  marginBottom: '32px',
+  paddingBottom: '24px',
+  borderBottom: '1px solid rgba(255,255,255,0.05)',
+};
+
 export default async function CampaignsPage() {
-  // 1. FETCH DATA (Admin sees ALL campaigns + Lead Counts)
-  // We use supabase count logic to get the number of leads per campaign efficiently
   const { data: campaigns, error } = await supabaseAdmin
     .from('campaigns')
-    .select(`*, leads(count)`)
+    .select('*, leads(count)')
     .order('created_at', { ascending: false });
 
   if (error) {
     return (
-      <div className="p-10 text-center text-red-500 border border-red-500/20 bg-red-500/10 rounded-xl m-10">
-        <h3 className="font-bold">System Error</h3>
-        <p className="text-sm">{error.message}</p>
+      <div style={{
+        margin: '40px',
+        padding: '24px',
+        background: 'rgba(239,68,68,0.06)',
+        border: '1px solid rgba(239,68,68,0.2)',
+        borderRadius: '16px',
+        color: '#ef4444',
+        textAlign: 'center',
+      }}>
+        <div style={{ fontWeight: '700', marginBottom: '6px' }}>System Error</div>
+        <div style={{ fontSize: '13px', opacity: 0.7 }}>{error.message}</div>
       </div>
     );
   }
 
-  // 2. CALCULATE LIVE STATS
-  const total = campaigns?.length || 0;
-  const active = campaigns?.filter(c => c.is_active).length || 0;
-  
-  // Safely sum up the leads (Supabase returns leads: [{ count: 5 }] usually)
-  const totalLeads = campaigns?.reduce((sum, c) => {
-    const count = c.leads?.[0]?.count || 0;
-    return sum + count;
-  }, 0) || 0;
+  const total  = campaigns?.length ?? 0;
+  const active = campaigns?.filter(c => c.is_active).length ?? 0;
 
-  // --- STYLES ---
-  // ✅ FIX: Added 'flexWrap' and 'gap' so it doesn't break on mobile
-  const headerStyle = { 
-    display: 'flex', 
-    flexWrap: 'wrap', 
-    justifyContent: 'space-between', 
-    alignItems: 'end', 
-    gap: '20px', 
-    marginBottom: '30px',
-    paddingBottom: '20px', 
-    borderBottom: '1px solid rgba(255,255,255,0.05)'
-  };
+  // Supabase returns leads as [{ count: N }]
+  const totalLeads = campaigns?.reduce((sum, c) => {
+    return sum + (c.leads?.[0]?.count ?? 0);
+  }, 0) ?? 0;
+
   return (
-    <div style={{animation: 'fadeIn 0.6s ease-out', paddingBottom: '100px'}}>
-      
-      {/* 1. HEADER & STATS */}
+    <div style={{ paddingBottom: '100px' }}>
+
+      {/* ── HEADER ── */}
       <div style={headerStyle}>
         <div>
-          <h1 style={{fontSize: '32px', fontWeight: '900', color: '#fff', margin: 0, letterSpacing: '-1px'}}>
-            Mission <span style={{color: '#666'}}>Control</span>
+          <h1 style={{
+            fontSize: 'clamp(24px, 4vw, 32px)',
+            fontWeight: '900',
+            color: '#fff',
+            margin: '0 0 16px 0',
+            letterSpacing: '-0.8px',
+          }}>
+            Mission <span style={{ color: '#444' }}>Control</span>
           </h1>
-          
-          <div style={{display: 'flex', gap: '12px', marginTop: '16px'}}>
-             <StatBadge 
-                label="LIVE SIGNALS" 
-                value={active} 
-                color="#00ff88" 
-                icon={<Radio size={12} />} 
-                bg="rgba(0, 255, 136, 0.1)"
-             />
-             <StatBadge 
-                label="TOTAL CAMPAIGNS" 
-                value={total} 
-                color="#fff" 
-                icon={<BarChart3 size={12} />} 
-                bg="rgba(255, 255, 255, 0.05)"
-             />
-             <StatBadge 
-                label="TOTAL LEADS" 
-                value={totalLeads} 
-                color="#3b82f6" 
-                icon={<Users size={12} />} 
-                bg="rgba(59, 130, 246, 0.1)"
-             />
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <StatBadge label="Live"   value={active}      color="#00ff88" icon={<Radio size={12} />} />
+            <StatBadge label="Total"  value={total}       color="#aaaaaa" icon={<BarChart3 size={12} />} />
+            <StatBadge label="Leads"  value={totalLeads}  color="#3b82f6" icon={<Users size={12} />} />
           </div>
         </div>
-        
-        {/* NEW CAMPAIGN BUTTON */}
-        <Link href="/admin/campaigns/create" style={{
-          background: '#fff', color: '#000', padding: '16px 24px', borderRadius: '16px', 
-          textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', 
-          letterSpacing: '1px', boxShadow: '0 0 30px rgba(255,255,255,0.15)',
-          transition: 'transform 0.2s', display: 'flex', alignItems: 'center', gap: '8px'
-        }}>
-          <Plus size={18} strokeWidth={3} /> Deploy New
+
+        <Link
+          href="/admin/campaigns/create"
+          style={{
+            background: '#fff',
+            color: '#000',
+            padding: '14px 22px',
+            borderRadius: '14px',
+            textDecoration: 'none',
+            fontSize: '12px',
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 0 30px rgba(255,255,255,0.1)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Plus size={16} strokeWidth={3} /> Deploy New
         </Link>
       </div>
 
-      {/* 2. THE INTERACTIVE MANAGER */}
-      <CampaignManager initialCampaigns={campaigns || []} />
-      
+      {/* ── CAMPAIGN MANAGER ── */}
+      <CampaignManager initialCampaigns={campaigns ?? []} />
     </div>
   );
 }
 
-// 10/10 Glass Pill Component for Stats
-function StatBadge({ label, value, color, icon, bg }) {
+// ── Stat badge ──
+// Note: uses rgba() borders instead of hex+alpha shorthand to avoid invalid CSS
+function StatBadge({ label, value, color, icon }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: '10px', 
-      padding: '8px 16px', borderRadius: '12px',
-      background: bg, border: `1px solid ${color}20` // Adds subtle border using hex transparency
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '8px 14px',
+      borderRadius: '12px',
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.07)',
     }}>
-       <div style={{color: color, display: 'flex'}}>{icon}</div>
-       <div style={{display: 'flex', flexDirection: 'column', lineHeight: '1'}}>
-          <span style={{color: color, fontSize: '15px', fontWeight: '900', marginBottom: '2px'}}>{value}</span>
-          <span style={{fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase'}}>{label}</span>
-       </div>
+      <div style={{ color, display: 'flex' }}>{icon}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+        <span style={{ color, fontSize: '15px', fontWeight: '900', marginBottom: '2px' }}>
+          {value}
+        </span>
+        <span style={{ fontSize: '9px', fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+          {label}
+        </span>
+      </div>
     </div>
   );
 }
