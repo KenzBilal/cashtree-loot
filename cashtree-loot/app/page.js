@@ -1,10 +1,69 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
-import { ArrowRight, Zap, ShieldCheck, Smartphone, Send, Menu, X, Globe, BarChart3, Lock, ChevronDown, ChevronUp } from 'lucide-react';
+import { 
+  ArrowRight, Menu, X, Globe, BarChart3, Lock, 
+  Send, ChevronDown, ChevronUp, Zap, ShieldCheck 
+} from 'lucide-react';
 import LegalDocs from './LegalDocs';
+
+// --- DATA CONSTANTS (For cleaner JSX) ---
+const STATS = [
+  { value: "5K+", label: "Active Nodes" },
+  { value: "12ms", label: "Global Latency" },
+  { value: "100%", label: "Verified Traffic" },
+  { value: "T+0", label: "Instant Settlement" }
+];
+
+const FEATURES = [
+  {
+    icon: <Globe size={24} />,
+    color: "var(--color-yellow)",
+    title: "1. Source",
+    desc: "Access high-yield CPA campaigns from Tier-1 financial institutions and global app partners directly via our marketplace."
+  },
+  {
+    icon: <BarChart3 size={24} />,
+    color: "var(--color-blue)",
+    title: "2. Execute",
+    desc: "Drive traffic via smart tracking links. Our Server-to-Server (S2S) engine validates conversions in real-time with 99.9% uptime."
+  },
+  {
+    icon: <Lock size={24} />,
+    color: "var(--color-green)",
+    title: "3. Settle",
+    desc: "Automated payout processing via UPI and Bank Transfer. Zero-fee withdrawal architecture for verified publishers."
+  }
+];
+
+const FAQS = [
+  {
+    q: "What type of traffic is accepted?",
+    a: "We accept organic traffic from Social Media (YouTube, Telegram, Instagram), SEO (Blogs/Websites), and Email Lists. Incentivized traffic is permitted only for specific 'Task' campaigns marked in the dashboard."
+  },
+  {
+    q: "What is the payout cycle?",
+    a: "We operate on a T+0 (Instant) model for verified publishers. Once a conversion is approved by the advertiser postback, funds are available for immediate withdrawal to your linked UPI account."
+  },
+  {
+    q: "Do you provide API access?",
+    a: "Yes. High-volume partners can request Postback/Webhook integration to track conversions on their own internal dashboards. Contact support for documentation."
+  },
+  {
+    q: "Why was my conversion rejected?",
+    a: "Rejections occur if the advertiser detects fraud (VPN/Proxy), duplicate IPs, or if the user fails to meet the KPI (Key Performance Indicator) such as 'New User Only' or 'Minimum Deposit'."
+  },
+  {
+    q: "Is there a minimum withdrawal limit?",
+    a: "The minimum withdrawal threshold is dynamic based on your publisher tier, typically starting at ₹50. This ensures efficient processing of thousands of daily transactions."
+  },
+  {
+    q: "How do I verify my account?",
+    a: "Verification is automated. Simply link a valid phone number and complete your first campaign. For high-ticket payouts, additional KYC may be requested for compliance."
+  }
+];
 
 export default function Home() {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -12,12 +71,16 @@ export default function Home() {
   const [dashboardLink, setDashboardLink] = useState("/login");
   const [scrolled, setScrolled] = useState(false);
 
+  // --- LOGIC: Session & Scroll Detection ---
   useEffect(() => {
-    // Scroll listener for Navbar Glass effect
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 20;
+      if (isScrolled !== scrolled) setScrolled(isScrolled);
+    };
 
-    // Partner Logic
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Partner Logic Restoration
     const partnerId = localStorage.getItem("p_id");
     const oldCode = localStorage.getItem("cashttree_referral");
     if (partnerId) {
@@ -27,102 +90,108 @@ export default function Home() {
     }
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [scrolled]);
+
+  const toggleFaq = (index) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
 
   return (
-    <div className="app-container">
+    <div className="root-layout">
       <Script src="https://nap5k.com/tag.min.js" strategy="lazyOnload" data-zone="10337480" />
 
-      {/* --- AMBIENT BACKGROUND GLOW --- */}
-      <div className="ambient-glow" />
+      {/* --- BACKGROUND FX --- */}
+      <div className="ambient-glow" aria-hidden="true" />
+      <div className="grid-overlay" aria-hidden="true" />
 
       {/* --- NAVIGATION --- */}
       <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-container">
+        <div className="container nav-inner">
           <Link href="/" className="brand">
             Cash<span className="text-neon">Tree</span>
           </Link>
 
           {/* Desktop Links */}
           <nav className="nav-links desktop-only">
-            <Link href="/campaigns" className="nav-link">Live Inventory</Link>
-            <a href="#protocol" className="nav-link">Protocol</a>
-            <a href="#faq" className="nav-link">FAQ</a>
+            <Link href="/campaigns" className="nav-item">Live Inventory</Link>
+            <a href="#protocol" className="nav-item">Protocol</a>
+            <a href="#faq" className="nav-item">FAQ</a>
           </nav>
 
           {/* Actions */}
           <div className="nav-actions">
-            <Link href={dashboardLink} className="btn-glass dashboard-btn">
-              Dashboard <ArrowRight size={14} />
+            <Link href={dashboardLink} className="btn-glass btn-sm dashboard-btn">
+              <span>Dashboard</span>
+              <ArrowRight size={14} className="icon-slide" />
             </Link>
-            <button className="mobile-toggle" onClick={() => setIsNavOpen(!isNavOpen)}>
-              {isNavOpen ? <X size={24} /> : <Menu size={24} />}
+            <button 
+              className="menu-toggle" 
+              onClick={() => setIsNavOpen(!isNavOpen)}
+              aria-label="Toggle Menu"
+              aria-expanded={isNavOpen}
+            >
+              {isNavOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
 
         {/* Mobile Menu Overlay */}
         <div className={`mobile-menu ${isNavOpen ? 'open' : ''}`}>
-          <div className="mobile-links">
-             <Link href="/campaigns" onClick={() => setIsNavOpen(false)}>Live Inventory</Link>
-             <a href="#protocol" onClick={() => setIsNavOpen(false)}>Protocol</a>
-             <a href="#faq" onClick={() => setIsNavOpen(false)}>FAQ</a>
+          <div className="mobile-menu-content">
+             <Link href="/campaigns" onClick={() => setIsNavOpen(false)} className="mobile-link">Live Inventory</Link>
+             <a href="#protocol" onClick={() => setIsNavOpen(false)} className="mobile-link">Protocol</a>
+             <a href="#faq" onClick={() => setIsNavOpen(false)} className="mobile-link">FAQ</a>
+             <Link href={dashboardLink} onClick={() => setIsNavOpen(false)} className="mobile-link highlight">
+               Partner Dashboard
+             </Link>
           </div>
         </div>
       </header>
 
       <main>
         {/* --- HERO SECTION --- */}
-        <section className="hero-section">
-          <div className="container hero-content">
-            <div className="badge animate-in fade-down">
-              <span className="badge-dot"></span> v2.0 Protocol Live
-            </div>
-            
-            <h1 className="hero-title animate-in fade-up">
-              The Performance <br/>
-              <span className="text-gradient">Reward Layer.</span>
-            </h1>
-            
-            <p className="hero-subtitle animate-in fade-up delay-100">
-              The infrastructure for modern publishers to monetize traffic.<br className="hidden-mobile"/>
-              Direct API connections. Instant liquidity. Enterprise-grade tracking.
-            </p>
-            
-            <div className="hero-cta-group animate-in fade-up delay-200">
-              <Link href="/campaigns" className="btn-primary">
-                View Inventory <ArrowRight size={18} />
-              </Link>
+        <section className="hero">
+          <div className="container hero-container">
+            <div className="hero-content">
+              <div className="badge fade-in-up">
+                <span className="badge-dot" /> v2.0 Protocol Live
+              </div>
               
-              <Link href={dashboardLink} className="btn-glass">
-                Partner Login
-              </Link>
+              <h1 className="hero-title fade-in-up delay-1">
+                The Performance <br/>
+                <span className="text-gradient">Reward Layer.</span>
+              </h1>
+              
+              <p className="hero-sub fade-in-up delay-2">
+                The infrastructure for modern publishers to monetize traffic.<br className="md-visible"/>
+                Direct API connections. Instant liquidity. Enterprise-grade tracking.
+              </p>
+              
+              <div className="cta-group fade-in-up delay-3">
+                <Link href="/campaigns" className="btn-primary">
+                  View Inventory <ArrowRight size={18} />
+                </Link>
+                
+                <Link href={dashboardLink} className="btn-glass">
+                  Partner Login
+                </Link>
+              </div>
             </div>
 
-            {/* STATS GRID */}
-            <div className="stats-grid animate-in fade-up delay-300">
-              <div className="stat-card">
-                <div className="stat-value">5K+</div>
-                <div className="stat-label">Active Nodes</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">12ms</div>
-                <div className="stat-label">Global Latency</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">100%</div>
-                <div className="stat-label">Verified Traffic</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">T+0</div>
-                <div className="stat-label">Instant Settlement</div>
-              </div>
+            {/* Stats Grid */}
+            <div className="stats-grid fade-in-up delay-4">
+              {STATS.map((stat, idx) => (
+                <div key={idx} className="stat-card">
+                  <div className="stat-value">{stat.value}</div>
+                  <div className="stat-label">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* --- PROTOCOL SECTION --- */}
-        <section id="protocol" className="section protocol-section">
+        <section id="protocol" className="section protocol">
           <div className="container">
             <div className="section-header">
               <h2 className="section-title">The Protocol</h2>
@@ -130,38 +199,25 @@ export default function Home() {
             </div>
             
             <div className="features-grid">
-              <div className="feature-card glass-panel">
-                <div className="icon-wrapper color-yellow">
-                  <Globe size={32}/>
+              {FEATURES.map((feature, idx) => (
+                <div key={idx} className="feature-card glass-panel" style={{ '--accent': feature.color }}>
+                  <div className="feature-icon">
+                    {feature.icon}
+                  </div>
+                  <h3 className="feature-title">{feature.title}</h3>
+                  <p className="feature-desc">{feature.desc}</p>
                 </div>
-                <h3>1. Source</h3>
-                <p>Access high-yield CPA campaigns from Tier-1 financial institutions and global app partners directly via our marketplace.</p>
-              </div>
-              
-              <div className="feature-card glass-panel">
-                <div className="icon-wrapper color-blue">
-                  <BarChart3 size={32}/>
-                </div>
-                <h3>2. Execute</h3>
-                <p>Drive traffic via smart tracking links. Our Server-to-Server (S2S) engine validates conversions in real-time with 99.9% uptime.</p>
-              </div>
-              
-              <div className="feature-card glass-panel">
-                <div className="icon-wrapper color-green">
-                  <Lock size={32}/>
-                </div>
-                <h3>3. Settle</h3>
-                <p>Automated payout processing via UPI and Bank Transfer. Zero-fee withdrawal architecture for verified publishers.</p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* --- ECOSYSTEM BANNER --- */}
-        <section className="section ecosystem-section">
+        <section className="section ecosystem">
           <div className="container">
-            <div className="ecosystem-banner glass-panel">
-              <div className="banner-content">
+            <div className="ecosystem-card glass-panel">
+              <div className="glow-effect" />
+              <div className="ecosystem-content">
                 <h2 className="banner-title">Join the Ecosystem</h2>
                 <p className="banner-desc">
                   Connect with thousands of publishers. Get real-time updates on high-converting offers, maintenance alerts, and optimization strategies.
@@ -175,55 +231,44 @@ export default function Home() {
                   <Send size={18} /> Join Official Channel
                 </a>
               </div>
-              <div className="banner-glow" />
             </div>
           </div>
         </section>
 
         {/* --- FAQ SECTION --- */}
-        <section id="faq" className="section faq-section">
-          <div className="container max-w-lg">
+        <section id="faq" className="section faq">
+          <div className="container faq-container">
             <div className="section-header">
               <h2 className="section-title">System FAQ</h2>
+              <p className="section-desc">Common questions about the CashTree architecture.</p>
             </div>
             
             <div className="faq-list">
-              <FaqItem 
-                question="What type of traffic is accepted?" 
-                answer="We accept organic traffic from Social Media (YouTube, Telegram, Instagram), SEO (Blogs/Websites), and Email Lists. Incentivized traffic is permitted only for specific 'Task' campaigns marked in the dashboard." 
-                isOpen={activeFaq === 1} onClick={() => setActiveFaq(activeFaq === 1 ? null : 1)}
-              />
-              <FaqItem 
-                question="What is the payout cycle?" 
-                answer="We operate on a T+0 (Instant) model for verified publishers. Once a conversion is approved by the advertiser postback, funds are available for immediate withdrawal to your linked UPI account." 
-                isOpen={activeFaq === 2} onClick={() => setActiveFaq(activeFaq === 2 ? null : 2)}
-              />
-              <FaqItem 
-                question="Do you provide API access?" 
-                answer="Yes. High-volume partners can request Postback/Webhook integration to track conversions on their own internal dashboards. Contact support for documentation." 
-                isOpen={activeFaq === 3} onClick={() => setActiveFaq(activeFaq === 3 ? null : 3)}
-              />
-              <FaqItem 
-                question="Why was my conversion rejected?" 
-                answer="Rejections occur if the advertiser detects fraud (VPN/Proxy), duplicate IPs, or if the user fails to meet the KPI (Key Performance Indicator) such as 'New User Only' or 'Minimum Deposit'." 
-                isOpen={activeFaq === 4} onClick={() => setActiveFaq(activeFaq === 4 ? null : 4)}
-              />
-              <FaqItem 
-                question="Is there a minimum withdrawal limit?" 
-                answer="The minimum withdrawal threshold is dynamic based on your publisher tier, typically starting at ₹50. This ensures efficient processing of thousands of daily transactions." 
-                isOpen={activeFaq === 5} onClick={() => setActiveFaq(activeFaq === 5 ? null : 5)}
-              />
-              <FaqItem 
-                question="How do I verify my account?" 
-                answer="Verification is automated. Simply link a valid phone number and complete your first campaign. For high-ticket payouts, additional KYC may be requested for compliance." 
-                isOpen={activeFaq === 6} onClick={() => setActiveFaq(activeFaq === 6 ? null : 6)}
-              />
+              {FAQS.map((item, idx) => (
+                <div key={idx} className={`faq-item glass-panel ${activeFaq === idx ? 'active' : ''}`}>
+                  <button 
+                    className="faq-trigger" 
+                    onClick={() => toggleFaq(idx)}
+                    aria-expanded={activeFaq === idx}
+                  >
+                    <span className="faq-q">{item.q}</span>
+                    <span className="faq-icon">
+                      {activeFaq === idx ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </span>
+                  </button>
+                  <div className="faq-content-wrapper">
+                    <div className="faq-answer">
+                      {item.a}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* --- FOOTER --- */}
-        <footer className="footer-section">
+        <footer className="footer">
           <div className="container">
             <div className="footer-grid">
               
@@ -240,22 +285,22 @@ export default function Home() {
 
               {/* Links Column */}
               <div className="footer-col">
-                <h4>Platform</h4>
-                <div className="footer-links">
-                  <Link href="/campaigns">Live Inventory</Link>
-                  <a href="#protocol">The Protocol</a>
-                  <Link href={dashboardLink}>Partner Login</Link>
-                </div>
+                <h4 className="footer-heading">Platform</h4>
+                <ul className="footer-links-list">
+                  <li><Link href="/campaigns">Live Inventory</Link></li>
+                  <li><a href="#protocol">The Protocol</a></li>
+                  <li><Link href={dashboardLink}>Partner Login</Link></li>
+                </ul>
               </div>
 
               {/* Support Column */}
               <div className="footer-col">
-                <h4>Support</h4>
-                <div className="footer-links">
-                  <Link href="/contact">Contact Us</Link>
-                  <a href="mailto:help@cashttree.online">help@cashttree.online</a>
-                  <a href="https://t.me/CashtTree_bot" target="_blank">Telegram Support</a>
-                </div>
+                <h4 className="footer-heading">Support</h4>
+                <ul className="footer-links-list">
+                  <li><Link href="/contact">Contact Us</Link></li>
+                  <li><a href="mailto:help@cashttree.online">help@cashttree.online</a></li>
+                  <li><a href="https://t.me/CashtTree_bot" target="_blank">Telegram Support</a></li>
+                </ul>
               </div>
             </div>
 
@@ -263,27 +308,34 @@ export default function Home() {
             <div className="footer-bottom">
               <LegalDocs />
               <div className="copyright">
-                © 2026 CashTree Network. All rights reserved.
+                © {new Date().getFullYear()} CashTree Network. All rights reserved.
               </div>
             </div>
           </div>
         </footer>
       </main>
 
-      {/* --- PREMIUM STYLESHEET (GLASS DESIGN SYSTEM) --- */}
+      {/* --- DESIGN SYSTEM & STYLES --- */}
       <style jsx global>{`
         :root {
           --bg-dark: #050505;
-          --glass-border: rgba(255, 255, 255, 0.08);
-          --glass-surface: rgba(255, 255, 255, 0.03);
-          --glass-highlight: rgba(255, 255, 255, 0.08);
+          --bg-panel: rgba(255, 255, 255, 0.03);
+          --border-light: rgba(255, 255, 255, 0.08);
+          --border-hover: rgba(255, 255, 255, 0.15);
           --neon-green: #00ff88;
+          --color-yellow: #fbbf24;
+          --color-blue: #3b82f6;
+          --color-green: #00ff88;
           --text-primary: #ffffff;
           --text-secondary: #888888;
-          --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Base Reset */
+        html {
+          scroll-behavior: smooth;
+        }
+
         body {
           background-color: var(--bg-dark);
           color: var(--text-primary);
@@ -291,47 +343,57 @@ export default function Home() {
           margin: 0;
           overflow-x: hidden;
           -webkit-font-smoothing: antialiased;
+          line-height: 1.5;
         }
 
-        .app-container {
-          position: relative;
-          min-height: 100vh;
-        }
-
-        /* Ambient Background */
-        .ambient-glow {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          height: 100vh;
-          background: radial-gradient(circle at 50% -20%, rgba(0, 255, 136, 0.08), transparent 70%);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        /* Layout Utils */
+        /* --- UTILS --- */
         .container {
           max-width: 1200px;
           margin: 0 auto;
           padding: 0 24px;
-          position: relative;
-          z-index: 1;
         }
-        .max-w-lg { max-width: 800px; }
 
-        /* Typography */
-        h1, h2, h3 { letter-spacing: -0.02em; font-weight: 800; margin: 0; }
         .text-neon { color: var(--neon-green); }
         .text-gradient {
           background: linear-gradient(135deg, #fff 30%, #888 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
+        
+        .glass-panel {
+          background: var(--bg-panel);
+          border: 1px solid var(--border-light);
+          backdrop-filter: blur(12px);
+          border-radius: 24px;
+          transition: all 0.3s var(--ease-out);
+        }
+        
+        /* --- BACKGROUNDS --- */
+        .ambient-glow {
+          position: fixed;
+          top: -20%; left: 50%;
+          transform: translateX(-50%);
+          width: 1200px; height: 1000px;
+          background: radial-gradient(circle, rgba(0, 255, 136, 0.06) 0%, transparent 60%);
+          pointer-events: none;
+          z-index: -1;
+        }
+        .grid-overlay {
+          position: fixed;
+          inset: 0;
+          background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+          background-size: 50px 50px;
+          mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+          pointer-events: none;
+          z-index: -1;
+        }
 
         /* --- NAVBAR --- */
         .navbar {
           position: fixed;
           top: 0; left: 0; right: 0;
-          height: 70px;
+          height: 72px;
           display: flex;
           align-items: center;
           z-index: 100;
@@ -341,63 +403,91 @@ export default function Home() {
         .navbar.scrolled {
           background: rgba(5, 5, 5, 0.7);
           backdrop-filter: blur(20px);
-          border-bottom: 1px solid var(--glass-border);
+          border-bottom: 1px solid var(--border-light);
         }
-        .nav-container {
+        .nav-inner {
           display: flex;
           justify-content: space-between;
           align-items: center;
           width: 100%;
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 24px;
         }
         .brand {
           font-size: 1.5rem;
           font-weight: 800;
           text-decoration: none;
           color: white;
-          letter-spacing: -1px;
+          letter-spacing: -0.04em;
+          display: flex;
+          align-items: center;
         }
-        .nav-links.desktop-only {
+        .nav-links {
           display: flex;
           gap: 32px;
         }
-        .nav-link {
+        .nav-item {
           color: var(--text-secondary);
           text-decoration: none;
           font-size: 0.9rem;
           font-weight: 500;
           transition: color 0.2s;
         }
-        .nav-link:hover { color: white; }
+        .nav-item:hover { color: white; }
         
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .menu-toggle {
+          display: none;
+          background: none;
+          border: none;
+          color: white;
+          padding: 4px;
+          cursor: pointer;
+        }
+
         /* Mobile Menu */
-        .mobile-toggle { display: none; background: none; border: none; color: white; }
         .mobile-menu {
-          position: fixed; top: 70px; left: 0; right: 0; bottom: 0;
+          position: fixed;
+          inset: 0;
+          top: 72px;
           background: var(--bg-dark);
-          transform: translateY(-100%);
-          transition: transform 0.3s ease;
           z-index: 90;
-          padding: 40px;
+          padding: 24px;
+          transform: translateY(-10px);
+          opacity: 0;
+          pointer-events: none;
+          transition: all 0.3s var(--ease-out);
+        }
+        .mobile-menu.open {
+          transform: translateY(0);
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .mobile-menu-content {
           display: flex;
           flex-direction: column;
+          gap: 24px;
         }
-        .mobile-menu.open { transform: translateY(0); }
-        .mobile-links a {
+        .mobile-link {
           font-size: 1.5rem;
-          font-weight: 700;
+          font-weight: 600;
           color: white;
           text-decoration: none;
-          margin-bottom: 24px;
-          display: block;
+          border-bottom: 1px solid var(--border-light);
+          padding-bottom: 16px;
+        }
+        .mobile-link.highlight {
+          color: var(--neon-green);
+          border-color: rgba(0, 255, 136, 0.2);
         }
 
         /* --- HERO --- */
-        .hero-section {
+        .hero {
           padding: 160px 0 100px;
           text-align: center;
+          position: relative;
         }
         .badge {
           display: inline-flex;
@@ -405,34 +495,39 @@ export default function Home() {
           gap: 8px;
           padding: 6px 12px;
           background: rgba(255, 255, 255, 0.05);
-          border: 1px solid var(--glass-border);
+          border: 1px solid var(--border-light);
           border-radius: 100px;
           font-size: 0.8rem;
           color: var(--text-secondary);
-          margin-bottom: 24px;
+          margin-bottom: 32px;
         }
-        .badge-dot { width: 6px; height: 6px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 10px var(--neon-green); }
-        
+        .badge-dot {
+          width: 6px; height: 6px;
+          background: var(--neon-green);
+          border-radius: 50%;
+          box-shadow: 0 0 10px var(--neon-green);
+        }
         .hero-title {
-          font-size: 4rem;
+          font-size: clamp(2.5rem, 5vw, 4.5rem);
           line-height: 1.1;
+          font-weight: 800;
+          letter-spacing: -0.02em;
           margin-bottom: 24px;
         }
-        .hero-subtitle {
-          font-size: 1.2rem;
+        .hero-sub {
+          font-size: clamp(1rem, 2vw, 1.25rem);
           color: var(--text-secondary);
           line-height: 1.6;
-          max-width: 600px;
-          margin: 0 auto 40px;
+          max-width: 640px;
+          margin: 0 auto 48px;
         }
-        .hero-cta-group {
+        .cta-group {
           display: flex;
           justify-content: center;
           gap: 16px;
           margin-bottom: 80px;
+          flex-wrap: wrap;
         }
-
-        /* Buttons */
         .btn-primary {
           background: var(--neon-green);
           color: #000;
@@ -447,109 +542,162 @@ export default function Home() {
         }
         .btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+          box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
         }
         .btn-glass {
           background: rgba(255, 255, 255, 0.05);
-          border: 1px solid var(--glass-border);
+          border: 1px solid var(--border-light);
           color: white;
           padding: 14px 32px;
           border-radius: 12px;
           font-weight: 600;
           text-decoration: none;
-          transition: background 0.2s;
+          transition: background 0.2s, border-color 0.2s;
           display: inline-flex;
           align-items: center;
           gap: 8px;
         }
-        .btn-glass:hover { background: rgba(255, 255, 255, 0.1); }
-        .dashboard-btn { padding: 8px 20px; font-size: 0.9rem; border-radius: 50px; }
+        .btn-glass:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: var(--border-hover);
+        }
+        .btn-sm { padding: 8px 16px; border-radius: 50px; font-size: 0.9rem; }
+        .icon-slide { transition: transform 0.2s; }
+        .btn-glass:hover .icon-slide { transform: translateX(3px); }
 
         /* Stats Grid */
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 24px;
-          border-top: 1px solid var(--glass-border);
-          padding-top: 40px;
+          gap: 1px;
+          background: var(--border-light);
+          border: 1px solid var(--border-light);
+          border-radius: 16px;
+          overflow: hidden;
         }
-        .stat-value { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 4px; }
-        .stat-label { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card {
+          background: var(--bg-dark);
+          padding: 32px 24px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        .stat-value { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 4px; letter-spacing: -0.02em; }
+        .stat-label { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+        /* --- SECTIONS COMMON --- */
+        .section { padding: 100px 0; }
+        .section-header { text-align: center; margin-bottom: 64px; }
+        .section-title { font-size: 2.5rem; margin-bottom: 16px; letter-spacing: -0.02em; }
+        .section-desc { color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
 
         /* --- FEATURES --- */
-        .section { padding: 100px 0; }
-        .section-header { text-align: center; margin-bottom: 60px; }
-        .section-title { font-size: 2.5rem; margin-bottom: 16px; }
-        .section-desc { color: var(--text-secondary); font-size: 1.1rem; }
-
         .features-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
           gap: 24px;
         }
-        .glass-panel {
-          background: var(--glass-surface);
-          border: 1px solid var(--glass-border);
-          backdrop-filter: blur(12px);
-          border-radius: 24px;
+        .feature-card {
           padding: 40px;
-          transition: transform 0.3s, border-color 0.3s;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          height: 100%;
         }
-        .glass-panel:hover {
-          transform: translateY(-5px);
-          border-color: var(--glass-highlight);
+        .feature-card:hover {
+          transform: translateY(-4px);
+          border-color: var(--border-hover);
         }
-        .icon-wrapper { margin-bottom: 24px; display: inline-flex; }
-        .color-yellow { color: #fbbf24; }
-        .color-blue { color: #3b82f6; }
-        .color-green { color: #00ff88; }
-        
-        .feature-card h3 { font-size: 1.5rem; margin-bottom: 12px; }
-        .feature-card p { color: var(--text-secondary); line-height: 1.6; }
+        .feature-icon {
+          margin-bottom: 24px;
+          color: var(--accent);
+          background: rgba(255, 255, 255, 0.05);
+          padding: 12px;
+          border-radius: 12px;
+        }
+        .feature-title { font-size: 1.5rem; margin-bottom: 12px; font-weight: 700; }
+        .feature-desc { color: var(--text-secondary); line-height: 1.6; font-size: 1rem; }
 
         /* --- ECOSYSTEM --- */
-        .ecosystem-banner {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 60px;
+        .ecosystem-card {
           position: relative;
+          padding: 80px 40px;
+          text-align: center;
           overflow: hidden;
         }
-        .banner-content { position: relative; z-index: 2; max-width: 600px; }
-        .banner-glow {
-          position: absolute; right: -100px; top: -100px; width: 400px; height: 400px;
-          background: radial-gradient(circle, rgba(0,255,136,0.1), transparent 70%);
-          z-index: 1;
+        .glow-effect {
+          position: absolute;
+          top: -50%; left: 50%;
+          transform: translateX(-50%);
+          width: 600px; height: 600px;
+          background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+          z-index: 0;
+          pointer-events: none;
         }
+        .ecosystem-content { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
+        .banner-title { font-size: 2.5rem; margin-bottom: 24px; letter-spacing: -0.02em; }
+        .banner-desc { color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 40px; line-height: 1.6; }
         .btn-telegram {
-          display: inline-flex; alignItems: center; gap: 10px;
-          background: #229ED9; color: white; padding: 14px 30px;
-          border-radius: 50px; font-weight: 700; text-decoration: none;
-          margin-top: 30px; transition: transform 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          background: #229ED9;
+          color: white;
+          padding: 16px 32px;
+          border-radius: 50px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: transform 0.2s, box-shadow 0.2s;
         }
-        .btn-telegram:hover { transform: translateY(-2px); }
+        .btn-telegram:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px -5px rgba(34, 158, 217, 0.4);
+        }
 
         /* --- FAQ --- */
+        .faq-container { max-width: 800px; }
+        .faq-list { display: flex; flex-direction: column; gap: 16px; }
         .faq-item {
-          border-bottom: 1px solid var(--glass-border);
+          overflow: hidden;
+          transition: border-color 0.2s;
         }
-        .faq-question {
-          width: 100%; text-align: left; background: none; border: none;
-          color: white; font-size: 1.1rem; font-weight: 600;
-          padding: 24px 0; cursor: pointer;
-          display: flex; justify-content: space-between; align-items: center;
+        .faq-item.active { border-color: var(--neon-green); background: rgba(0, 255, 136, 0.02); }
+        .faq-trigger {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 24px;
+          background: none;
+          border: none;
+          color: white;
+          cursor: pointer;
+          text-align: left;
         }
+        .faq-q { font-size: 1.1rem; font-weight: 600; }
+        .faq-icon { color: var(--text-secondary); transition: transform 0.3s; }
+        .faq-item.active .faq-icon { color: var(--neon-green); transform: rotate(180deg); }
+        
+        .faq-content-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.3s var(--ease-out);
+        }
+        .faq-item.active .faq-content-wrapper { grid-template-rows: 1fr; }
         .faq-answer {
-          color: var(--text-secondary); line-height: 1.6;
-          overflow: hidden; transition: all 0.3s ease;
+          overflow: hidden;
+          padding: 0 24px 24px;
+          color: var(--text-secondary);
+          line-height: 1.6;
         }
 
         /* --- FOOTER --- */
-        .footer-section {
-          border-top: 1px solid var(--glass-border);
+        .footer {
+          border-top: 1px solid var(--border-light);
           padding: 80px 0 40px;
           background: #020202;
+          font-size: 0.95rem;
         }
         .footer-grid {
           display: grid;
@@ -557,61 +705,75 @@ export default function Home() {
           gap: 60px;
           margin-bottom: 60px;
         }
-        .footer-brand { font-size: 1.5rem; font-weight: 800; color: white; text-decoration: none; }
-        .footer-desc { margin-top: 16px; color: var(--text-secondary); line-height: 1.6; max-width: 300px; }
-        .footer-links { display: flex; flexDirection: column; gap: 16px; margin-top: 24px; }
-        .footer-links a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
-        .footer-links a:hover { color: white; }
+        .footer-brand {
+          font-size: 1.5rem;
+          font-weight: 800;
+          color: white;
+          text-decoration: none;
+          margin-bottom: 16px;
+          display: block;
+        }
+        .footer-desc {
+          color: var(--text-secondary);
+          max-width: 320px;
+          line-height: 1.6;
+        }
+        .footer-heading {
+          font-size: 1rem;
+          font-weight: 700;
+          color: white;
+          margin-bottom: 24px;
+        }
+        .footer-links-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .footer-links-list a {
+          color: var(--text-secondary);
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .footer-links-list a:hover { color: white; }
+        
         .footer-bottom {
-          border-top: 1px solid var(--glass-border);
-          padding-top: 30px;
+          border-top: 1px solid var(--border-light);
+          padding-top: 32px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 20px;
+          gap: 24px;
+          text-align: center;
         }
-        .copyright { font-size: 0.8rem; color: #444; }
+        .copyright { color: #444; font-size: 0.85rem; }
 
-        /* --- MOBILE RESPONSIVENESS --- */
+        /* --- MEDIA QUERIES --- */
         @media (max-width: 768px) {
-          .nav-links.desktop-only { display: none; }
-          .mobile-toggle { display: block; }
-          .hero-title { font-size: 2.5rem; }
-          .hero-subtitle { font-size: 1rem; }
+          .desktop-only { display: none; }
+          .menu-toggle { display: block; }
           .stats-grid { grid-template-columns: 1fr 1fr; }
-          .hero-cta-group { flex-direction: column; }
           .footer-grid { grid-template-columns: 1fr; gap: 40px; }
-          .ecosystem-banner { flex-direction: column; text-align: center; padding: 40px 20px; }
-          .btn-telegram { width: 100%; justify-content: center; }
-          .hidden-mobile { display: none; }
+          .md-visible { display: none; }
         }
 
-        /* --- ANIMATIONS --- */
-        .animate-in { animation-duration: 0.6s; animation-fill-mode: both; ease-out; }
-        .fade-up { animation-name: fadeUp; }
-        .fade-down { animation-name: fadeDown; }
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
+        /* --- ANIMATIONS (CSS Classes) --- */
+        .fade-in-up {
+          animation: fadeInUp 0.8s var(--ease-out) forwards;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
 
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
-    </div>
-  );
-}
-
-// --- SUB-COMPONENTS ---
-function FaqItem({ question, answer, isOpen, onClick }) {
-  return (
-    <div className="faq-item">
-      <button className="faq-question" onClick={onClick}>
-        {question}
-        {isOpen ? <ChevronUp size={20} color="#00ff88"/> : <ChevronDown size={20} color="#666"/>}
-      </button>
-      <div style={{ maxHeight: isOpen ? '200px' : '0', opacity: isOpen ? 1 : 0, transition: 'all 0.3s ease' }}>
-        <p style={{ paddingBottom: '24px', margin: 0 }}>{answer}</p>
-      </div>
     </div>
   );
 }
