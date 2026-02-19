@@ -1,325 +1,382 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
-import { 
-  ArrowRight, Menu, X, Globe, BarChart3, Lock, 
-  Send, ChevronDown, ChevronUp, Zap, ShieldCheck 
+import {
+  ArrowRight, Menu, X, Globe, BarChart3, Lock,
+  Send, ChevronDown, ChevronRight
 } from 'lucide-react';
 import LegalDocs from './LegalDocs';
 
-// --- DATA CONSTANTS (Preserved) ---
+// ── DATA ──
 const STATS = [
-  { value: "5K+", label: "Active Nodes" },
-  { value: "12ms", label: "Global Latency" },
-  { value: "100%", label: "Verified Traffic" },
-  { value: "T+0", label: "Instant Settlement" }
+  { value: '5K+',  label: 'Active Nodes' },
+  { value: '12ms', label: 'Global Latency' },
+  { value: '100%', label: 'Verified Traffic' },
+  { value: 'T+0',  label: 'Instant Settlement' },
 ];
 
 const FEATURES = [
   {
-    icon: <Globe size={24} />,
-    color: "var(--color-yellow)",
-    title: "1. Source",
-    desc: "Access high-yield CPA campaigns from Tier-1 financial institutions and global app partners directly via our marketplace."
+    icon: <Globe size={22} />,
+    color: '#fbbf24', rgb: '251,191,36',
+    title: '1. Source',
+    desc: 'Access high-yield CPA campaigns from Tier-1 financial institutions and global app partners directly via our marketplace.',
   },
   {
-    icon: <BarChart3 size={24} />,
-    color: "var(--color-blue)",
-    title: "2. Execute",
-    desc: "Drive traffic via smart tracking links. Our Server-to-Server (S2S) engine validates conversions in real-time with 99.9% uptime."
+    icon: <BarChart3 size={22} />,
+    color: '#3b82f6', rgb: '59,130,246',
+    title: '2. Execute',
+    desc: 'Drive traffic via smart tracking links. Our Server-to-Server (S2S) engine validates conversions in real-time with 99.9% uptime.',
   },
   {
-    icon: <Lock size={24} />,
-    color: "var(--color-green)",
-    title: "3. Settle",
-    desc: "Automated payout processing via UPI and Bank Transfer. Zero-fee withdrawal architecture for verified publishers."
-  }
+    icon: <Lock size={22} />,
+    color: '#00ff88', rgb: '0,255,136',
+    title: '3. Settle',
+    desc: 'Automated payout processing via UPI and Bank Transfer. Zero-fee withdrawal architecture for verified publishers.',
+  },
 ];
 
 const FAQS = [
-  {
-    q: "What type of traffic is accepted?",
-    a: "We accept organic traffic from Social Media (YouTube, Telegram, Instagram), SEO (Blogs/Websites), and Email Lists. Incentivized traffic is permitted only for specific 'Task' campaigns marked in the dashboard."
-  },
-  {
-    q: "What is the payout cycle?",
-    a: "We operate on a T+0 (Instant) model for verified publishers. Once a conversion is approved by the advertiser postback, funds are available for immediate withdrawal to your linked UPI account."
-  },
-  {
-    q: "Do you provide API access?",
-    a: "Yes. High-volume partners can request Postback/Webhook integration to track conversions on their own internal dashboards. Contact support for documentation."
-  },
-  {
-    q: "Why was my conversion rejected?",
-    a: "Rejections occur if the advertiser detects fraud (VPN/Proxy), duplicate IPs, or if the user fails to meet the KPI (Key Performance Indicator) such as 'New User Only' or 'Minimum Deposit'."
-  },
-  {
-    q: "Is there a minimum withdrawal limit?",
-    a: "The minimum withdrawal threshold is dynamic based on your publisher tier, typically starting at ₹50. This ensures efficient processing of thousands of daily transactions."
-  },
-  {
-    q: "How do I verify my account?",
-    a: "Verification is automated. Simply link a valid phone number and complete your first campaign. For high-ticket payouts, additional KYC may be requested for compliance."
-  }
+  { q: 'What type of traffic is accepted?', a: "We accept organic traffic from Social Media (YouTube, Telegram, Instagram), SEO (Blogs/Websites), and Email Lists. Incentivized traffic is permitted only for specific 'Task' campaigns marked in the dashboard." },
+  { q: 'What is the payout cycle?',          a: 'We operate on a T+0 (Instant) model for verified publishers. Once a conversion is approved by the advertiser postback, funds are available for immediate withdrawal to your linked UPI account.' },
+  { q: 'Do you provide API access?',          a: 'Yes. High-volume partners can request Postback/Webhook integration to track conversions on their own internal dashboards. Contact support for documentation.' },
+  { q: 'Why was my conversion rejected?',     a: "Rejections occur if the advertiser detects fraud (VPN/Proxy), duplicate IPs, or if the user fails to meet the KPI such as 'New User Only' or 'Minimum Deposit'." },
+  { q: 'Is there a minimum withdrawal limit?', a: 'The minimum withdrawal threshold is dynamic based on your publisher tier, typically starting at ₹50. This ensures efficient processing of thousands of daily transactions.' },
+  { q: 'How do I verify my account?',         a: 'Verification is automated. Simply link a valid phone number and complete your first campaign. For high-ticket payouts, additional KYC may be requested for compliance.' },
 ];
 
 export default function Home() {
-  const [isNavOpen, setIsNavOpen] = useState(false);
-  const [activeFaq, setActiveFaq] = useState(null);
-  const [dashboardLink, setDashboardLink] = useState("/login");
-  const [scrolled, setScrolled] = useState(false);
+  const [isNavOpen, setIsNavOpen]         = useState(false);
+  const [activeFaq, setActiveFaq]         = useState(null);
+  const [dashboardLink, setDashboardLink] = useState('/login');
+  const [scrolled, setScrolled]           = useState(false);
+  const [isLoading, setIsLoading]         = useState(true);
+  const [ready, setReady]                 = useState(false);
 
-  // ⚡ LOADING STATE (Splash Screen)
-  const [isLoading, setIsLoading] = useState(true);
-
-  // --- LOGIC: Session & Scroll Detection ---
   useEffect(() => {
-    // 1. SPLASH SCREEN TIMER (Matches Animation Duration)
-    // The animation is ~2.2s, so we give it 2.5s to finish smoothly
-    const timer = setTimeout(() => {
+    const splashTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 2500);
+      setTimeout(() => setReady(true), 60);
+    }, 1800);
 
-    // 2. SCROLL DETECTION
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 20;
-      if (isScrolled !== scrolled) setScrolled(isScrolled);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // 3. PARTNER LOGIC (Preserved)
-    const partnerId = localStorage.getItem("p_id");
-    const oldCode = localStorage.getItem("cashttree_referral");
-    if (partnerId) {
-      setDashboardLink("/dashboard");
-    } else if (oldCode) {
-      setDashboardLink(`/dashboard?code=${oldCode}`);
-    }
+    try {
+      const pid  = localStorage.getItem('p_id');
+      const code = localStorage.getItem('cashttree_referral');
+      if (pid)        setDashboardLink('/dashboard');
+      else if (code)  setDashboardLink(`/dashboard?code=${code}`);
+    } catch {}
 
     return () => {
-      clearTimeout(timer); 
-      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(splashTimer);
+      window.removeEventListener('scroll', onScroll);
     };
-  }, [scrolled]);
-
-  const toggleFaq = (index) => {
-    setActiveFaq(activeFaq === index ? null : index);
-  };
+  }, []);
 
   return (
-    <div className="root-layout">
+    <div>
       <Script src="https://nap5k.com/tag.min.js" strategy="lazyOnload" data-zone="10337480" />
 
-      {/* --------------------------------------------------------- */}
-      {/* ⚡ NEW: PREMIUM LIQUID SPLASH SCREEN (From loading.js) */}
-      {/* --------------------------------------------------------- */}
-      <div className={`splash-screen ${!isLoading ? 'fade-out' : ''}`}>
-        <div style={{position: 'relative'}}>
-          
-          {/* 1. The Base Text (Dimmed Background) */}
-          <h1 style={{
-            fontSize: '40px', fontWeight: '900', color: '#111', 
-            margin: 0, letterSpacing: '4px', position: 'relative', zIndex: 1
-          }}>
-            CASHTREE
-          </h1>
+      <style>{`
+        :root {
+          --neon:       #00ff88;
+          --neon-glow:  rgba(0,255,136,0.32);
+          --neon-dim:   rgba(0,255,136,0.1);
+          --border-l:   rgba(255,255,255,0.07);
+          --border-h:   rgba(255,255,255,0.14);
+          --muted:      #777;
+          --mid:        #aaa;
+          --ease:       cubic-bezier(0.16,1,0.3,1);
+          --mono:       'SF Mono','Menlo','Courier New',monospace;
+        }
 
-          {/* 2. The "Hollow" Overlay (Outline) */}
-          <h1 style={{
-            fontSize: '40px', fontWeight: '900', color: 'transparent', 
-            WebkitTextStroke: '1px #333',
-            margin: 0, letterSpacing: '4px', position: 'absolute', top: 0, left: 0, zIndex: 2
-          }}>
-            CASHTREE
-          </h1>
+        /* SPLASH */
+        .splash { position:fixed; inset:0; background:#000; z-index:99999; display:flex; align-items:center; justify-content:center; transition:opacity 0.9s ease, visibility 0.9s; }
+        .splash.out { opacity:0; visibility:hidden; pointer-events:none; }
+        @keyframes fillUp { 0%{width:0%;opacity:0} 8%{opacity:1} 60%{width:100%;opacity:1} 100%{width:100%;opacity:1} }
+        @keyframes glowPulse { 0%,100%{opacity:.1} 50%{opacity:.3} }
 
-          {/* 3. The Neon Liquid Fill (Animated Reveal) */}
-          <h1 className="liquid-text" style={{
-            fontSize: '40px', fontWeight: '900', 
-            margin: 0, letterSpacing: '4px', position: 'absolute', top: 0, left: 0, zIndex: 3,
-            overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
-            borderRight: '2px solid #00ff88', // The Laser Line
-            animation: 'fillUp 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards' // 'forwards' keeps it full at end
-          }}>
-            {/* Dual Color Logic: CASH (White) + TREE (Green) */}
-            <span style={{color: '#fff'}}>CASH</span>
-            <span style={{color: '#00ff88'}}>TREE</span>
-          </h1>
-          
-          {/* 4. Reflection/Glow below */}
-          <div style={{
-             position: 'absolute', bottom: '-10px', left: '0', right: '0', 
-             height: '20px', background: '#00ff88', filter: 'blur(30px)', opacity: 0.2,
-             animation: 'glowPulse 2.2s infinite' 
-          }}></div>
+        /* BG */
+        .lp-ambient { position:fixed; top:-20%; left:50%; transform:translateX(-50%); width:1000px; height:900px; pointer-events:none; z-index:0; background:radial-gradient(circle, rgba(0,255,136,0.05) 0%, transparent 65%); }
+        .lp-grid { position:fixed; inset:0; pointer-events:none; z-index:0; background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px); background-size:52px 52px; mask-image:radial-gradient(circle at center,black 30%,transparent 78%); }
 
+        /* NAV */
+        .lp-nav { position:fixed; top:0; left:0; right:0; height:70px; display:flex; align-items:center; z-index:1000; border-bottom:1px solid transparent; transition:background 0.3s,border-color 0.3s; }
+        .lp-nav.sc { background:rgba(3,3,5,0.82); backdrop-filter:blur(20px); border-color:var(--border-l); }
+        .lp-nav-wrap { max-width:1280px; margin:0 auto; padding:0 24px; width:100%; display:flex; justify-content:space-between; align-items:center; }
+        .lp-brand { font-size:1.4rem; font-weight:900; color:#fff; text-decoration:none; letter-spacing:-0.04em; }
+        .lp-brand .g { color:var(--neon); text-shadow:0 0 20px var(--neon-glow); }
+        .lp-navlinks { display:flex; gap:2px; align-items:center; background:rgba(255,255,255,0.03); padding:5px; border-radius:100px; border:1px solid var(--border-l); }
+        .lp-navlink { color:#888; text-decoration:none; font-size:13px; font-weight:600; padding:8px 18px; border-radius:100px; transition:color 0.2s,background 0.2s; }
+        .lp-navlink:hover { color:#fff; background:rgba(255,255,255,0.06); }
+        .lp-dash-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 20px; border-radius:100px; background:rgba(255,255,255,0.05); border:1px solid var(--border-l); color:#fff; text-decoration:none; font-size:13px; font-weight:700; transition:border-color 0.2s,background 0.2s; }
+        .lp-dash-btn:hover { border-color:var(--border-h); background:rgba(255,255,255,0.09); }
+        .lp-dash-btn .arr { transition:transform 0.2s; }
+        .lp-dash-btn:hover .arr { transform:translateX(3px); }
+        .lp-menu-btn { display:none; background:none; border:none; color:#fff; padding:6px; cursor:pointer; }
+
+        /* MOBILE NAV */
+        .lp-mob { position:fixed; inset:0; top:70px; background:#030305; z-index:999; padding:24px; transform:translateY(-12px); opacity:0; pointer-events:none; transition:all 0.3s var(--ease); border-top:1px solid var(--border-l); }
+        .lp-mob.open { transform:translateY(0); opacity:1; pointer-events:auto; }
+        .lp-mob-link { display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:700; color:#999; text-decoration:none; padding:18px 0; border-bottom:1px solid var(--border-l); transition:color 0.2s; }
+        .lp-mob-link:hover { color:#fff; }
+        .lp-mob-link.hi { color:var(--neon); border-color:rgba(0,255,136,0.15); }
+
+        /* HERO */
+        .lp-hero { padding:148px 0 88px; text-align:center; position:relative; z-index:1; }
+        .lp-badge { display:inline-flex; align-items:center; gap:10px; padding:6px 18px; border-radius:100px; margin-bottom:34px; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.18); }
+        .lp-dot { width:7px; height:7px; background:var(--neon); border-radius:50%; box-shadow:0 0 10px var(--neon); animation:ring 2s infinite; }
+        @keyframes ring { 0%{box-shadow:0 0 0 0 rgba(0,255,136,0.5)} 70%{box-shadow:0 0 0 8px rgba(0,255,136,0)} 100%{box-shadow:0 0 0 0 rgba(0,255,136,0)} }
+        .lp-badge-text { font-size:11px; font-weight:800; color:var(--neon); text-transform:uppercase; letter-spacing:1.2px; }
+        .lp-h1 { font-size:clamp(2.8rem,6vw,5rem); line-height:1.07; font-weight:900; letter-spacing:-0.03em; margin:0 0 26px; color:#fff; }
+        .lp-h1 .grad { background:linear-gradient(168deg,#fff 25%,rgba(0,255,136,0.65) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .lp-sub { font-size:clamp(1rem,2vw,1.18rem); color:var(--mid); max-width:550px; margin:0 auto 50px; line-height:1.72; }
+        .lp-ctas { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-bottom:86px; }
+        .lp-btn-p { display:inline-flex; align-items:center; gap:10px; padding:14px 32px; border-radius:14px; background:var(--neon); color:#000; font-weight:800; font-size:14px; text-decoration:none; transition:transform 0.2s,box-shadow 0.2s; box-shadow:0 0 22px rgba(0,255,136,0.22); }
+        .lp-btn-p:hover { transform:translateY(-2px); box-shadow:0 14px 36px rgba(0,255,136,0.34); }
+        .lp-btn-g { display:inline-flex; align-items:center; gap:10px; padding:14px 32px; border-radius:14px; background:rgba(255,255,255,0.04); border:1px solid var(--border-l); color:#fff; font-weight:700; font-size:14px; text-decoration:none; transition:background 0.2s,border-color 0.2s; }
+        .lp-btn-g:hover { background:rgba(255,255,255,0.09); border-color:var(--border-h); }
+
+        /* STATS */
+        .lp-stats { display:grid; grid-template-columns:repeat(4,1fr); background:rgba(0,0,0,0.42); border:1px solid var(--border-l); border-radius:20px; backdrop-filter:blur(12px); overflow:hidden; }
+        .lp-sc { padding:34px 20px; text-align:center; border-right:1px solid var(--border-l); transition:background 0.2s; }
+        .lp-sc:last-child { border-right:none; }
+        .lp-sc:hover { background:rgba(255,255,255,0.02); }
+        .lp-sv { font-family:var(--mono); font-size:2.1rem; font-weight:700; color:#fff; letter-spacing:-0.05em; margin-bottom:6px; transition:color 0.2s,text-shadow 0.2s; }
+        .lp-sc:hover .lp-sv { color:var(--neon); text-shadow:0 0 20px var(--neon-glow); }
+        .lp-sl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; }
+
+        /* SCROLL HINT */
+        .lp-scroll { position:absolute; bottom:-42px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:5px; opacity:0.3; animation:bob 2s infinite; }
+        @keyframes bob { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(7px)} }
+        .lp-scroll span { font-size:9px; color:#555; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
+
+        /* SECTION */
+        .lp-sec { padding:96px 0; position:relative; z-index:1; }
+        .lp-sec-head { text-align:center; margin-bottom:58px; }
+        .lp-eyebrow { display:inline-block; font-size:10px; font-weight:900; color:var(--neon); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
+        .lp-sec-title { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; letter-spacing:-0.02em; color:#fff; margin:0 0 14px; }
+        .lp-sec-desc { color:var(--mid); font-size:1.02rem; max-width:500px; margin:0 auto; line-height:1.72; }
+
+        /* FEATURES */
+        .lp-feat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:18px; }
+        .lp-feat { background:rgba(255,255,255,0.02); border:1px solid var(--border-l); border-radius:22px; padding:34px 30px; display:flex; flex-direction:column; position:relative; overflow:hidden; transition:transform 0.3s var(--ease),border-color 0.3s,box-shadow 0.3s; }
+        .lp-feat::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--fc,#00ff88),transparent); opacity:0; transition:opacity 0.3s; }
+        .lp-feat:hover { transform:translateY(-5px); border-color:var(--border-h); box-shadow:0 20px 40px rgba(0,0,0,0.4); }
+        .lp-feat:hover::before { opacity:1; }
+        .lp-feat-ico { width:44px; height:44px; border-radius:12px; margin-bottom:22px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); transition:background 0.3s,border-color 0.3s; }
+        .lp-feat:hover .lp-feat-ico { background:rgba(var(--fr,0,255,136),0.1); border-color:rgba(var(--fr,0,255,136),0.25); }
+        .lp-feat-title { font-size:1.15rem; font-weight:800; color:#fff; margin:0 0 10px; letter-spacing:-0.02em; }
+        .lp-feat-desc { color:var(--mid); line-height:1.65; font-size:14px; }
+
+        /* ECO */
+        .lp-eco { position:relative; border-radius:24px; overflow:hidden; background:rgba(255,255,255,0.02); border:1px solid var(--border-l); padding:80px 40px; text-align:center; }
+        .lp-eco-glow { position:absolute; top:-40%; left:50%; transform:translateX(-50%); width:700px; height:580px; pointer-events:none; background:radial-gradient(circle, rgba(0,255,136,0.075) 0%,transparent 65%); }
+        .lp-eco-inner { position:relative; z-index:1; max-width:560px; margin:0 auto; }
+        .lp-eco-title { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; letter-spacing:-0.02em; margin:0 0 16px; }
+        .lp-eco-desc { color:var(--mid); font-size:1.02rem; margin:0 0 38px; line-height:1.72; }
+        .lp-btn-tg { display:inline-flex; align-items:center; gap:10px; padding:15px 36px; border-radius:100px; background:#229ED9; color:#fff; font-weight:700; font-size:15px; text-decoration:none; transition:transform 0.2s,box-shadow 0.2s; }
+        .lp-btn-tg:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(34,158,217,0.32); }
+
+        /* FAQ */
+        .lp-faq-list { max-width:740px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+        .lp-faq { background:rgba(255,255,255,0.02); border:1px solid var(--border-l); border-radius:16px; overflow:hidden; transition:border-color 0.25s,background 0.25s; }
+        .lp-faq.open { border-color:rgba(0,255,136,0.22); background:rgba(0,255,136,0.02); }
+        .lp-faq-line { height:2px; width:0%; background:linear-gradient(90deg,var(--neon),transparent); transition:width 0.4s var(--ease); }
+        .lp-faq.open .lp-faq-line { width:100%; }
+        .lp-faq-btn { width:100%; display:flex; justify-content:space-between; align-items:center; padding:22px 22px; background:none; border:none; color:#fff; cursor:pointer; text-align:left; gap:16px; }
+        .lp-faq-q { font-size:15px; font-weight:700; line-height:1.4; }
+        .lp-faq-ico { color:var(--muted); flex-shrink:0; transition:transform 0.3s,color 0.3s; }
+        .lp-faq.open .lp-faq-ico { transform:rotate(180deg); color:var(--neon); }
+        .lp-faq-body { display:grid; grid-template-rows:0fr; transition:grid-template-rows 0.38s var(--ease); }
+        .lp-faq.open .lp-faq-body { grid-template-rows:1fr; }
+        .lp-faq-inner { overflow:hidden; }
+        .lp-faq-a { padding:0 22px 20px; color:var(--mid); line-height:1.7; font-size:14px; }
+
+        /* FOOTER */
+        .lp-footer { border-top:1px solid var(--border-l); padding:76px 0 38px; background:#020202; }
+        .lp-footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr; gap:80px; margin-bottom:60px; }
+        .lp-footer-brand { font-size:1.55rem; font-weight:900; color:#fff; text-decoration:none; display:block; margin-bottom:14px; letter-spacing:-0.04em; }
+        .lp-footer-desc { color:var(--muted); font-size:14px; line-height:1.7; max-width:290px; }
+        .lp-footer-h { font-size:10px; font-weight:800; color:#fff; margin:0 0 22px; text-transform:uppercase; letter-spacing:1.5px; }
+        .lp-footer-links { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:14px; }
+        .lp-footer-links a { color:var(--muted); font-size:14px; text-decoration:none; transition:color 0.2s; }
+        .lp-footer-links a:hover { color:#fff; }
+        .lp-footer-bottom { border-top:1px solid var(--border-l); padding-top:34px; display:flex; flex-direction:column; align-items:center; gap:18px; }
+        .lp-copy { color:#3a3a3a; font-size:13px; }
+
+        /* FADE-UP ENTRANCE */
+        .fu { opacity:0; transform:translateY(26px); transition:opacity 0.8s var(--ease),transform 0.8s var(--ease); }
+        .fu.in { opacity:1; transform:translateY(0); }
+        .d1{transition-delay:.07s} .d2{transition-delay:.14s} .d3{transition-delay:.21s} .d4{transition-delay:.28s}
+
+        /* RESPONSIVE */
+        @media(max-width:1024px){
+          .lp-navlinks{display:none}
+          .lp-menu-btn{display:block}
+          .lp-stats{grid-template-columns:1fr 1fr}
+          .lp-sc:nth-child(2){border-right:none}
+          .lp-sc{border-bottom:1px solid var(--border-l)}
+          .lp-sc:nth-last-child(-n+2){border-bottom:none}
+          .lp-sv{font-size:1.8rem}
+        }
+        @media(max-width:768px){
+          .lp-hero{padding:118px 0 68px}
+          .lp-sec{padding:66px 0}
+          .lp-eco{padding:50px 22px}
+          .lp-eco-glow{width:360px}
+          .lp-ctas{flex-direction:column;padding:0 20px}
+          .lp-btn-p,.lp-btn-g{width:100%;justify-content:center}
+          .lp-footer-grid{grid-template-columns:1fr;gap:38px}
+          .lp-footer{padding:56px 0 28px}
+        }
+      `}</style>
+
+      {/* SPLASH */}
+      <div className={`splash ${!isLoading ? 'out' : ''}`}>
+        <div style={{ position:'relative' }}>
+          <h1 style={{ fontSize:'42px', fontWeight:'900', color:'#111', margin:0, letterSpacing:'5px', position:'relative', zIndex:1 }}>CASHTREE</h1>
+          <h1 style={{ fontSize:'42px', fontWeight:'900', color:'transparent', WebkitTextStroke:'1px #252525', margin:0, letterSpacing:'5px', position:'absolute', top:0, left:0, zIndex:2 }}>CASHTREE</h1>
+          <h1 style={{ fontSize:'42px', fontWeight:'900', margin:0, letterSpacing:'5px', position:'absolute', top:0, left:0, zIndex:3, overflow:'hidden', width:'0%', whiteSpace:'nowrap', borderRight:'2px solid #00ff88', animation:'fillUp 1.8s cubic-bezier(0.4,0,0.2,1) forwards' }}>
+            <span style={{ color:'#fff' }}>CASH</span><span style={{ color:'#00ff88' }}>TREE</span>
+          </h1>
+          <div style={{ position:'absolute', bottom:'-12px', left:0, right:0, height:'16px', background:'#00ff88', filter:'blur(26px)', opacity:.16, animation:'glowPulse 1.8s infinite' }} />
         </div>
       </div>
 
-      {/* --- BACKGROUND FX --- */}
-      <div className="ambient-glow" aria-hidden="true" />
-      <div className="grid-overlay" aria-hidden="true" />
+      {/* BG */}
+      <div className="lp-ambient" aria-hidden="true" />
+      <div className="lp-grid" aria-hidden="true" />
 
-      {/* --- NAVIGATION --- */}
-      <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="container nav-inner">
-          <Link href="/" className="brand">
-            Cash<span className="text-neon">Tree</span>
-          </Link>
+      {/* NAV */}
+      <header className={`lp-nav ${scrolled ? 'sc' : ''}`}>
+        <div className="lp-nav-wrap">
+          <Link href="/" className="lp-brand">Cash<span className="g">Tree</span></Link>
 
-          {/* Desktop Links */}
-          <nav className="nav-links desktop-only">
-            <Link href="/campaigns" className="nav-item">Live Inventory</Link>
-            <a href="#protocol" className="nav-item">Protocol</a>
-            <a href="#faq" className="nav-item">FAQ</a>
+          <nav className="lp-navlinks">
+            <Link href="/campaigns" className="lp-navlink">Live Inventory</Link>
+            <a href="#protocol" className="lp-navlink">Protocol</a>
+            <a href="#faq" className="lp-navlink">FAQ</a>
           </nav>
 
-          {/* Actions */}
-          <div className="nav-actions">
-            <Link href={dashboardLink} className="btn-glass btn-sm dashboard-btn">
-              <span>Dashboard</span>
-              <ArrowRight size={14} className="icon-slide" />
+          <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+            <Link href={dashboardLink} className="lp-dash-btn">
+              Dashboard <ArrowRight size={14} className="arr" />
             </Link>
-            <button 
-              className="menu-toggle" 
-              onClick={() => setIsNavOpen(!isNavOpen)}
-              aria-label="Toggle Menu"
-              aria-expanded={isNavOpen}
-            >
+            <button className="lp-menu-btn" onClick={() => setIsNavOpen(!isNavOpen)} aria-label="Toggle menu">
               {isNavOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
-        <div className={`mobile-menu ${isNavOpen ? 'open' : ''}`}>
-          <div className="mobile-menu-content">
-             <Link href="/campaigns" onClick={() => setIsNavOpen(false)} className="mobile-link">Live Inventory</Link>
-             <a href="#protocol" onClick={() => setIsNavOpen(false)} className="mobile-link">Protocol</a>
-             <a href="#faq" onClick={() => setIsNavOpen(false)} className="mobile-link">FAQ</a>
-             <Link href={dashboardLink} onClick={() => setIsNavOpen(false)} className="mobile-link highlight">
-               Partner Dashboard
-             </Link>
-          </div>
+        <div className={`lp-mob ${isNavOpen ? 'open' : ''}`}>
+          <Link href="/campaigns" className="lp-mob-link" onClick={() => setIsNavOpen(false)}>Live Inventory <ChevronRight size={16} /></Link>
+          <a href="#protocol" className="lp-mob-link" onClick={() => setIsNavOpen(false)}>Protocol <ChevronRight size={16} /></a>
+          <a href="#faq" className="lp-mob-link" onClick={() => setIsNavOpen(false)}>FAQ <ChevronRight size={16} /></a>
+          <Link href={dashboardLink} className="lp-mob-link hi" onClick={() => setIsNavOpen(false)}>Partner Dashboard <ChevronRight size={16} /></Link>
         </div>
       </header>
 
       <main>
-        {/* --- HERO SECTION --- */}
-        <section className="hero">
-          <div className="container hero-container">
-            <div className="hero-content">
-              {/* Animation logic: Wait for splash screen to finish (!isLoading) */}
-              <div className={`status-badge ${!isLoading ? 'fade-in-up' : ''}`}>
-                <span className="pulse-dot"></span>
-                <span className="status-text">v2.0 Protocol Live</span>
-              </div>
-              
-              <h1 className={`hero-title ${!isLoading ? 'fade-in-up delay-1' : ''}`}>
-                The Performance <br/>
-                <span className="text-gradient">Reward Layer.</span>
-              </h1>
-              
-              <p className={`hero-sub ${!isLoading ? 'fade-in-up delay-2' : ''}`}>
-                The infrastructure for modern publishers to monetize traffic.<br className="md-visible"/>
-                Direct API connections. Instant liquidity. Enterprise-grade tracking.
-              </p>
-              
-              <div className={`cta-group ${!isLoading ? 'fade-in-up delay-3' : ''}`}>
-                <Link href="/campaigns" className="btn-primary">
-                  View Inventory <ArrowRight size={18} />
-                </Link>
-                
-                <Link href={dashboardLink} className="btn-glass">
-                  Partner Login
-                </Link>
-              </div>
+        {/* HERO */}
+        <section className="lp-hero">
+          <div className="container" style={{ position:'relative' }}>
+            <div className={`lp-badge fu ${ready ? 'in' : ''}`}>
+              <span className="lp-dot" />
+              <span className="lp-badge-text">v2.0 Protocol Live</span>
             </div>
 
-            <div className={`stats-hud ${!isLoading ? 'fade-in-up delay-4' : ''}`}>
-              {STATS.map((stat, idx) => (
-                <div key={idx} className="stat-cell">
-                  <div className="stat-value">{stat.value}</div>
-                  <div className="stat-label">{stat.label}</div>
+            <h1 className={`lp-h1 fu d1 ${ready ? 'in' : ''}`}>
+              The Performance<br />
+              <span className="grad">Reward Layer.</span>
+            </h1>
+
+            <p className={`lp-sub fu d2 ${ready ? 'in' : ''}`}>
+              Infrastructure for modern publishers to monetize traffic.
+              Direct API connections. Instant liquidity. Enterprise-grade tracking.
+            </p>
+
+            <div className={`lp-ctas fu d3 ${ready ? 'in' : ''}`}>
+              <Link href="/campaigns" className="lp-btn-p">View Inventory <ArrowRight size={17} /></Link>
+              <Link href={dashboardLink} className="lp-btn-g">Partner Login</Link>
+            </div>
+
+            <div className={`lp-stats fu d4 ${ready ? 'in' : ''}`}>
+              {STATS.map((s, i) => (
+                <div key={i} className="lp-sc">
+                  <div className="lp-sv">{s.value}</div>
+                  <div className="lp-sl">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="lp-scroll" aria-hidden="true">
+              <ChevronDown size={15} color="#444" />
+              <span>Scroll</span>
+            </div>
+          </div>
+        </section>
+
+        {/* PROTOCOL */}
+        <section id="protocol" className="lp-sec">
+          <div className="container">
+            <div className="lp-sec-head">
+              <span className="lp-eyebrow">The Protocol</span>
+              <h2 className="lp-sec-title">Built for Scale</h2>
+              <p className="lp-sec-desc">Streamlined monetization infrastructure from source to settlement.</p>
+            </div>
+            <div className="lp-feat-grid">
+              {FEATURES.map((f, i) => (
+                <div key={i} className="lp-feat" style={{ '--fc': f.color, '--fr': f.rgb }}>
+                  <div className="lp-feat-ico" style={{ color: f.color }}>{f.icon}</div>
+                  <h3 className="lp-feat-title">{f.title}</h3>
+                  <p className="lp-feat-desc">{f.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* --- PROTOCOL SECTION --- */}
-        <section id="protocol" className="section protocol">
+        {/* ECOSYSTEM */}
+        <section className="lp-sec">
           <div className="container">
-            <div className="section-header">
-              <h2 className="section-title">The Protocol</h2>
-              <p className="section-desc">Streamlined monetization infrastructure built for scale.</p>
-            </div>
-            
-            <div className="features-grid">
-              {FEATURES.map((feature, idx) => (
-                <div key={idx} className="feature-card glass-panel" style={{ '--accent': feature.color }}>
-                  <div className="feature-icon-wrapper">
-                    <div className="feature-icon">{feature.icon}</div>
-                    <div className="feature-glow" />
-                  </div>
-                  <h3 className="feature-title">{feature.title}</h3>
-                  <p className="feature-desc">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* --- ECOSYSTEM BANNER --- */}
-        <section className="section ecosystem">
-          <div className="container">
-            <div className="ecosystem-card glass-panel-heavy">
-              <div className="card-shine" />
-              <div className="ecosystem-content">
-                <h2 className="banner-title">Join the Ecosystem</h2>
-                <p className="banner-desc">
-                  Connect with thousands of publishers. Get real-time updates on high-converting offers, maintenance alerts, and optimization strategies.
-                </p>
-                <a 
-                  href="https://t.me/CashtTree_bot" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="btn-telegram"
-                >
-                  <Send size={18} /> <span style={{marginLeft: '8px'}}>Join Official Channel</span>
+            <div className="lp-eco">
+              <div className="lp-eco-glow" />
+              <div className="lp-eco-inner">
+                <span className="lp-eyebrow">Community</span>
+                <h2 className="lp-eco-title">Join the Ecosystem</h2>
+                <p className="lp-eco-desc">Connect with thousands of publishers. Get real-time updates on high-converting offers, maintenance alerts, and optimization strategies.</p>
+                <a href="https://t.me/CashtTree_bot" target="_blank" rel="noopener noreferrer" className="lp-btn-tg">
+                  <Send size={17} /> Join Official Channel
                 </a>
               </div>
             </div>
           </div>
         </section>
 
-        {/* --- FAQ SECTION --- */}
-        <section id="faq" className="section faq">
-          <div className="container faq-container">
-            <div className="section-header">
-              <h2 className="section-title">System FAQ</h2>
-              <p className="section-desc">Technical & Operational Specifications.</p>
+        {/* FAQ */}
+        <section id="faq" className="lp-sec">
+          <div className="container">
+            <div className="lp-sec-head">
+              <span className="lp-eyebrow">FAQ</span>
+              <h2 className="lp-sec-title">System Specs</h2>
+              <p className="lp-sec-desc">Technical &amp; operational answers for publishers.</p>
             </div>
-            
-            <div className="faq-list">
-              {FAQS.map((item, idx) => (
-                <div key={idx} className={`faq-item glass-panel ${activeFaq === idx ? 'active' : ''}`}>
-                  <button 
-                    className="faq-trigger" 
-                    onClick={() => toggleFaq(idx)}
-                    aria-expanded={activeFaq === idx}
-                  >
-                    <span className="faq-q">{item.q}</span>
-                    <span className="faq-icon-wrapper">
-                      {activeFaq === idx ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                    </span>
+            <div className="lp-faq-list">
+              {FAQS.map((item, i) => (
+                <div key={i} className={`lp-faq ${activeFaq === i ? 'open' : ''}`}>
+                  <div className="lp-faq-line" />
+                  <button className="lp-faq-btn" onClick={() => setActiveFaq(activeFaq === i ? null : i)} aria-expanded={activeFaq === i}>
+                    <span className="lp-faq-q">{item.q}</span>
+                    <ChevronDown size={17} className="lp-faq-ico" />
                   </button>
-                  <div className="faq-content-wrapper">
-                    <div className="faq-answer">
-                      {item.a}
+                  <div className="lp-faq-body">
+                    <div className="lp-faq-inner">
+                      <p className="lp-faq-a">{item.a}</p>
                     </div>
                   </div>
                 </div>
@@ -328,325 +385,40 @@ export default function Home() {
           </div>
         </section>
 
-        {/* --- FOOTER --- */}
-        <footer className="footer">
+        {/* FOOTER */}
+        <footer className="lp-footer">
           <div className="container">
-            <div className="footer-grid">
-              <div className="footer-col brand-col">
-                <Link href="/" className="footer-brand">
-                  Cash<span className="text-neon">Tree</span>
+            <div className="lp-footer-grid">
+              <div>
+                <Link href="/" className="lp-footer-brand">
+                  Cash<span style={{ color:'#00ff88', textShadow:'0 0 20px rgba(0,255,136,0.3)' }}>Tree</span>
                 </Link>
-                <p className="footer-desc">
-                  The performance reward layer for the modern internet. 
-                  Connecting creators with instant liquidity.
-                </p>
+                <p className="lp-footer-desc">The performance reward layer for the modern internet. Connecting creators with instant liquidity.</p>
               </div>
-
-              <div className="footer-col">
-                <h4 className="footer-heading">Platform</h4>
-                <ul className="footer-links-list">
+              <div>
+                <h4 className="lp-footer-h">Platform</h4>
+                <ul className="lp-footer-links">
                   <li><Link href="/campaigns">Live Inventory</Link></li>
                   <li><a href="#protocol">The Protocol</a></li>
                   <li><Link href={dashboardLink}>Partner Login</Link></li>
                 </ul>
               </div>
-
-              <div className="footer-col">
-                <h4 className="footer-heading">Support</h4>
-                <ul className="footer-links-list">
+              <div>
+                <h4 className="lp-footer-h">Support</h4>
+                <ul className="lp-footer-links">
                   <li><Link href="/contact">Contact Us</Link></li>
                   <li><a href="mailto:help@cashttree.online">help@cashttree.online</a></li>
-                  <li><a href="https://t.me/CashtTree_bot" target="_blank">Telegram Support</a></li>
+                  <li><a href="https://t.me/CashtTree_bot" target="_blank" rel="noopener noreferrer">Telegram Support</a></li>
                 </ul>
               </div>
             </div>
-
-            <div className="footer-bottom">
+            <div className="lp-footer-bottom">
               <LegalDocs />
-              <div className="copyright">
-                © {new Date().getFullYear()} CashTree Network. All rights reserved.
-              </div>
+              <p className="lp-copy">© {new Date().getFullYear()} CashTree Network. All rights reserved.</p>
             </div>
           </div>
         </footer>
       </main>
-
-      {/* --- DESIGN SYSTEM & STYLES --- */}
-      <style jsx global>{`
-        :root {
-          --bg-dark: #050505;
-          --neon-green: #00ff88;
-          --color-yellow: #fbbf24;
-          --color-blue: #3b82f6;
-          --color-green: #00ff88;
-          --glass-bg: rgba(255, 255, 255, 0.03);
-          --glass-border: rgba(255, 255, 255, 0.08);
-          --glass-highlight: rgba(255, 255, 255, 0.12);
-          --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          --font-mono: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-          --text-primary: #ffffff;
-          --text-secondary: #949494;
-          --text-tertiary: #525252;
-          --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        html { scroll-behavior: smooth; }
-        body {
-          background-color: var(--bg-dark);
-          color: var(--text-primary);
-          font-family: var(--font-sans);
-          margin: 0;
-          overflow-x: hidden;
-          line-height: 1.5;
-        }
-
-        /* --------------------------------------------------------- */
-        /* ⚡ ANIMATION: SPLASH SCREEN (Ported from loading.js) */
-        /* --------------------------------------------------------- */
-        .splash-screen {
-          position: fixed;
-          inset: 0;
-          background-color: #000; /* Solid Black Background */
-          z-index: 99999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: opacity 0.8s ease-out, visibility 0.8s;
-        }
-        .splash-screen.fade-out {
-          opacity: 0;
-          visibility: hidden;
-          pointer-events: none;
-        }
-        
-        /* Keyframes from loading.js */
-        @keyframes fillUp {
-          0% { width: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          50% { width: 100%; opacity: 1; }
-          90% { width: 100%; opacity: 1; }
-          100% { width: 100%; opacity: 1; } /* Keep full at end */
-        }
-        @keyframes glowPulse {
-          0%, 100% { opacity: 0.1; }
-          50% { opacity: 0.4; }
-        }
-
-        /* --- EXISTING STYLES (Preserved) --- */
-        .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
-        .text-neon { color: var(--neon-green); text-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
-        .text-gradient {
-          background: linear-gradient(180deg, #fff 0%, #a1a1aa 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        
-        .glass-panel {
-          background: var(--glass-bg);
-          border: 1px solid var(--border-light);
-          backdrop-filter: blur(12px);
-          border-radius: 24px;
-          transition: all 0.3s var(--ease-out);
-        }
-        
-        /* --- BACKGROUNDS --- */
-        .ambient-glow {
-          position: fixed; top: -20%; left: 50%; transform: translateX(-50%);
-          width: 1200px; height: 1000px;
-          background: radial-gradient(circle, rgba(0, 255, 136, 0.06) 0%, transparent 60%);
-          pointer-events: none; z-index: -1;
-        }
-        .grid-overlay {
-          position: fixed; inset: 0;
-          background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-          background-size: 50px 50px;
-          mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-          pointer-events: none; z-index: -1;
-        }
-
-        /* --- NAVBAR --- */
-        .navbar {
-          position: fixed; top: 0; left: 0; right: 0; height: 72px;
-          display: flex; align-items: center; z-index: 100;
-          transition: all 0.3s ease; border-bottom: 1px solid transparent;
-        }
-        .navbar.scrolled {
-          background: rgba(5, 5, 5, 0.7);
-          backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-light);
-        }
-        .nav-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .brand { font-size: 1.5rem; font-weight: 800; text-decoration: none; color: white; letter-spacing: -0.04em; }
-        .nav-links {
-          display: flex; gap: 40px; background: rgba(255, 255, 255, 0.03);
-          padding: 8px 32px; border-radius: 100px; border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .nav-item { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
-        .nav-item:hover { color: white; }
-        .nav-actions { display: flex; align-items: center; gap: 16px; }
-        .menu-toggle { display: none; background: none; border: none; color: white; padding: 4px; cursor: pointer; }
-
-        /* Mobile Menu */
-        .mobile-menu {
-          position: fixed; inset: 0; top: 72px; background: var(--bg-dark);
-          z-index: 90; padding: 24px; transform: translateY(-20px); opacity: 0;
-          pointer-events: none; transition: all 0.3s var(--ease-out);
-        }
-        .mobile-menu.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-        .mobile-menu-content { display: flex; flex-direction: column; gap: 24px; }
-        .mobile-link {
-          font-size: 1.25rem; font-weight: 600; color: white;
-          text-decoration: none; padding-bottom: 16px; border-bottom: 1px solid var(--glass-border);
-        }
-        .mobile-link.highlight { color: var(--neon-green); border-color: rgba(0, 255, 136, 0.2); }
-
-        /* --- HERO --- */
-        .hero { padding: 160px 0 100px; text-align: center; position: relative; }
-        .badge {
-          display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
-          background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-light);
-          border-radius: 100px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 32px;
-        }
-        .status-badge {
-          display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px;
-          background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.2);
-          border-radius: 100px; margin-bottom: 40px;
-        }
-        .pulse-dot {
-          width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%;
-          box-shadow: 0 0 10px var(--neon-green); animation: pulse 2s infinite;
-        }
-        .status-text { font-size: 0.8rem; font-weight: 600; color: var(--neon-green); letter-spacing: 0.05em; text-transform: uppercase; }
-        
-        .hero-title { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 24px; }
-        .hero-sub { font-size: clamp(1.1rem, 2vw, 1.25rem); color: var(--text-secondary); line-height: 1.6; max-width: 600px; margin: 0 auto 48px; }
-        .cta-group { display: flex; justify-content: center; gap: 20px; margin-bottom: 100px; flex-wrap: wrap; }
-        
-        .btn-primary {
-          background: var(--neon-green); color: #000; padding: 14px 32px;
-          border-radius: 12px; font-weight: 700; text-decoration: none;
-          display: inline-flex; align-items: center; gap: 10px; transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2); }
-        .btn-glass {
-          background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-light);
-          color: white; padding: 14px 32px; border-radius: 12px; font-weight: 600;
-          text-decoration: none; transition: background 0.2s, border-color 0.2s;
-          display: inline-flex; align-items: center; gap: 8px;
-        }
-        .btn-glass:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--border-hover); }
-        .btn-sm { padding: 10px 24px; border-radius: 50px; font-size: 0.9rem; }
-        .icon-slide { transition: transform 0.2s; }
-        .btn-glass:hover .icon-slide { transform: translateX(3px); }
-
-        /* Stats Grid */
-        .stats-hud {
-          display: grid; grid-template-columns: repeat(4, 1fr);
-          background: rgba(0,0,0,0.4); border: 1px solid var(--border-light);
-          border-radius: 20px; backdrop-filter: blur(10px); overflow: hidden;
-        }
-        .stat-cell {
-          padding: 40px 20px; display: flex; flex-direction: column;
-          align-items: center; justify-content: center; border-right: 1px solid var(--border-light);
-          transition: background 0.3s;
-        }
-        .stat-cell:last-child { border-right: none; }
-        .stat-cell:hover { background: rgba(255,255,255,0.02); }
-        .stat-value { font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: white; margin-bottom: 8px; letter-spacing: -0.05em; }
-        .stat-label { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-
-        /* --- SECTIONS --- */
-        .section { padding: 100px 0; }
-        .section-header { text-align: center; margin-bottom: 64px; }
-        .section-title { font-size: 2.5rem; margin-bottom: 16px; letter-spacing: -0.02em; }
-        .section-desc { color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
-
-        /* --- FEATURES --- */
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
-        .feature-card { padding: 40px; display: flex; flex-direction: column; align-items: flex-start; height: 100%; }
-        .feature-card:hover { transform: translateY(-4px); border-color: var(--border-hover); }
-        .feature-icon { margin-bottom: 24px; color: var(--accent); background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; }
-        .feature-title { font-size: 1.5rem; margin-bottom: 12px; font-weight: 700; }
-        .feature-desc { color: var(--text-secondary); line-height: 1.6; font-size: 1rem; }
-
-        /* --- ECOSYSTEM --- */
-        .ecosystem-card { position: relative; padding: 80px 40px; text-align: center; overflow: hidden; }
-        .glow-effect {
-          position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
-          width: 600px; height: 600px; background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
-          z-index: 0; pointer-events: none;
-        }
-        .ecosystem-content { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
-        .banner-title { font-size: 2.5rem; margin-bottom: 24px; letter-spacing: -0.02em; }
-        .banner-desc { color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 40px; line-height: 1.6; }
-        .btn-telegram {
-          display: inline-flex; align-items: center; gap: 10px;
-          background: #229ED9; color: white; padding: 16px 32px; border-radius: 50px;
-          font-weight: 600; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-telegram:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -5px rgba(34, 158, 217, 0.4); }
-
-        /* --- FAQ --- */
-        .faq-container { max-width: 800px; }
-        .faq-list { display: flex; flex-direction: column; gap: 16px; }
-        .faq-item { overflow: hidden; transition: border-color 0.2s; }
-        .faq-item.active { border-color: var(--neon-green); background: rgba(0, 255, 136, 0.02); }
-        .faq-trigger {
-          width: 100%; display: flex; justify-content: space-between; align-items: center;
-          padding: 24px; background: none; border: none; color: white; cursor: pointer; text-align: left;
-        }
-        .faq-q { font-size: 1.1rem; font-weight: 600; }
-        .faq-icon-wrapper { color: var(--text-secondary); transition: transform 0.3s; }
-        .faq-item.active .faq-icon-wrapper { color: var(--neon-green); transform: rotate(180deg); }
-        .faq-content-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s var(--ease-out); }
-        .faq-item.active .faq-content-wrapper { grid-template-rows: 1fr; }
-        .faq-answer { overflow: hidden; padding: 0 24px 24px; color: var(--text-secondary); line-height: 1.6; }
-
-        /* --- FOOTER --- */
-        .footer { border-top: 1px solid var(--border-light); padding: 80px 0 40px; background: #020202; font-size: 0.95rem; }
-        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 80px; margin-bottom: 80px; }
-        .footer-brand { font-size: 1.75rem; font-weight: 800; color: white; text-decoration: none; margin-bottom: 24px; display: block; }
-        .footer-desc { color: var(--text-secondary); max-width: 320px; line-height: 1.6; font-size: 1rem; }
-        .footer-heading { font-size: 0.9rem; font-weight: 700; color: white; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 0.1em; }
-        .footer-links-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
-        .footer-links-list a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
-        .footer-links-list a:hover { color: white; }
-        .footer-bottom { border-top: 1px solid var(--border-light); padding-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; }
-        .copyright { color: var(--text-tertiary); font-size: 0.9rem; }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 1024px) {
-           .nav-links { display: none; }
-           .menu-toggle { display: block; }
-           .stats-hud { grid-template-columns: 1fr 1fr; }
-           .stat-cell:nth-child(2) { border-right: none; }
-           .stat-cell { border-bottom: 1px solid var(--border-light); }
-           .stat-cell:nth-last-child(-n+2) { border-bottom: none; }
-        }
-        @media (max-width: 768px) {
-          .hero-title { font-size: 2.75rem; }
-          .footer-grid { grid-template-columns: 1fr; gap: 40px; }
-          .cta-group { flex-direction: column; width: 100%; }
-          .btn-primary, .btn-glass { width: 100%; justify-content: center; }
-          .md-visible { display: none; }
-        }
-
-        /* --- ANIMATIONS --- */
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in-up { animation: fadeInUp 1s var(--ease-out) forwards; opacity: 0; }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
-          70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
-        }
-      `}</style>
     </div>
   );
 }
