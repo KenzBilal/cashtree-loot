@@ -58,27 +58,16 @@ export default async function OfferPage(props) {
   let referrerId = null;                  // Store the UUID here
 
   if (refCode) {
-    // A. ✅ SECURE LOOKUP: Use the SQL function we just made
-    // This works even if Row Level Security (RLS) blocks direct table access
-    const { data: promoterId, error: lookupError } = await supabase
-      .rpc('get_promoter_id_by_username', { 
-        lookup_name: refCode.trim() 
+    const { data: rows } = await supabase
+      .rpc('get_promoter_and_bonus', {
+        lookup_name: refCode.trim(),
+        p_campaign_id: campaign.id
       });
 
-    if (promoterId && !lookupError) {
-      referrerId = promoterId; // ✅ Save UUID to pass to form
-
-      // B. Check for Custom Split (This table should be public readable)
-      const { data: settings } = await supabase
-        .from('promoter_campaign_settings')
-        .select('user_bonus')
-        .eq('account_id', promoterId) // Use the resolved UUID
-        .eq('campaign_id', campaign.id)
-        .maybeSingle();
-
-      // C. Override Default if custom setting exists
-      if (settings) {
-        finalReward = settings.user_bonus;
+    if (rows && rows.length > 0) {
+      referrerId = rows[0].promoter_id;
+      if (rows[0].user_bonus !== null) {
+        finalReward = rows[0].user_bonus;
       }
     }
   }
