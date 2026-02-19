@@ -4,75 +4,116 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL, 
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// ── Helpers ────────────────────────────────────────────────────────────────
 
-export async function savePayoutSettings(campaignId, userBonus, promoterShare) {
-  console.log("🚀 DEBUG: Running Updated Action v2.0 - promoter_share"); // <--- Add this line
+/** Integer-safe rupee math: work in paise (×100) to avoid floating-point drift. */
+const toPaise = (amount) => Math.round(parseFloat(amount) * 100);
+
+/** Authenticate the incoming request and return the Supabase user, or null. */
+async function getAuthenticatedUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('ct_session')?.value;
+  if (!token) return null;
+
+  const supabaseAuth = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+
+  const { data: { user }, error } = await supabaseAuth.auth.getUser();
+  if (error || !user) return null;
+  return user;
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────
+
+/**
+ * Saves a promoter's custom payout split for a campaign.
+ *
+ * Only `userBonus` is trusted from the client.
+ * `promoterShare` is derived server-side from the campaign's payout_amount,
+ * ensuring the client can never inflate its own commission.
+ *
+ * @param {string} campaignId
+ * @param {number} userBonus   - What the referred user earns (₹)
+ */
+export async function savePayoutSettings(campaignId, userBonus) {
   try {
-    // 1. GET AUTHENTICATED USER
-    const cookieStore = await cookies();
-    const token = cookieStore.get('ct_session')?.value;
-    
-    if (!token) return { success: false, error: "Unauthorized" };
+    // 1. Validate raw inputs before touching the DB
+    const parsedUserBonus = parseFloat(userBonus);
+    if (
+      !campaignId ||
+      isNaN(parsedUserBonus) ||
+      parsedUserBonus < 0
+    ) {
+      return { success: false, error: 'Invalid input values.' };
+    }
 
-    const supabaseAuth = createClient(
+    // 2. Authenticate
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: 'Unauthorized. Please log in again.' };
+
+    // 3. Fetch campaign limit — the single source of truth
+    const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-    
-    const { data: { user } } = await supabaseAuth.auth.getUser();
-    if (!user) return { success: false, error: "Unauthorized" };
 
-    // 2. FETCH CAMPAIGN LIMIT (Source of Truth)
     const { data: campaign, error: campError } = await supabaseAdmin
       .from('campaigns')
       .select('payout_amount')
       .eq('id', campaignId)
       .single();
 
-    if (campError || !campaign) return { success: false, error: "Campaign not found" };
-
-    // 3. SECURITY CHECK (Server-Side Math)
-    // Ensure the new split doesn't exceed the Admin's Total Limit
-    const proposedTotal = parseFloat(userBonus) + parseFloat(promoterShare);
-    const maxLimit = parseFloat(campaign.payout_amount);
-
-    // Allow a tiny margin for floating point errors (0.01)
-    if (proposedTotal > maxLimit + 0.01) {
-      return { success: false, error: `Limit exceeded! Max allowed is ₹${maxLimit}` };
+    if (campError || !campaign) {
+      return { success: false, error: 'Campaign not found.' };
     }
 
-    // 4. UPSERT SETTINGS
-    // "Upsert" means: If settings exist, update them. If not, create new row.
-    const { error } = await supabaseAdmin
+    // 4. Server-side math in paise (integer arithmetic — no float drift)
+    const maxPaise      = toPaise(campaign.payout_amount);
+    const userPaise     = toPaise(parsedUserBonus);
+    const promoterPaise = maxPaise - userPaise;
+
+    if (userPaise < 0 || promoterPaise < 0 || userPaise > maxPaise) {
+      return {
+        success: false,
+        error: `Split out of range. Max total is ₹${campaign.payout_amount}.`,
+      };
+    }
+
+    // Convert back to rupees for storage (2 decimal places)
+    const userBonusFinal     = userPaise / 100;
+    const promoterShareFinal = promoterPaise / 100;
+
+    // 5. Upsert — insert on first save, update on subsequent saves
+    const { error: upsertError } = await supabaseAdmin
       .from('promoter_campaign_settings')
-      .upsert({
-        account_id: user.id,
-        campaign_id: campaignId,
-        user_bonus: parseFloat(userBonus),
-        promoter_share: parseFloat(promoterShare),
-        updated_at: new Date().toISOString()
-        // Note: We don't send 'created_at' or 'id', the DB must handle them (Step 1)
-      }, {
-        onConflict: 'account_id, campaign_id'
-      });
+      .upsert(
+        {
+          account_id:     user.id,
+          campaign_id:    campaignId,
+          user_bonus:     userBonusFinal,
+          promoter_share: promoterShareFinal,
+          updated_at:     new Date().toISOString(),
+        },
+        { onConflict: 'account_id, campaign_id' }
+      );
 
-    if (error) {
-      console.error("Save Error:", error);
-      // 🚨 CHANGE THIS LINE TO SEE THE REAL ERROR:
-      return { success: false, error: error.message || error.details || "Database rejected the save." };
+    if (upsertError) {
+      console.error('[savePayoutSettings] DB error:', upsertError);
+      return {
+        success: false,
+        error: upsertError.message || 'Database rejected the save. Please try again.',
+      };
     }
 
-    // 5. REFRESH UI
+    // 6. Invalidate server cache so the page re-fetches fresh data
     revalidatePath('/dashboard/campaigns');
     return { success: true };
 
-  } catch (e) {
-    console.error("Critical Error:", e);
-    return { success: false, error: e.message };
+  } catch (err) {
+    console.error('[savePayoutSettings] Unexpected error:', err);
+    return { success: false, error: 'An unexpected error occurred. Please try again.' };
   }
 }

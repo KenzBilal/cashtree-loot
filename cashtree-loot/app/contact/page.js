@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import Link from 'next/link';
 import { MessageCircle, ChevronDown, CheckCircle2, Briefcase, ArrowLeft } from 'lucide-react';
 
@@ -19,87 +19,150 @@ const EMPTY = {
   company: '', category: CATEGORIES[0], message: '',
 };
 
-export default function ContactPage() {
-  const [form, setForm]       = useState(EMPTY);
-  const [status, setStatus]   = useState('idle'); // idle | submitting | success | error
-  const [dropOpen, setDrop]   = useState(false);
-  const [ticketId]            = useState(() => `CT-${Math.floor(10000 + Math.random() * 90000)}`);
-  const [hoveredOpt, setHovOpt] = useState(null);
+const MAX_MESSAGE_LENGTH = 2000;
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+// ── STYLES ──────────────────────────────────────────────────────────────────
+const styles = `
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes dropIn   { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin     { to { transform:rotate(360deg); } }
+  @keyframes popIn    { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+  .ct-input, .ct-textarea {
+    width:100%; background:#000; border:1px solid #1e1e1e;
+    border-radius:11px; padding:12px 14px; color:#fff;
+    font-size:13px; font-weight:600; outline:none;
+    font-family:inherit; transition:border-color 0.18s, box-shadow 0.18s;
+    box-sizing:border-box;
+  }
+  .ct-input::placeholder, .ct-textarea::placeholder { color:#333; }
+  .ct-input:focus, .ct-textarea:focus {
+    border-color:#2e2e2e; box-shadow:0 0 0 3px rgba(0,255,136,0.05);
+  }
+  .ct-textarea {
+    resize:vertical; min-height:120px; line-height:1.6;
+  }
+
+  .ct-method:hover { border-color:#2a2a2a !important; background:rgba(255,255,255,0.03) !important; }
+  .ct-method-tg:hover { border-color:rgba(34,158,217,0.4) !important; background:rgba(34,158,217,0.08) !important; }
+  .ct-submit:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 10px 30px rgba(0,255,136,0.25) !important; }
+  .ct-submit:disabled { opacity:0.7; cursor:wait; }
+  .ct-back:hover { color:#fff !important; }
+
+  .ct-drop-opt:hover { background:rgba(0,255,136,0.08) !important; color:#00ff88 !important; }
+  .ct-drop-opt.active { color:#00ff88; background:rgba(0,255,136,0.05); }
+  .ct-drop-opt:focus-visible {
+    outline: 2px solid rgba(0,255,136,0.6);
+    outline-offset: -2px;
+    background:rgba(0,255,136,0.08) !important;
+    color:#00ff88 !important;
+  }
+
+  .ct-card { animation: fadeUp 0.5s ease-out; }
+  .ct-success { animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1); }
+
+  @media(max-width:900px) {
+    .ct-split { grid-template-columns:1fr !important; }
+    .ct-left { order:2; }
+    .ct-right { order:1; }
+  }
+  @media(max-width:560px) {
+    .ct-form-row { grid-template-columns:1fr !important; }
+  }
+`;
+
+// ── COMPONENT ────────────────────────────────────────────────────────────────
+export default function ContactPage() {
+  const [form, setForm]     = useState(EMPTY);
+  const [status, setStatus] = useState('idle'); // idle | submitting | success | error
+  const [errorMsg, setErrorMsg] = useState('');
+  const [dropOpen, setDrop] = useState(false);
+  const [ticketId, setTicketId] = useState('');
+
+  const dropRef = useRef(null);
+  const dropTriggerId = useId();
+  const dropListId = useId();
+
+  // Generate ticket ID only on client to avoid hydration mismatch
+  useEffect(() => {
+    setTicketId(`CT-${Math.floor(10000 + Math.random() * 90000)}`);
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropOpen) return;
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) {
+        setDrop(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropOpen]);
+
+  // Close dropdown on Escape key
+  useEffect(() => {
+    if (!dropOpen) return;
+    const handler = (e) => { if (e.key === 'Escape') setDrop(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [dropOpen]);
+
+  const set = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }));
+    // Clear error banner as soon as user edits anything
+    if (status === 'error') setStatus('idle');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('submitting');
+    setErrorMsg('');
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ticketId }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        // Use server-returned ticket ID if provided, else keep client-generated one
+        if (data?.ticketId) setTicketId(data.ticketId);
         setStatus('success');
         setForm(EMPTY);
       } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data?.message || 'Something went wrong. Please try again or contact us via Telegram.');
         setStatus('error');
       }
     } catch {
+      setErrorMsg('Network error. Please check your connection and try again.');
       setStatus('error');
     }
   };
 
   const isSubmitting = status === 'submitting';
 
+  // Keyboard navigation for dropdown
+  const handleDropKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setDrop(o => !o);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!dropOpen) { setDrop(true); return; }
+      const idx = CATEGORIES.indexOf(form.category);
+      set('category', CATEGORIES[Math.min(idx + 1, CATEGORIES.length - 1)]);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const idx = CATEGORIES.indexOf(form.category);
+      set('category', CATEGORIES[Math.max(idx - 1, 0)]);
+    }
+  };
+
   return (
     <div style={{ paddingBottom: '80px' }}>
-      <style>{`
-        @keyframes fadeUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes dropIn   { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes spin     { to { transform:rotate(360deg); } }
-        @keyframes popIn    { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
-
-        .ct-input {
-          width:100%; background:#000; border:1px solid #1e1e1e;
-          border-radius:11px; padding:12px 14px; color:#fff;
-          font-size:13px; font-weight:600; outline:none;
-          font-family:inherit; transition:border-color 0.18s, box-shadow 0.18s;
-          box-sizing:border-box;
-        }
-        .ct-input::placeholder { color:#333; }
-        .ct-input:focus { border-color:#2e2e2e; box-shadow:0 0 0 3px rgba(0,255,136,0.05); }
-
-        .ct-textarea {
-          width:100%; background:#000; border:1px solid #1e1e1e;
-          border-radius:11px; padding:12px 14px; color:#fff;
-          font-size:13px; font-weight:600; outline:none;
-          font-family:inherit; resize:vertical; min-height:120px; line-height:1.6;
-          transition:border-color 0.18s, box-shadow 0.18s;
-          box-sizing:border-box;
-        }
-        .ct-textarea::placeholder { color:#333; }
-        .ct-textarea:focus { border-color:#2e2e2e; box-shadow:0 0 0 3px rgba(0,255,136,0.05); }
-
-        .ct-method:hover { border-color:#2a2a2a !important; background:rgba(255,255,255,0.03) !important; }
-        .ct-method-tg:hover { border-color:rgba(34,158,217,0.4) !important; background:rgba(34,158,217,0.08) !important; }
-        .ct-submit:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 10px 30px rgba(0,255,136,0.25) !important; }
-        .ct-submit:disabled { opacity:0.7; cursor:wait; }
-        .ct-back:hover { color:#fff !important; }
-
-        .ct-drop-opt:hover { background:rgba(0,255,136,0.08) !important; color:#00ff88 !important; }
-        .ct-drop-opt.active { color:#00ff88; background:rgba(0,255,136,0.05); }
-
-        .ct-card { animation: fadeUp 0.5s ease-out; }
-        .ct-success { animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1); }
-
-        @media(max-width:900px) {
-          .ct-split { grid-template-columns:1fr !important; }
-          .ct-left { order:2; }
-          .ct-right { order:1; }
-        }
-        @media(max-width:560px) {
-          .ct-form-row { grid-template-columns:1fr !important; }
-        }
-      `}</style>
+      <style>{styles}</style>
 
       {/* ── AMBIENT GLOW ── */}
       <div style={{
@@ -185,7 +248,7 @@ export default function ContactPage() {
             </p>
           </div>
 
-          {/* Contact methods */}
+          {/* Email contact */}
           <a
             href="mailto:partners@cashttree.online"
             className="ct-method"
@@ -214,6 +277,7 @@ export default function ContactPage() {
             </div>
           </a>
 
+          {/* Telegram contact */}
           <a
             href="https://t.me/CashtTree_bot"
             target="_blank"
@@ -252,7 +316,7 @@ export default function ContactPage() {
             borderRadius: '14px',
             display: 'flex', alignItems: 'center', gap: '10px',
           }}>
-            <span style={{ fontSize: '16px' }}>🔒</span>
+            <span style={{ fontSize: '16px' }} aria-hidden="true">🔒</span>
             <span style={{ fontSize: '11px', color: '#444', fontWeight: '700' }}>
               All submissions are encrypted via 256-bit SSL
             </span>
@@ -296,6 +360,8 @@ export default function ContactPage() {
             <div
               className="ct-success"
               style={{ textAlign: 'center', padding: '60px 28px' }}
+              role="status"
+              aria-live="polite"
             >
               <div style={{
                 width: '72px', height: '72px', borderRadius: '22px',
@@ -335,49 +401,65 @@ export default function ContactPage() {
           ) : (
 
             /* ── FORM ── */
-            <form onSubmit={handleSubmit} style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} noValidate style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
               {/* Name + Email */}
               <div className="ct-form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                <Field label="Full Name">
+                <Field label="Full Name" htmlFor="ct-name">
                   <input
-                    type="text" required placeholder="Enter name"
+                    id="ct-name"
+                    type="text" required placeholder="Enter your name"
                     value={form.name} onChange={e => set('name', e.target.value)}
                     className="ct-input"
+                    autoComplete="name"
                   />
                 </Field>
-                <Field label="Business Email">
+                <Field label="Business Email" htmlFor="ct-email">
                   <input
+                    id="ct-email"
                     type="email" required placeholder="name@company.com"
                     value={form.email} onChange={e => set('email', e.target.value)}
                     className="ct-input"
+                    autoComplete="email"
                   />
                 </Field>
               </div>
 
               {/* Phone + Company */}
               <div className="ct-form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                <Field label="Phone (Optional)">
+                <Field label="Phone (Optional)" htmlFor="ct-phone">
                   <input
-                    type="tel" placeholder="+91 XXXXX XXXXX"
+                    id="ct-phone"
+                    type="tel" placeholder="+1 (555) 000-0000"
                     value={form.phone} onChange={e => set('phone', e.target.value)}
                     className="ct-input"
+                    autoComplete="tel"
                   />
                 </Field>
-                <Field label="Company / Network">
+                <Field label="Company / Network" htmlFor="ct-company">
                   <input
+                    id="ct-company"
                     type="text" placeholder="Agency or network name"
                     value={form.company} onChange={e => set('company', e.target.value)}
                     className="ct-input"
+                    autoComplete="organization"
                   />
                 </Field>
               </div>
 
               {/* Department Dropdown */}
-              <Field label="Department">
-                <div style={{ position: 'relative', zIndex: 50 }}>
+              <Field label="Department" htmlFor={dropTriggerId}>
+                <div style={{ position: 'relative', zIndex: 50 }} ref={dropRef}>
                   <div
+                    id={dropTriggerId}
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    aria-expanded={dropOpen}
+                    aria-controls={dropListId}
+                    aria-label="Department"
+                    tabIndex={0}
                     onClick={() => setDrop(o => !o)}
+                    onKeyDown={handleDropKeyDown}
                     className="ct-input"
                     style={{
                       cursor: 'pointer',
@@ -394,18 +476,34 @@ export default function ContactPage() {
                   </div>
 
                   {dropOpen && (
-                    <div style={{
-                      position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-                      background: '#0a0a0a', border: '1px solid #222',
-                      borderRadius: '13px', overflow: 'hidden',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-                      animation: 'dropIn 0.15s ease-out',
-                    }}>
+                    <ul
+                      id={dropListId}
+                      role="listbox"
+                      aria-label="Department options"
+                      style={{
+                        listStyle: 'none', margin: 0, padding: 0,
+                        position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+                        background: '#0a0a0a', border: '1px solid #222',
+                        borderRadius: '13px', overflow: 'hidden',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                        animation: 'dropIn 0.15s ease-out',
+                      }}
+                    >
                       {CATEGORIES.map((opt) => (
-                        <div
+                        <li
                           key={opt}
+                          role="option"
+                          aria-selected={form.category === opt}
+                          tabIndex={0}
                           className={`ct-drop-opt ${form.category === opt ? 'active' : ''}`}
                           onClick={() => { set('category', opt); setDrop(false); }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              set('category', opt);
+                              setDrop(false);
+                            }
+                          }}
                           style={{
                             padding: '11px 16px',
                             fontSize: '13px', fontWeight: '600',
@@ -416,32 +514,37 @@ export default function ContactPage() {
                           }}
                         >
                           {opt}
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
                 </div>
               </Field>
 
               {/* Message */}
-              <Field label="Detailed Description">
+              <Field label={`Detailed Description (${form.message.length}/${MAX_MESSAGE_LENGTH})`} htmlFor="ct-message">
                 <textarea
+                  id="ct-message"
                   required
                   placeholder="Please describe your request in detail…"
                   value={form.message}
                   onChange={e => set('message', e.target.value)}
+                  maxLength={MAX_MESSAGE_LENGTH}
                   className="ct-textarea"
                 />
               </Field>
 
               {/* Error */}
               {status === 'error' && (
-                <div style={{
-                  padding: '12px 16px', borderRadius: '10px',
-                  background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
-                  fontSize: '12px', color: '#ef4444', fontWeight: '700',
-                }}>
-                  Something went wrong. Please try again or contact us via Telegram.
+                <div
+                  role="alert"
+                  style={{
+                    padding: '12px 16px', borderRadius: '10px',
+                    background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
+                    fontSize: '12px', color: '#ef4444', fontWeight: '700',
+                  }}
+                >
+                  {errorMsg}
                 </div>
               )}
 
@@ -450,6 +553,7 @@ export default function ContactPage() {
                 type="submit"
                 disabled={isSubmitting}
                 className="ct-submit"
+                aria-busy={isSubmitting}
                 style={{
                   width: '100%', padding: '14px',
                   background: isSubmitting ? '#1a1a1a' : '#fff',
@@ -465,13 +569,17 @@ export default function ContactPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 0.8s linear infinite' }}>
+                    <svg
+                      width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.5" strokeLinecap="round"
+                      style={{ animation: 'spin 0.8s linear infinite' }}
+                      aria-hidden="true"
+                    >
                       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                     </svg>
                     Processing…
                   </>
-                ) : 'Initiate Ticket'}
+                ) : 'Submit Request'}
               </button>
             </form>
           )}
@@ -481,14 +589,17 @@ export default function ContactPage() {
   );
 }
 
-// ── FIELD WRAPPER ──
-function Field({ label, children }) {
+// ── FIELD WRAPPER ──────────────────────────────────────────────────────────
+function Field({ label, htmlFor, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-      <label style={{
-        fontSize: '10px', fontWeight: '800', color: '#555',
-        textTransform: 'uppercase', letterSpacing: '0.8px',
-      }}>
+      <label
+        htmlFor={htmlFor}
+        style={{
+          fontSize: '10px', fontWeight: '800', color: '#555',
+          textTransform: 'uppercase', letterSpacing: '0.8px',
+        }}
+      >
         {label}
       </label>
       {children}
