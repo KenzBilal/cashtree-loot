@@ -321,12 +321,24 @@ function LeadCard({ lead, onAction, delay }) {
           <div style={{ color: '#fff', fontWeight: '800', fontSize: '15px', marginBottom: '5px' }}>
             {lead.campaigns?.title || 'Unknown Campaign'}
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11px', color: '#555' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '11px', color: '#555', alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Clock size={11} /> {timeAgo}
             </span>
+            {lead.user_name && (
+              <span style={{
+                color: '#ccc', fontWeight: '700',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid #222',
+                borderRadius: '6px',
+                padding: '2px 8px',
+                fontSize: '11px',
+              }}>
+                👤 {lead.user_name}
+              </span>
+            )}
             {lead.accounts?.username && (
-              <span style={{ color: '#777', fontWeight: '600' }}>
+              <span style={{ color: '#666', fontWeight: '600' }}>
                 via {lead.accounts.username}
               </span>
             )}
