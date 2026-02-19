@@ -1,28 +1,32 @@
 import { createClient } from '@supabase/supabase-js';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { ShieldCheck, Zap } from 'lucide-react';
-import OfferForm from './OfferForm'; 
+import OfferForm from './OfferForm';
 
+// ✅ Supabase client defined FIRST
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL, 
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// ✅ Cache wrapper defined AFTER supabase — shared between generateMetadata and OfferPage
+// This means only 1 DB call instead of 2 on every page load
+const getCampaign = cache(async (slug) => {
+  return await supabase
+    .from('campaigns')
+    .select('*')
+    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`)
+    .eq('is_active', true)
+    .single();
+});
+
 export const dynamic = 'force-dynamic';
 
-// ---------------------------------------------------------
-// 🚀 NEW: Professional SEO Metadata (WhatsApp/Telegram Previews)
-// ---------------------------------------------------------
+// ✅ SEO Metadata — uses cache, no extra DB call
 export async function generateMetadata(props) {
-  const params = await props.params;
-  const { slug } = params;
-  
-  // Quick fetch for metadata only
-  const { data: campaign } = await supabase
-    .from('campaigns')
-    .select('title, description, icon_url')
-    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`)
-    .single();
+  const { slug } = await props.params;
+  const { data: campaign } = await getCampaign(slug);
 
   if (!campaign) return { title: 'Offer Not Found' };
 
@@ -30,32 +34,23 @@ export async function generateMetadata(props) {
     title: `${campaign.title} - Get Rewarded | CashTree`,
     description: `Complete this task and earn instant cashback. Verified offer.`,
     openGraph: {
-      images: [campaign.icon_url || 'https://cashttree.online/default-og.png'], // Fallback image
+      images: [campaign.icon_url || 'https://cashttree.online/default-og.png'],
     },
   };
 }
 
 export default async function OfferPage(props) {
-  const params = await props.params;
+  const { slug } = await props.params;
   const searchParams = await props.searchParams;
-  const { slug } = params;
   const refCode = searchParams.ref;
 
-  // 1. FETCH CAMPAIGN
-  const { data: campaign, error } = await supabase
-    .from('campaigns')
-    .select('*')
-    .or(`landing_url.ilike.%${slug},landing_url.eq.${slug}`)
-    .eq('is_active', true)
-    .single();
-
+  // 1. FETCH CAMPAIGN — uses cache, shared with generateMetadata
+  const { data: campaign, error } = await getCampaign(slug);
   if (error || !campaign) return notFound();
 
-  // ---------------------------------------------------------
-  // ⚡ 2. DYNAMIC PAYOUT LOGIC (Optimized)
-  // ---------------------------------------------------------
-  let finalReward = campaign.user_reward; // Default value
-  let referrerId = null;                  // Store the UUID here
+  // 2. DYNAMIC PAYOUT LOGIC — single RPC call instead of two sequential ones
+  let finalReward = campaign.user_reward;
+  let referrerId = null;
 
   if (refCode) {
     const { data: rows } = await supabase
@@ -71,9 +66,8 @@ export default async function OfferPage(props) {
       }
     }
   }
-  // ---------------------------------------------------------
 
-  const steps = campaign.description 
+  const steps = campaign.description
     ? campaign.description.split(/\n|\d+\.\s+/).filter(line => line.trim().length > 0)
     : ["Register using your Phone Number", "Complete basic profile", "Reward credited to UPI"];
 
@@ -84,12 +78,12 @@ export default async function OfferPage(props) {
       <div className="bg-grid" />
 
       <div className="glass-card">
-        
+
         {/* BRANDING */}
         <div className="brand-header">
-           <div className="brand-logo">
-             <span className="text-white">Cash</span><span className="text-green">Tree</span>
-           </div>
+          <div className="brand-logo">
+            <span className="text-white">Cash</span><span className="text-green">Tree</span>
+          </div>
         </div>
 
         {/* HERO */}
@@ -98,7 +92,7 @@ export default async function OfferPage(props) {
             {campaign.icon_url ? (
               <img src={campaign.icon_url} alt={campaign.title} />
             ) : (
-              <span style={{fontSize:'24px'}}>🔥</span>
+              <span style={{ fontSize: '24px' }}>🔥</span>
             )}
           </div>
           <div>
@@ -112,37 +106,38 @@ export default async function OfferPage(props) {
         {/* EARNINGS */}
         <div className="earn-glass">
           <div className="earn-header">
-            {/* Shows: YOUR REWARD: ₹50 */}
             <Zap size={14} fill="currentColor" /> YOUR REWARD: ₹{finalReward}
           </div>
           <ul className="earn-steps">
-             {steps.map((step, i) => (
-               <li key={i}><span>{i+1}.</span> {step}</li>
-             ))}
+            {steps.map((step, i) => (
+              <li key={i}><span>{i + 1}.</span> {step}</li>
+            ))}
           </ul>
         </div>
 
-        {/* FORM - Now passing referrerId (UUID) for perfect accuracy */}
-        <OfferForm 
-          campaignId={campaign.id} 
-          refCode={refCode}         // Keeping for UI (if needed)
-          referrerId={referrerId}   // ✅ NEW: Pass the UUID directly!
+        {/* FORM */}
+        <OfferForm
+          campaignId={campaign.id}
+          refCode={refCode}
+          referrerId={referrerId}
           redirectUrl={campaign.affiliate_link}
-          payoutAmount={finalReward} 
+          payoutAmount={finalReward}
         />
 
         <p className="footer-text">
-           100% Safe & Secure • Instant Tracking
+          100% Safe & Secure • Instant Tracking
         </p>
       </div>
 
       <style>{`
         :root { --bg: #030305; --glass-border: rgba(255, 255, 255, 0.08); --neon: #00ff88; }
+
         .page-wrapper {
           min-height: 100vh; display: flex; align-items: center; justify-content: center;
           font-family: 'Inter', system-ui, sans-serif; color: #fff; padding: 20px;
           background: var(--bg); overflow: hidden; position: relative;
         }
+
         .bg-glow-1 { position: fixed; top: -20%; left: -20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(0,255,136,0.06), transparent 70%); z-index: 0; pointer-events: none; }
         .bg-glow-2 { position: fixed; bottom: -20%; right: -20%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%); z-index: 0; pointer-events: none; }
         .bg-grid { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 50px 50px; mask-image: radial-gradient(circle at center, black, transparent 80%); z-index: 0; pointer-events: none; }
@@ -153,6 +148,12 @@ export default async function OfferPage(props) {
           border: 1px solid var(--glass-border); border-top: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 28px; padding: 36px;
           box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0,0,0,0.4);
+          animation: pageIn 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pageIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
 
         .brand-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
