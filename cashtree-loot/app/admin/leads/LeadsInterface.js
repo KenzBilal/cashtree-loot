@@ -325,18 +325,8 @@ function LeadCard({ lead, onAction, delay }) {
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Clock size={11} /> {timeAgo}
             </span>
-            {lead.user_name && (
-              <span style={{
-                color: '#ccc', fontWeight: '700',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid #222',
-                borderRadius: '6px',
-                padding: '2px 8px',
-                fontSize: '11px',
-              }}>
-                👤 {lead.user_name}
-              </span>
-            )}
+           
+            
             {lead.accounts?.username && (
               <span style={{ color: '#666', fontWeight: '600' }}>
                 via {lead.accounts.username}
@@ -367,19 +357,28 @@ function LeadCard({ lead, onAction, delay }) {
       </div>
 
       {/* Data row */}
-      <div style={{
-        background: '#000',
-        border: '1px solid #141414',
-        borderRadius: '10px',
-        padding: '10px 14px',
-      }}>
-        <div style={{ fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '5px' }}>
-          Submitted Data
-        </div>
-        <div style={{ fontFamily: 'monospace', color: '#00ff88', fontSize: '13px', fontWeight: '600', wordBreak: 'break-all' }}>
-          {submittedData}
-        </div>
-      </div>
+<div style={{
+  background: '#000',
+  border: '1px solid #141414',
+  borderRadius: '10px',
+  padding: '10px 14px',
+}}>
+  {lead.user_name && (
+    <div style={{ 
+      fontSize: '12px', color: '#888', fontWeight: '700', 
+      marginBottom: '6px', paddingBottom: '6px',
+      borderBottom: '1px solid #141414'
+    }}>
+      👤 {lead.user_name}
+    </div>
+  )}
+  <div style={{ fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '5px' }}>
+    Submitted Data
+  </div>
+  <div style={{ fontFamily: 'monospace', color: '#00ff88', fontSize: '13px', fontWeight: '600', wordBreak: 'break-all' }}>
+    {submittedData}
+  </div>
+</div>
 
       {/* Action buttons (pending only) */}
       {isPending && (
