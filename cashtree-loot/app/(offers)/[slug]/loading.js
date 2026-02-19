@@ -45,8 +45,7 @@ export default function Loading() {
           fontFamily: 'Inter, system-ui, sans-serif',
         }}>
           <span style={{ color: '#fff' }}>CASH</span>
-          <span style={{ color: '#00ff88' }}>TREE
-          </span>
+          <span style={{ color: '#00ff88' }}>TREE</span>
         </h1>
 
         {/* 4. Glow reflection */}

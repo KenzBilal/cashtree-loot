@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { ShieldCheck, Zap } from 'lucide-react';
 import OfferForm from './OfferForm';
+import PageReveal from './PageReveal';
 
 // ✅ Supabase client defined FIRST
 const supabase = createClient(
@@ -10,8 +11,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// ✅ Cache wrapper defined AFTER supabase — shared between generateMetadata and OfferPage
-// This means only 1 DB call instead of 2 on every page load
+// ✅ Cache wrapper — shared between generateMetadata and OfferPage (1 DB call instead of 2)
 const getCampaign = cache(async (slug) => {
   return await supabase
     .from('campaigns')
@@ -77,57 +77,60 @@ export default async function OfferPage(props) {
       <div className="bg-glow-2" />
       <div className="bg-grid" />
 
-      <div className="glass-card">
+      {/* ✅ PageReveal guarantees card always animates in, even if page loads instantly */}
+      <PageReveal>
+        <div className="glass-card">
 
-        {/* BRANDING */}
-        <div className="brand-header">
-          <div className="brand-logo">
-            <span className="text-white">Cash</span><span className="text-green">Tree</span>
-          </div>
-        </div>
-
-        {/* HERO */}
-        <div className="hero-section">
-          <div className="icon-box">
-            {campaign.icon_url ? (
-              <img src={campaign.icon_url} alt={campaign.title} />
-            ) : (
-              <span style={{ fontSize: '24px' }}>🔥</span>
-            )}
-          </div>
-          <div>
-            <h1>{campaign.title}</h1>
-            <div className="verified-badge">
-              <ShieldCheck size={12} strokeWidth={3} /> Verified Offer
+          {/* BRANDING */}
+          <div className="brand-header">
+            <div className="brand-logo">
+              <span className="text-white">Cash</span><span className="text-green">Tree</span>
             </div>
           </div>
-        </div>
 
-        {/* EARNINGS */}
-        <div className="earn-glass">
-          <div className="earn-header">
-            <Zap size={14} fill="currentColor" /> YOUR REWARD: ₹{finalReward}
+          {/* HERO */}
+          <div className="hero-section">
+            <div className="icon-box">
+              {campaign.icon_url ? (
+                <img src={campaign.icon_url} alt={campaign.title} />
+              ) : (
+                <span style={{ fontSize: '24px' }}>🔥</span>
+              )}
+            </div>
+            <div>
+              <h1>{campaign.title}</h1>
+              <div className="verified-badge">
+                <ShieldCheck size={12} strokeWidth={3} /> Verified Offer
+              </div>
+            </div>
           </div>
-          <ul className="earn-steps">
-            {steps.map((step, i) => (
-              <li key={i}><span>{i + 1}.</span> {step}</li>
-            ))}
-          </ul>
+
+          {/* EARNINGS */}
+          <div className="earn-glass">
+            <div className="earn-header">
+              <Zap size={14} fill="currentColor" /> YOUR REWARD: ₹{finalReward}
+            </div>
+            <ul className="earn-steps">
+              {steps.map((step, i) => (
+                <li key={i}><span>{i + 1}.</span> {step}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* FORM */}
+          <OfferForm
+            campaignId={campaign.id}
+            refCode={refCode}
+            referrerId={referrerId}
+            redirectUrl={campaign.affiliate_link}
+            payoutAmount={finalReward}
+          />
+
+          <p className="footer-text">
+            100% Safe & Secure • Instant Tracking
+          </p>
         </div>
-
-        {/* FORM */}
-        <OfferForm
-          campaignId={campaign.id}
-          refCode={refCode}
-          referrerId={referrerId}
-          redirectUrl={campaign.affiliate_link}
-          payoutAmount={finalReward}
-        />
-
-        <p className="footer-text">
-          100% Safe & Secure • Instant Tracking
-        </p>
-      </div>
+      </PageReveal>
 
       <style>{`
         :root { --bg: #030305; --glass-border: rgba(255, 255, 255, 0.08); --neon: #00ff88; }
@@ -148,12 +151,6 @@ export default async function OfferPage(props) {
           border: 1px solid var(--glass-border); border-top: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 28px; padding: 36px;
           box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0,0,0,0.4);
-          animation: pageIn 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes pageIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
         }
 
         .brand-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
