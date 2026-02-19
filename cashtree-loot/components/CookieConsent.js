@@ -1,103 +1,131 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Cookie, X } from 'lucide-react';
+import { Cookie, ShieldCheck } from 'lucide-react';
 
 export default function CookieConsent() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [visible, setVisible]   = useState(false);
+  const [leaving, setLeaving]   = useState(false);
 
   useEffect(() => {
-    // Check if user has already chosen
-    const savedConsent = localStorage.getItem('cookieConsent');
-    if (!savedConsent) {
-      // Small delay for smooth entrance animation
-      const timer = setTimeout(() => setIsVisible(true), 1500);
-      return () => clearTimeout(timer);
+    const saved = localStorage.getItem('cookieConsent');
+    if (!saved) {
+      const t = setTimeout(() => setVisible(true), 1600);
+      return () => clearTimeout(t);
     }
   }, []);
 
-  const handleAccept = () => {
-    localStorage.setItem('cookieConsent', 'true');
-    setIsVisible(false);
-    // Here you would normally trigger your analytics (Google/Facebook pixels)
+  const dismiss = (value) => {
+    setLeaving(true);
+    setTimeout(() => {
+      localStorage.setItem('cookieConsent', value);
+      setVisible(false);
+      setLeaving(false);
+    }, 400);
   };
 
-  const handleDecline = () => {
-    localStorage.setItem('cookieConsent', 'false');
-    setIsVisible(false);
-  };
-
-  if (!isVisible) return null;
+  if (!visible) return null;
 
   return (
-    <div style={{
-      position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999,
-      width: '90%', maxWidth: '400px',
-      background: 'rgba(10, 10, 15, 0.85)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
-      borderRadius: '20px',
-      padding: '24px',
-      boxShadow: '0 20px 50px -10px rgba(0,0,0,0.5)',
-      animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
-    }}>
-      {/* Header */}
-      <div style={{display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px'}}>
-        <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
+    <>
+      <style>{`
+        @keyframes ccUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes ccDown { from { opacity:1; transform:translateY(0); }   to { opacity:0; transform:translateY(24px); } }
+        .cc-wrap { animation: ccUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .cc-wrap.out { animation: ccDown 0.4s cubic-bezier(0.4,0,1,1) forwards; }
+        .cc-decline:hover { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.15) !important; color: #fff !important; }
+        .cc-accept:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,136,0.35) !important; }
+      `}</style>
+
+      <div
+        className={`cc-wrap ${leaving ? 'out' : ''}`}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 99998,
+          width: 'calc(100vw - 40px)',
+          maxWidth: '380px',
+          background: 'rgba(8,8,12,0.92)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 24px 60px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset',
+        }}
+      >
+        {/* Top row */}
+        <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'12px' }}>
           <div style={{
-            background: 'rgba(0, 255, 136, 0.1)', padding: '10px', borderRadius: '12px',
-            color: '#00ff88', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            width: '38px', height: '38px', borderRadius: '11px', flexShrink: 0,
+            background: 'rgba(0,255,136,0.08)',
+            border: '1px solid rgba(0,255,136,0.18)',
+            color: '#00ff88',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Cookie size={24} />
+            <Cookie size={18} strokeWidth={2} />
           </div>
-          <div>
-            <h4 style={{margin: 0, color: 'white', fontSize: '1rem', fontWeight: '700'}}>Cookie Policy</h4>
-            <span style={{fontSize: '0.8rem', color: '#666'}}>Privacy & Tracking</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '13px', fontWeight: '800', color: '#fff', marginBottom: '1px' }}>
+              Cookie Policy
+            </div>
+            <div style={{ fontSize: '10px', color: '#555', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              Privacy &amp; Tracking
+            </div>
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 8px', borderRadius: '20px',
+            background: 'rgba(0,255,136,0.06)',
+            border: '1px solid rgba(0,255,136,0.15)',
+          }}>
+            <ShieldCheck size={10} color="#00ff88" />
+            <span style={{ fontSize: '9px', color: '#00ff88', fontWeight: '800', letterSpacing: '0.5px' }}>GDPR</span>
           </div>
         </div>
-        <button onClick={handleDecline} style={{background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '4px'}}>
-          <X size={20} />
-        </button>
+
+        {/* Body */}
+        <p style={{
+          color: '#666', fontSize: '12px', lineHeight: '1.65',
+          margin: '0 0 16px', fontWeight: '500',
+        }}>
+          We use cookies to enhance your experience, analyze traffic, and personalize content.
+          Your data is never sold to third parties.
+        </p>
+
+        {/* Actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <button
+            className="cc-decline"
+            onClick={() => dismiss('false')}
+            style={{
+              padding: '11px', borderRadius: '11px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'transparent', color: '#888',
+              fontSize: '12px', fontWeight: '800',
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px',
+              transition: 'background 0.18s, border-color 0.18s, color 0.18s',
+            }}
+          >
+            Decline
+          </button>
+          <button
+            className="cc-accept"
+            onClick={() => dismiss('true')}
+            style={{
+              padding: '11px', borderRadius: '11px', border: 'none',
+              background: '#00ff88', color: '#000',
+              fontSize: '12px', fontWeight: '900',
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px',
+              boxShadow: '0 0 20px rgba(0,255,136,0.2)',
+              transition: 'transform 0.18s, box-shadow 0.18s',
+            }}
+          >
+            Accept All
+          </button>
+        </div>
       </div>
-
-      {/* Text */}
-      <p style={{color: '#999', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '24px'}}>
-        We use cookies to enhance your experience, analyze traffic, and personalize content. By clicking "Accept", you consent to our use of cookies.
-      </p>
-
-      {/* Actions */}
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
-        <button 
-          onClick={handleDecline}
-          style={{
-            padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)',
-            background: 'transparent', color: '#ccc', fontSize: '0.9rem', fontWeight: '600',
-            cursor: 'pointer', transition: '0.2s'
-          }}
-          onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
-          onMouseOut={(e) => e.target.style.background = 'transparent'}
-        >
-          Decline
-        </button>
-        <button 
-          onClick={handleAccept}
-          style={{
-            padding: '12px', borderRadius: '10px', border: 'none',
-            background: '#00ff88', color: '#000', fontSize: '0.9rem', fontWeight: '700',
-            cursor: 'pointer', boxShadow: '0 0 20px rgba(0, 255, 136, 0.2)'
-          }}
-        >
-          Accept All
-        </button>
-      </div>
-
-      <style jsx>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(50px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
