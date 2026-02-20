@@ -2,24 +2,25 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- 1. PAY A USER (Direct Lead Payout) ---
+// ── 1. PAY A USER (Direct Lead Payout) ──
 export async function markLeadAsPaid(leadId) {
+  await requireAdmin();
+
   try {
-    // ✅ FIX: Removed 'updated_at' because the column does not exist in 'leads'.
-    // We only update the status to 'Paid'.
     const { error } = await supabaseAdmin
       .from('leads')
-      .update({ status: 'Paid' }) 
+      .update({ status: 'Paid' })
       .eq('id', leadId);
 
     if (error) throw new Error(error.message);
-    
+
     revalidatePath('/admin/finance');
     return { success: true };
   } catch (e) {
@@ -27,8 +28,10 @@ export async function markLeadAsPaid(leadId) {
   }
 }
 
-// --- 2. PROCESS PROMOTER WITHDRAWAL (With Refund Logic) ---
+// ── 2. PROCESS PROMOTER WITHDRAWAL (With Refund Logic) ──
 export async function processWithdrawal(payoutId, action, amount, userId) {
+  await requireAdmin();
+
   try {
     // A. Update Status
     const { error: updateError } = await supabaseAdmin
@@ -45,13 +48,13 @@ export async function processWithdrawal(payoutId, action, amount, userId) {
         .insert({
           account_id: userId,
           amount: amount,
-          type: 'legacy_migration', // ✅ FIXED: Changed from 'credit' to match DB rules
+          type: 'legacy_migration',
           description: `Refund: Withdrawal Rejected`
         });
 
       if (refundError) {
-          console.error("Refund Error:", refundError); // Added for debugging
-          throw new Error("Failed to refund user ledger.");
+        console.error("Refund Error:", refundError);
+        throw new Error("Failed to refund user ledger.");
       }
     }*/
 

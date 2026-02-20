@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,12 +10,14 @@ const supabaseAdmin = createClient(
 );
 
 export async function updateSystemConfig(formData) {
+  await requireAdmin();
+
   try {
     const updates = {
       maintenance_mode: formData.get('maintenance') === 'on',
-      min_withdrawal: parseFloat(formData.get('min_w')) || 500,
+      min_withdrawal:   parseFloat(formData.get('min_w')) || 500,
       support_whatsapp: formData.get('whatsapp'),
-      notice_board: formData.get('notice'),
+      notice_board:     formData.get('notice'),
     };
 
     const { error } = await supabaseAdmin

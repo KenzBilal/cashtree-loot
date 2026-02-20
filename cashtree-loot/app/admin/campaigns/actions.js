@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -11,22 +12,22 @@ const supabaseAdmin = createClient(
 
 // ── 1. CREATE CAMPAIGN ──
 export async function createCampaign(formData) {
-  const title         = formData.get('title')?.trim();
-  const landing_url   = formData.get('landing_url')?.trim();
+  await requireAdmin();
+
+  const title          = formData.get('title')?.trim();
+  const landing_url    = formData.get('landing_url')?.trim();
   const affiliate_link = formData.get('affiliate_link')?.trim() || null;
-  const description   = formData.get('description')?.trim() || null;
-  const category      = formData.get('category')?.trim() || null;
-  const icon_url      = formData.get('icon_url')?.trim() || null;
+  const description    = formData.get('description')?.trim()    || null;
+  const category       = formData.get('category')?.trim()       || null;
+  const icon_url       = formData.get('icon_url')?.trim()       || null;
 
   const user_reward   = parseFloat(formData.get('user_reward'))   || 0;
   const payout_amount = parseFloat(formData.get('payout_amount')) || 0;
 
-  // Basic validation
   if (!title || !landing_url) {
     return { success: false, error: 'Title and URL Slug are required.' };
   }
 
-  // Finance safety check
   if (user_reward > payout_amount) {
     return {
       success: false,
@@ -48,7 +49,6 @@ export async function createCampaign(formData) {
   });
 
   if (error) {
-    // Duplicate slug — surface a human-readable message
     if (error.code === '23505') {
       return { success: false, error: 'That URL slug is already taken. Choose another.' };
     }
@@ -61,6 +61,8 @@ export async function createCampaign(formData) {
 
 // ── 2. UPDATE CAMPAIGN ──
 export async function updateCampaign(campaignId, formData) {
+  await requireAdmin();
+
   try {
     const user_reward   = parseFloat(formData.get('user_reward'))   || 0;
     const payout_amount = parseFloat(formData.get('payout_amount')) || 0;
@@ -78,14 +80,14 @@ export async function updateCampaign(campaignId, formData) {
     }
 
     const updates = {
-      title:           formData.get('title')?.trim(),
-      description:     formData.get('description')?.trim() || null,
+      title:          formData.get('title')?.trim(),
+      description:    formData.get('description')?.trim()    || null,
       user_reward,
       payout_amount,
       landing_url,
-      affiliate_link:  formData.get('affiliate_link')?.trim() || null,
-      category:        formData.get('category')?.trim()       || null,
-      icon_url:        formData.get('icon_url')?.trim()       || null,
+      affiliate_link: formData.get('affiliate_link')?.trim() || null,
+      category:       formData.get('category')?.trim()       || null,
+      icon_url:       formData.get('icon_url')?.trim()       || null,
     };
 
     const { error } = await supabaseAdmin
@@ -106,6 +108,8 @@ export async function updateCampaign(campaignId, formData) {
 
 // ── 3. TOGGLE STATUS ──
 export async function toggleCampaignStatus(campaignId, currentStatus) {
+  await requireAdmin();
+
   try {
     const { error } = await supabaseAdmin
       .from('campaigns')
@@ -124,6 +128,8 @@ export async function toggleCampaignStatus(campaignId, currentStatus) {
 
 // ── 4. DELETE CAMPAIGN ──
 export async function deleteCampaign(campaignId) {
+  await requireAdmin();
+
   try {
     const { error } = await supabaseAdmin
       .from('campaigns')
