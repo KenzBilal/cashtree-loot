@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { name: 'Overview',     path: '/dashboard',           Icon: LayoutDashboard },
   { name: 'Campaigns',    path: '/dashboard/campaigns', Icon: Megaphone },
   { name: 'Network',      path: '/dashboard/team',      Icon: Network },
-  { name: 'Finance',      path: '/dashboard/wallet',    Icon: Wallet },
+  { name: 'Wallet',       path: '/dashboard/wallet',    Icon: Wallet },
   { name: 'Activity Log', path: '/dashboard/leads',     Icon: ClipboardList },
   { name: 'Profile',      path: '/dashboard/profile',   Icon: UserCircle },
 ];
