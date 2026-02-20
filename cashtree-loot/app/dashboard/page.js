@@ -85,10 +85,8 @@ export default async function DashboardPage() {
           overflowX: 'auto', paddingBottom: '4px',
         }}>
           {[
-            { icon: '📡', value: liveLeads,  label: 'Live',  color: NEON },
             { icon: '📊', value: leadCount,  label: 'Total', color: '#fff' },
             { icon: '👥', value: leadCount,  label: 'Leads', color: '#3b82f6' },
-            { icon: '💸', value: `₹${earnedToday.toLocaleString('en-IN')}`, label: 'Today', color: NEON },
           ].map((chip, i) => (
             <div
               key={i}
