@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 export default function DashboardClient({ account, referralLink }) {
   const [greeting, setGreeting] = useState('Welcome');
-  const [copied, setCopied]     = useState(false);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -14,12 +13,6 @@ export default function DashboardClient({ account, referralLink }) {
     else             setGreeting('Good Evening');
   }, []);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div>
       <style>{`
@@ -27,7 +20,7 @@ export default function DashboardClient({ account, referralLink }) {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.3; }
         }
-        .db-blink { animation: blink 2s infinite; }
+        .db-blink  { animation: blink 2s infinite; }
         .db-avatar { transition: transform 0.2s; }
         .db-avatar:hover { transform: scale(1.06); }
       `}</style>
@@ -65,20 +58,37 @@ export default function DashboardClient({ account, referralLink }) {
           </div>
         </div>
 
+        {/* Avatar — matches Image 1: white circle + green ring + green dot */}
         <Link
           href="/dashboard/profile"
           className="db-avatar"
-          style={{
-            width: '48px', height: '48px', borderRadius: '13px',
-            background: '#00ff88',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', fontWeight: '900', color: '#000',
-            textDecoration: 'none',
-            boxShadow: '0 0 20px rgba(0,255,136,0.28)',
-            flexShrink: 0,
-          }}
+          style={{ textDecoration: 'none', flexShrink: 0, position: 'relative' }}
         >
-          {account.username?.[0]?.toUpperCase() || 'P'}
+          {/* Outer dark-green ring */}
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '50%',
+            border: '2.5px solid #1c4a30',
+            padding: '3px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {/* White circle with initial */}
+            <div style={{
+              width: '100%', height: '100%', borderRadius: '50%',
+              background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '19px', fontWeight: '900', color: '#000',
+            }}>
+              {account.username?.[0]?.toUpperCase() || 'P'}
+            </div>
+          </div>
+          {/* Green online dot */}
+          <div style={{
+            position: 'absolute', bottom: '2px', right: '2px',
+            width: '12px', height: '12px', borderRadius: '50%',
+            background: '#00ff88',
+            border: '2px solid #030305',
+            boxShadow: '0 0 8px rgba(0,255,136,0.9)',
+          }} />
         </Link>
       </div>
     </div>

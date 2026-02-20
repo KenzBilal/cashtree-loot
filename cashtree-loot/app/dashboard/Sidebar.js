@@ -2,17 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Megaphone,
+  Network,
+  Wallet,
+  ClipboardList,
+  UserCircle,
+} from 'lucide-react';
 
 const NAV_ITEMS = [
-  { name: 'Dashboard',    path: '/dashboard',           icon: '🏠' },
-  { name: 'Campaigns',    path: '/dashboard/campaigns', icon: '🔥' },
-  { name: 'Network',      path: '/dashboard/team',      icon: '🕸' },
-  { name: 'Finance',      path: '/dashboard/wallet',    icon: '💰' },
-  { name: 'Activity Log', path: '/dashboard/leads',     icon: '📋' },
-  { name: 'Profile',      path: '/dashboard/profile',   icon: '👤' },
+  { name: 'Overview',     path: '/dashboard',           Icon: LayoutDashboard },
+  { name: 'Campaigns',    path: '/dashboard/campaigns', Icon: Megaphone },
+  { name: 'Network',      path: '/dashboard/team',      Icon: Network },
+  { name: 'Finance',      path: '/dashboard/wallet',    Icon: Wallet },
+  { name: 'Activity Log', path: '/dashboard/leads',     Icon: ClipboardList },
+  { name: 'Profile',      path: '/dashboard/profile',   Icon: UserCircle },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ username }) {
   const pathname = usePathname();
 
   return (
@@ -25,77 +33,110 @@ export default function Sidebar() {
       zIndex: 50,
     }}>
       <style>{`
-        .sb-link { transition: background 0.18s; }
+        .sb-link { transition: background 0.18s, border-color 0.18s; }
         .sb-link:hover:not(.sb-active) { background: rgba(255,255,255,0.03) !important; }
-        .sb-link:hover:not(.sb-active) .sb-icon  { border-color: rgba(255,255,255,0.12) !important; }
-        .sb-link:hover:not(.sb-active) .sb-lbl   { color: #fff !important; }
+        .sb-link:hover:not(.sb-active) .sb-lbl { color: #bbb !important; }
+        .sb-link:hover:not(.sb-active) .sb-ibox { border-color: rgba(255,255,255,0.1) !important; }
       `}</style>
 
-      {/* Brand */}
+      {/* ── Brand Block with Avatar (Image 1 style) ── */}
       <div style={{
-        padding: '22px 20px 18px',
+        padding: '26px 20px 20px',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
-        display: 'flex', alignItems: 'center', gap: '12px',
+        display: 'flex', alignItems: 'center', gap: '14px',
       }}>
-        <div style={{
-          width: '38px', height: '38px', borderRadius: '10px',
-          background: '#00ff88', flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '18px', fontWeight: '900', color: '#000',
-          boxShadow: '0 0 16px rgba(0,255,136,0.28)',
-        }}>
-          C
+
+        {/* White circle + dark green ring + green dot */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          {/* Outer ring */}
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '50%',
+            border: '2.5px solid #1c4a30',
+            padding: '3px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {/* White circle */}
+            <div style={{
+              width: '100%', height: '100%', borderRadius: '50%',
+              background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '17px', fontWeight: '900', color: '#000',
+            }}>
+              {username?.[0]?.toUpperCase() || 'P'}
+            </div>
+          </div>
+          {/* Green online dot */}
+          <div style={{
+            position: 'absolute', bottom: '1px', right: '1px',
+            width: '11px', height: '11px', borderRadius: '50%',
+            background: '#00ff88',
+            border: '2px solid #050505',
+            boxShadow: '0 0 8px rgba(0,255,136,0.8)',
+          }} />
         </div>
+
         <div>
-          <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+          <div style={{
+            fontSize: '14px', fontWeight: '900', color: '#fff',
+            letterSpacing: '-0.3px', lineHeight: 1.2,
+          }}>
             CashTree
           </div>
-          <div style={{ fontSize: '10px', color: '#3a3a3a', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: '3px' }}>
+          <div style={{
+            fontSize: '10px', color: '#333', fontWeight: '700',
+            textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: '2px',
+          }}>
             Promoter Hub
           </div>
         </div>
       </div>
 
-      {/* Section label */}
-      <div style={{ padding: '20px 20px 8px', fontSize: '9px', fontWeight: '800', color: '#2e2e2e', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+      {/* ── Section Label ── */}
+      <div style={{
+        padding: '18px 22px 8px',
+        fontSize: '9px', fontWeight: '800', color: '#2a2a2a',
+        textTransform: 'uppercase', letterSpacing: '1.5px',
+      }}>
         Main Menu
       </div>
 
-      {/* Nav */}
-      <div style={{ padding: '0 10px', display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.path;
+      {/* ── Nav Links (Image 2 style) ── */}
+      <div style={{
+        padding: '4px 10px',
+        display: 'flex', flexDirection: 'column', gap: '2px',
+        flex: 1,
+      }}>
+        {NAV_ITEMS.map(({ name, path, Icon }) => {
+          const isActive = pathname === path;
           return (
             <Link
-              key={item.path}
-              href={item.path}
+              key={path}
+              href={path}
               className={`sb-link${isActive ? ' sb-active' : ''}`}
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '9px 12px', borderRadius: '11px',
+                padding: '10px 12px', borderRadius: '11px',
                 textDecoration: 'none',
-                background: isActive ? 'rgba(0,255,136,0.07)' : 'transparent',
-                position: 'relative',
+                background: isActive
+                  ? 'linear-gradient(90deg, rgba(0,255,136,0.14), rgba(0,255,136,0.05))'
+                  : 'transparent',
+                border: `1px solid ${isActive ? 'rgba(0,255,136,0.16)' : 'transparent'}`,
               }}
             >
-              {/* Active left accent */}
-              {isActive && (
-                <div style={{
-                  position: 'absolute', left: 0, top: '18%', bottom: '18%',
-                  width: '3px', borderRadius: '0 3px 3px 0',
-                  background: '#00ff88', boxShadow: '0 0 8px #00ff88',
-                }} />
-              )}
-
               {/* Icon box */}
-              <div className="sb-icon" style={{
-                width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0,
+              <div className="sb-ibox" style={{
+                width: '32px', height: '32px', borderRadius: '8px',
+                flexShrink: 0,
                 background: isActive ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.03)',
                 border: `1px solid ${isActive ? 'rgba(0,255,136,0.22)' : 'rgba(255,255,255,0.06)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '15px', transition: 'border-color 0.18s',
+                transition: 'border-color 0.18s',
               }}>
-                {item.icon}
+                <Icon
+                  size={14}
+                  color={isActive ? '#00ff88' : '#555'}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                />
               </div>
 
               {/* Label */}
@@ -103,16 +144,19 @@ export default function Sidebar() {
                 fontSize: '13px',
                 fontWeight: isActive ? '700' : '500',
                 color: isActive ? '#fff' : '#555',
+                flex: 1,
                 transition: 'color 0.18s',
               }}>
-                {item.name}
+                {name}
               </span>
 
-              {/* Active dot */}
+              {/* Active dot — right side */}
               {isActive && (
                 <div style={{
-                  marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%',
-                  background: '#00ff88', boxShadow: '0 0 6px #00ff88',
+                  width: '7px', height: '7px', borderRadius: '50%',
+                  background: '#00ff88',
+                  boxShadow: '0 0 8px #00ff88',
+                  flexShrink: 0,
                 }} />
               )}
             </Link>
@@ -120,9 +164,12 @@ export default function Sidebar() {
         })}
       </div>
 
-      {/* Footer */}
-      <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <div style={{ fontSize: '10px', color: '#2a2a2a', fontWeight: '700' }}>
+      {/* ── Footer ── */}
+      <div style={{
+        padding: '14px 22px',
+        borderTop: '1px solid rgba(255,255,255,0.04)',
+      }}>
+        <div style={{ fontSize: '10px', color: '#222', fontWeight: '700' }}>
           Promoter Dashboard · v2.0
         </div>
       </div>
