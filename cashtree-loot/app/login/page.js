@@ -19,56 +19,62 @@ export default function LoginPage() {
   const [form, setForm]                   = useState({ username: '', password: '' });
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(null); };
 
-  // ── Clean ONLY the Supabase auth key, nothing else ──
-  useEffect(() => {
-    try {
-      const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL
-        .split('//')[1].split('.')[0];
-      localStorage.removeItem(`sb-${projectId}-auth-token`);
-    } catch {}
-    document.cookie = 'ct_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-  }, []);
+// ── Clean ONLY the Supabase auth key, nothing else ──
+useEffect(() => {
+  try {
+    const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL
+      .split('//')[1].split('.')[0];
+    localStorage.removeItem(`sb-${projectId}-auth-token`);
+  } catch {}
+  
+  // Clear via API so HttpOnly cookie gets wiped server-side
+  fetch('/api/auth/session', { method: 'DELETE' });
+}, []);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
 
-    let email = form.username.trim();
-    if (!email.includes('@')) {
-      email = `${email.toUpperCase()}@cashttree.internal`;
+  let email = form.username.trim();
+  if (!email.includes('@')) {
+    email = `${email.toUpperCase()}@cashttree.internal`;
+  }
+
+  try {
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password: form.password,
+    });
+    if (authError) throw new Error('Invalid credentials. Please try again.');
+
+    const { data: account, error: roleError } = await supabase
+      .from('accounts')
+      .select('role, is_frozen')
+      .eq('id', data.user.id)
+      .single();
+
+    if (roleError || !account) throw new Error('Account setup missing. Contact support.');
+
+    if (account.is_frozen) {
+      await supabase.auth.signOut();
+      throw new Error('Access Denied: Account is frozen.');
     }
 
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password: form.password,
-      });
-      if (authError) throw new Error('Invalid credentials. Please try again.');
+    // ← HttpOnly cookie set server-side, JS cannot read or steal it
+    await fetch('/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: data.session.access_token }),
+    });
 
-      const { data: account, error: roleError } = await supabase
-        .from('accounts')
-        .select('role, is_frozen')
-        .eq('id', data.user.id)
-        .single();
+    router.push(account.role === 'admin' ? '/admin' : '/dashboard');
 
-      if (roleError || !account) throw new Error('Account setup missing. Contact support.');
-
-      if (account.is_frozen) {
-        await supabase.auth.signOut();
-        throw new Error('Access Denied: Account is frozen.');
-      }
-
-      document.cookie = `ct_session=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
-
-      router.push(account.role === 'admin' ? '/admin' : '/dashboard');
-
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
+  } catch (err) {
+    setError(err.message);
+    setLoading(false);
+  }
+};
   const handleContactAdmin = () => {
     const adminHandle = process.env.NEXT_PUBLIC_ADMIN_TELEGRAM || 'CashtTree_bot';
     const text = `Hello Admin, I forgot my CashTree password. My username is: ${form.username || '[enter username]'}`;

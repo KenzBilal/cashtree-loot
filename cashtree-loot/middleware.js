@@ -9,22 +9,30 @@ export function middleware(request) {
   // 2. Define Protected Zones
   const isProtectedPath = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
 
-  // 3. SECURITY GATE: If trying to access protected area WITHOUT session -> Kick to Login
+  // 3. Block external POST abuse on session API
+  // Only allow session API calls that originate from your own domain
+  const isSessionApi = pathname === '/api/auth/session';
+  if (isSessionApi) {
+    const origin = request.headers.get('origin');
+    const host   = request.headers.get('host');
+    if (origin && !origin.includes(host)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
+  // 4. SECURITY GATE
   if (isProtectedPath && !session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-
-  // --- LOOP FIX: REMOVED THE AUTO-REDIRECT FROM LOGIN ---
-  // We removed the block that said "If at /login and session exists, go to /dashboard".
-  // This prevents the infinite loop if the dashboard rejects the token.
 
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/admin/:path*', 
-    '/dashboard/:path*', 
-    '/login'
+    '/admin/:path*',
+    '/dashboard/:path*',
+    '/api/auth/session',
+    '/login',
   ],
 };
