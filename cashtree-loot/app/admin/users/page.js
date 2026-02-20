@@ -9,11 +9,12 @@ const supabaseAdmin = createClient(
 );
 
 export default async function UsersPage() {
+  // 1. Removed 'balance' from this query
   const { data: users, error } = await supabaseAdmin
     .from('accounts')
     .select(`
       id, username, full_name, phone, upi_id, is_frozen,
-      created_at, role, balance,
+      created_at, role,
       ledger ( amount, created_at, type, description ),
       leads!leads_referred_by_fkey ( id )
     `)
@@ -27,19 +28,25 @@ export default async function UsersPage() {
     );
   }
 
+  // 2. Calculate balance dynamically from their ledger records
+  const formattedUsers = users?.map(u => ({
+    ...u,
+    balance: u.ledger?.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0) || 0
+  })) || [];
+
   // Stats
-  const totalUsers     = users?.length || 0;
-  const frozenCount    = users?.filter(u => u.is_frozen).length || 0;
-  const adminCount     = users?.filter(u => u.role === 'admin').length || 0;
-  const totalLiability = users?.reduce((sum, u) => sum + (u.balance || 0), 0) || 0;
+  const totalUsers     = formattedUsers.length;
+  const frozenCount    = formattedUsers.filter(u => u.is_frozen).length;
+  const adminCount     = formattedUsers.filter(u => u.role === 'admin').length;
+  const totalLiability = formattedUsers.reduce((sum, u) => sum + u.balance, 0);
   const today          = new Date().toISOString().split('T')[0];
-  const newToday       = users?.filter(u => u.created_at?.startsWith(today)).length || 0;
+  const newToday       = formattedUsers.filter(u => u.created_at?.startsWith(today)).length;
 
   const stats = { totalUsers, frozenCount, adminCount, totalLiability, newToday };
 
   return (
     <UsersInterface
-      initialUsers={users || []}
+      initialUsers={formattedUsers}
       stats={stats}
     />
   );

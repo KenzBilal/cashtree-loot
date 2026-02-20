@@ -31,12 +31,25 @@ export async function resetUserBalance(userId) {
   await requireAdmin();
 
   try {
-    const { error } = await supabaseAdmin
-      .from('accounts')
-      .update({ balance: 0 })
-      .eq('id', userId);
+    // To reset, we find the current balance and add a negative ledger entry
+    const { data: ledgerRows } = await supabaseAdmin
+      .from('ledger')
+      .select('amount')
+      .eq('account_id', userId);
+      
+    const currentBalance = ledgerRows?.reduce((sum, row) => sum + Number(row.amount), 0) || 0;
 
-    if (error) throw error;
+    if (currentBalance !== 0) {
+      const { error } = await supabaseAdmin
+        .from('ledger')
+        .insert({
+          account_id: userId,
+          type: 'admin_reset',
+          amount: -currentBalance,
+          description: 'Admin balance reset'
+        });
+      if (error) throw error;
+    }
 
     revalidatePath('/admin/users');
     return { success: true };
@@ -51,33 +64,19 @@ export async function creditUserWallet(userId, amount, reason) {
 
   try {
     const credit = parseFloat(amount);
-    if (!credit || credit <= 0) {
-      return { success: false, error: 'Invalid amount.' };
-    }
+    if (!credit || credit <= 0) return { success: false, error: 'Invalid amount.' };
 
-    // A. Add ledger entry
+    // Simply insert a positive ledger entry. The view calculates the rest.
     const { error: ledgerError } = await supabaseAdmin
       .from('ledger')
       .insert({
         account_id:  userId,
-        type:        'task_earning',
+        type:        'manual_credit',
         amount:      credit,
         description: reason?.trim() || 'Manual credit by admin',
       });
 
     if (ledgerError) throw ledgerError;
-
-    // B. Update balance
-    const { data: account } = await supabaseAdmin
-      .from('accounts')
-      .select('balance')
-      .eq('id', userId)
-      .single();
-
-    await supabaseAdmin
-      .from('accounts')
-      .update({ balance: (account?.balance || 0) + credit })
-      .eq('id', userId);
 
     revalidatePath('/admin/users');
     return { success: true };
@@ -92,34 +91,19 @@ export async function deductUserWallet(userId, amount, reason) {
 
   try {
     const deduct = parseFloat(amount);
-    if (!deduct || deduct <= 0) {
-      return { success: false, error: 'Invalid amount.' };
-    }
+    if (!deduct || deduct <= 0) return { success: false, error: 'Invalid amount.' };
 
-    // A. Add negative ledger entry
+    // Simply insert a negative ledger entry.
     const { error: ledgerError } = await supabaseAdmin
       .from('ledger')
       .insert({
         account_id:  userId,
-        type:        'task_earning',
+        type:        'manual_deduction',
         amount:      -deduct,
         description: reason?.trim() || 'Manual deduction by admin',
       });
 
     if (ledgerError) throw ledgerError;
-
-    // B. Update balance
-    const { data: account } = await supabaseAdmin
-      .from('accounts')
-      .select('balance')
-      .eq('id', userId)
-      .single();
-
-    const newBalance = Math.max(0, (account?.balance || 0) - deduct);
-    await supabaseAdmin
-      .from('accounts')
-      .update({ balance: newBalance })
-      .eq('id', userId);
 
     revalidatePath('/admin/users');
     return { success: true };
