@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import CampaignsInterface from './CampaignsInterface';
 
-// Always fetch fresh data — promoters need up-to-the-second campaign state.
 export const dynamic = 'force-dynamic';
 
 export default async function CampaignsPage() {
@@ -22,21 +21,13 @@ export default async function CampaignsPage() {
   const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
   if (authError || !user) redirect('/login');
 
-  // ── 2. Promoter identity ─────────────────────────────────────────────────
-  // Prefer an explicit username stored in metadata; never silently derive one
-  // from an email address since that can contain unsafe URL characters.
-  const promoterUsername =
-    user.user_metadata?.username ||
-    user.user_metadata?.name ||
-    null;
-
-  // ── 3. Parallel data fetch ───────────────────────────────────────────────
+  // ── 2. Parallel data fetch ───────────────────────────────────────────────
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const [campaignsResult, settingsResult] = await Promise.all([
+  const [campaignsResult, settingsResult, accountResult] = await Promise.all([
     supabaseAdmin
       .from('campaigns')
       .select('*')
@@ -47,9 +38,16 @@ export default async function CampaignsPage() {
       .from('promoter_campaign_settings')
       .select('campaign_id, user_bonus, promoter_share')
       .eq('account_id', user.id),
+
+    // ✅ FIX: username comes from accounts table, not auth metadata
+    supabaseAdmin
+      .from('accounts')
+      .select('username')
+      .eq('id', user.id)
+      .single(),
   ]);
 
-  // ── 4. Error handling ────────────────────────────────────────────────────
+  // ── 3. Error handling ────────────────────────────────────────────────────
   if (campaignsResult.error) {
     console.error('[CampaignsPage] Failed to load campaigns:', campaignsResult.error);
     return (
@@ -63,15 +61,19 @@ export default async function CampaignsPage() {
   }
 
   if (settingsResult.error) {
-    // Non-fatal — degrade gracefully with default splits
     console.error('[CampaignsPage] Failed to load user settings:', settingsResult.error);
   }
+
+  if (accountResult.error) {
+    console.error('[CampaignsPage] Failed to load account:', accountResult.error);
+  }
+
+  // ── 4. Username — sourced from accounts table ────────────────────────────
+  const promoterUsername = accountResult.data?.username || null;
 
   // ── 5. Render ────────────────────────────────────────────────────────────
   return (
     <div style={{ paddingBottom: '100px' }}>
-
-      {/* Header */}
       <div style={{ marginBottom: '30px', textAlign: 'center' }}>
         <h1 style={{
           fontSize: '28px', fontWeight: '900', color: '#fff',
@@ -90,7 +92,6 @@ export default async function CampaignsPage() {
         promoterUsername={promoterUsername}
         userSettings={settingsResult.data ?? []}
       />
-
     </div>
   );
 }

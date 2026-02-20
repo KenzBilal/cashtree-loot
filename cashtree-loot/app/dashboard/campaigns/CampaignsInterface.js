@@ -7,12 +7,8 @@ import { savePayoutSettings } from './actions';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Compute the effective payout split for a campaign, respecting any custom
- * settings the promoter has already saved.
- */
 function getSplit(campaign, userSettings) {
-  const custom = userSettings?.find((s) => s.campaign_id === campaign.id);
+  const custom     = userSettings?.find((s) => s.campaign_id === campaign.id);
   const totalLimit = parseFloat(campaign.payout_amount);
   const userShare  = custom ? parseFloat(custom.user_bonus) : parseFloat(campaign.user_reward ?? 0);
   return {
@@ -22,10 +18,6 @@ function getSplit(campaign, userSettings) {
   };
 }
 
-/**
- * Build a safe referral URL.
- * Returns null if the landing URL is missing or uses a non-http(s) scheme.
- */
 function buildReferralLink(landingUrl, promoterUsername, origin) {
   if (!landingUrl || !promoterUsername) return null;
 
@@ -33,7 +25,6 @@ function buildReferralLink(landingUrl, promoterUsername, origin) {
     ? landingUrl
     : `${origin}${landingUrl.startsWith('/') ? '' : '/'}${landingUrl}`;
 
-  // Reject non-http(s) schemes (e.g. javascript:)
   try {
     const parsed = new URL(full);
     if (!['http:', 'https:'].includes(parsed.protocol)) return null;
@@ -45,9 +36,6 @@ function buildReferralLink(landingUrl, promoterUsername, origin) {
   return `${full}${sep}ref=${encodeURIComponent(promoterUsername)}`;
 }
 
-/**
- * Split a description string into individual step strings, trimming whitespace.
- */
 function parseSteps(text) {
   if (!text) return [];
   return text
@@ -66,6 +54,37 @@ function Badge({ text, color, bg }) {
     }}>
       {text}
     </span>
+  );
+}
+
+// ✅ FIX 4: Fallback avatar when icon_url is null/empty
+function CampaignIcon({ iconUrl, title, size = 60, radius = 16 }) {
+  const [broken, setBroken] = useState(false);
+
+  if (!iconUrl || broken) {
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: radius,
+        background: '#1a1a1a', border: '1px solid #222',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.4, fontWeight: '900', color: '#00ff88',
+        flexShrink: 0,
+      }}>
+        {title?.[0]?.toUpperCase() || '?'}
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={iconUrl}
+      alt={`${title} icon`}
+      width={size}
+      height={size}
+      onError={() => setBroken(true)}
+      style={{ borderRadius: radius, border: '1px solid #222', objectFit: 'cover', flexShrink: 0 }}
+    />
   );
 }
 
@@ -88,20 +107,13 @@ function CampaignCard({ campaign, userSettings, index, onClick }) {
       }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#333')}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#1a1a1a')}
-      onFocus={(e) => (e.currentTarget.style.borderColor = '#00ff88')}
-      onBlur={(e) => (e.currentTarget.style.borderColor = '#1a1a1a')}
+      onFocus={(e)      => (e.currentTarget.style.borderColor = '#00ff88')}
+      onBlur={(e)       => (e.currentTarget.style.borderColor = '#1a1a1a')}
     >
-      {/* Card header */}
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={campaign.icon_url}
-          alt={`${campaign.title} icon`}
-          width={60} height={60}
-          style={{ borderRadius: '16px', border: '1px solid #222', objectFit: 'cover', flexShrink: 0 }}
-        />
+        <CampaignIcon iconUrl={campaign.icon_url} title={campaign.title} size={60} radius={16} />
         <div>
-          <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: '800', lineHeight: '1.2', marginBottom: '6px', margin: '0 0 6px' }}>
+          <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: '800', lineHeight: '1.2', margin: '0 0 6px' }}>
             {campaign.title}
           </h3>
           <span style={{
@@ -114,7 +126,6 @@ function CampaignCard({ campaign, userSettings, index, onClick }) {
         </div>
       </div>
 
-      {/* Payout grid */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
         background: '#111', padding: '12px', borderRadius: '14px',
@@ -143,26 +154,29 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
   const [copyError, setCopyError]       = useState(false);
 
   // Payout editor state
-  const [isEditing, setIsEditing]       = useState(false);
-  const [editUserReward, setEditUserReward] = useState(0);
-  const [inputError, setInputError]     = useState('');
-  const [saveError, setSaveError]       = useState('');
-  const [isSaving, setIsSaving]         = useState(false);
+  const [isEditing, setIsEditing]           = useState(false);
+  // ✅ FIX 2: initialise as null — only render editor when ready
+  const [editUserReward, setEditUserReward] = useState(null);
+  const [inputError, setInputError]         = useState('');
+  const [saveError, setSaveError]           = useState('');
+  const [isSaving, setIsSaving]             = useState(false);
 
-  // Compute current split (memoised per selected task + settings)
   const activeSplit = selectedTask ? getSplit(selectedTask, userSettings) : null;
 
-  // Live-computed "you keep" value in edit mode
-  const livePromoterShare = activeSplit
-    ? Math.round((activeSplit.totalLimit - editUserReward) * 100) / 100
+  // ✅ FIX 3: clamp livePromoterShare to 0 so it never shows negative
+  const livePromoterShare = activeSplit && editUserReward !== null
+    ? Math.max(0, Math.round((activeSplit.totalLimit - editUserReward) * 100) / 100)
     : 0;
 
-  // ── Reset editor when a new task is opened ─────────────────────────────
+  // ── Reset all state when a new task is opened ──────────────────────────
   useEffect(() => {
     if (selectedTask) {
       setIsEditing(false);
       setSaveError('');
       setInputError('');
+      // ✅ FIX 5: also reset copy state on modal open
+      setCopied(false);
+      setCopyError(false);
       setEditUserReward(getSplit(selectedTask, userSettings).userShare);
     }
   }, [selectedTask, userSettings]);
@@ -209,16 +223,14 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
 
   // ── Save payout split ──────────────────────────────────────────────────
   const handleSavePayout = async () => {
-    if (inputError) return;
+    if (inputError || editUserReward === null) return;
     setIsSaving(true);
     setSaveError('');
 
-    // Only pass userBonus — server derives promoterShare from DB
     const res = await savePayoutSettings(selectedTask.id, editUserReward);
 
     if (res.success) {
       setIsEditing(false);
-      // Use router.refresh() — no full page reload, preserves scroll & state
       startTransition(() => router.refresh());
     } else {
       setSaveError(res.error || 'Something went wrong. Please try again.');
@@ -291,13 +303,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
             {/* Modal header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedTask.icon_url}
-                  alt={`${selectedTask.title} icon`}
-                  width={56} height={56}
-                  style={{ borderRadius: '16px', border: '1px solid #333', objectFit: 'cover', flexShrink: 0 }}
-                />
+                <CampaignIcon iconUrl={selectedTask.icon_url} title={selectedTask.title} size={56} radius={16} />
                 <div>
                   <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '900', margin: '0 0 6px' }}>
                     {selectedTask.title}
@@ -331,7 +337,6 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
               transition: 'background 0.3s, border-color 0.3s',
             }}>
 
-              {/* View / Edit toggle row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isEditing ? '16px' : '0' }}>
                 {!isEditing && (
                   <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -363,12 +368,11 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                 </button>
               </div>
 
-              {/* Edit mode */}
-              {isEditing && (
+              {/* ✅ FIX 2: Only render edit form when editUserReward is ready */}
+              {isEditing && editUserReward !== null && (
                 <div className="fade-in">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
 
-                    {/* User bonus input */}
                     <div>
                       <label
                         htmlFor="ct-user-bonus"
@@ -390,11 +394,11 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                           padding: '10px', borderRadius: '8px',
                           color: '#fff', fontWeight: '800',
                           outline: 'none', boxSizing: 'border-box',
+                          fontFamily: 'inherit',
                         }}
                       />
                     </div>
 
-                    {/* Auto-calculated promoter share (read-only) */}
                     <div>
                       <label
                         htmlFor="ct-promoter-share"
@@ -402,6 +406,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                       >
                         You Keep
                       </label>
+                      {/* ✅ FIX 3: livePromoterShare clamped to 0, never negative */}
                       <input
                         id="ct-promoter-share"
                         type="number"
@@ -414,12 +419,12 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                           padding: '10px', borderRadius: '8px',
                           color: '#888', fontWeight: '800',
                           cursor: 'not-allowed', boxSizing: 'border-box',
+                          fontFamily: 'inherit',
                         }}
                       />
                     </div>
                   </div>
 
-                  {/* Input validation error */}
                   {inputError && (
                     <div role="alert" style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700', marginBottom: '8px' }}>
                       {inputError}
@@ -430,7 +435,6 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                     Max total budget: ₹{activeSplit.totalLimit}
                   </div>
 
-                  {/* Save error */}
                   {saveError && (
                     <div role="alert" style={{
                       padding: '10px 14px', borderRadius: '8px', marginBottom: '12px',
@@ -453,7 +457,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                       cursor: (isSaving || !!inputError || isPending) ? 'not-allowed' : 'pointer',
                       opacity: (isSaving || !!inputError || isPending) ? 0.7 : 1,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      transition: 'opacity 0.2s',
+                      transition: 'opacity 0.2s', fontFamily: 'inherit',
                     }}
                   >
                     {(isSaving || isPending)
@@ -505,7 +509,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                   background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
                   fontSize: '12px', color: '#ef4444', fontWeight: '700',
                 }}>
-                  ⚠️ No username set. Please update your profile to generate referral links.
+                  ⚠️ No username found. Please contact support.
                 </div>
               )}
 
@@ -532,6 +536,7 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
                   cursor: promoterUsername ? 'pointer' : 'not-allowed',
                   opacity: promoterUsername ? 1 : 0.5,
                   transition: 'background 0.2s, opacity 0.2s',
+                  fontFamily: 'inherit',
                 }}
               >
                 {copied ? <Check size={20} aria-hidden="true" /> : <Copy size={20} aria-hidden="true" />}
@@ -543,8 +548,11 @@ export default function CampaignsInterface({ campaigns, promoterId, promoterUser
         </div>
       )}
 
-      {/* Spinner keyframe (used for Saving button) */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+      `}</style>
     </div>
   );
 }
