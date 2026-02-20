@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient';
 
-export const revalidate = 20; // Revalidate every 20 seconds
+export const revalidate = 20;
 
 export default async function DashboardPage() {
 
@@ -26,22 +26,24 @@ export default async function DashboardPage() {
   const [accountRes, configRes, leadsRes] = await Promise.all([
     supabase.from('accounts').select('username, ledger(amount, created_at)').eq('id', user.id).single(),
     supabase.from('system_config').select('notice_board').eq('id', 1).single(),
-    supabase.from('leads').select('payout', { count: 'exact' }).eq('referred_by', user.id),
+    supabase.from('leads').select('payout, status', { count: 'exact' }).eq('referred_by', user.id),
   ]);
 
   const account   = accountRes.data || { username: 'Promoter', ledger: [] };
   const config    = configRes.data  || {};
+  const leads     = leadsRes.data   || [];
   const leadCount = leadsRes.count  || 0;
 
-  // 3. LOGIC ENGINE
+  // 3. LOGIC
   const totalBalance = account.ledger?.reduce((sum, l) => sum + l.amount, 0) || 0;
-
-  const today       = new Date().toISOString().split('T')[0];
-  const earnedToday = account.ledger
+  const today        = new Date().toISOString().split('T')[0];
+  const earnedToday  = account.ledger
     ?.filter(l => l.created_at.startsWith(today) && l.amount > 0)
     .reduce((sum, l) => sum + l.amount, 0) || 0;
 
-  // Rank / gamification
+  const liveLeads = leads.filter(l => l.status === 'Approved' || l.status === 'Pending').length;
+
+  // Rank gamification
   let rank = { name: 'INITIATE', next: 1000, progress: 0 };
   if      (totalBalance > 10000) rank = { name: 'KINGPIN',   next: 0,     progress: 100 };
   else if (totalBalance > 5000)  rank = { name: 'SYNDICATE', next: 10000, progress: (totalBalance / 10000) * 100 };
@@ -53,68 +55,100 @@ export default async function DashboardPage() {
   const NEON = '#00ff88';
 
   const glass = {
-    background: 'rgba(8,8,12,0.7)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
+    background: 'rgba(8,8,12,0.8)',
     border: '1px solid rgba(255,255,255,0.07)',
-    borderRadius: '20px',
-    padding: '22px',
+    borderRadius: '16px',
+    padding: '20px',
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: '0 20px 40px -12px rgba(0,0,0,0.8)',
   };
 
   return (
     <div style={{ paddingBottom: '120px' }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        .db-page { animation: fadeIn 0.5s ease-out; }
+        .db-page      { animation: fadeIn 0.45s ease-out; }
         .db-withdraw:hover { background: ${NEON} !important; color: #000 !important; border-color: ${NEON} !important; }
-        .db-history:hover  { background: rgba(255,255,255,0.07) !important; }
-        .db-quick:hover    { border-color: rgba(255,255,255,0.14) !important; background: rgba(255,255,255,0.05) !important; }
+        .db-history:hover  { background: rgba(255,255,255,0.06) !important; }
+        .db-quick:hover    { border-color: rgba(255,255,255,0.12) !important; background: rgba(255,255,255,0.04) !important; }
+        .db-stat:hover     { border-color: rgba(0,255,136,0.2) !important; }
       `}</style>
 
       <div className="db-page">
 
-        {/* ── 1. HEADER ── */}
+        {/* ── HEADER ── */}
         <DashboardClient account={account} referralLink={referralLink} />
 
-        {/* ── 2. VAULT / BALANCE CARD ── */}
+        {/* ── STAT CHIPS — like screenshot top bar ── */}
+        <div style={{
+          display: 'flex', gap: '10px', marginBottom: '24px',
+          overflowX: 'auto', paddingBottom: '4px',
+        }}>
+          {[
+            { icon: '📡', value: liveLeads,  label: 'Live',  color: NEON },
+            { icon: '📊', value: leadCount,  label: 'Total', color: '#fff' },
+            { icon: '👥', value: leadCount,  label: 'Leads', color: '#3b82f6' },
+            { icon: '💸', value: `₹${earnedToday.toLocaleString('en-IN')}`, label: 'Today', color: NEON },
+          ].map((chip, i) => (
+            <div
+              key={i}
+              className="db-stat"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 16px', borderRadius: '12px', flexShrink: 0,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                transition: 'border-color 0.18s',
+              }}
+            >
+              <span style={{ fontSize: '13px' }}>{chip.icon}</span>
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: chip.color, lineHeight: 1 }}>
+                  {chip.value}
+                </div>
+                <div style={{ fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: '2px' }}>
+                  {chip.label}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── VAULT / BALANCE CARD ── */}
         <div style={{
           ...glass,
-          background: 'linear-gradient(160deg, #0c0c0c 0%, #000 100%)',
-          marginBottom: '16px',
+          background: 'linear-gradient(160deg, #0c0c0c 0%, #050505 100%)',
+          marginBottom: '12px',
         }}>
           {/* Corner glow */}
           <div style={{
-            position: 'absolute', top: '-40%', right: '-30%',
-            width: '280px', height: '280px',
+            position: 'absolute', top: '-40%', right: '-20%',
+            width: '260px', height: '260px',
             background: `radial-gradient(circle, ${NEON} 0%, transparent 70%)`,
-            opacity: 0.12, filter: 'blur(70px)', pointerEvents: 'none',
+            opacity: 0.08, filter: 'blur(60px)', pointerEvents: 'none',
           }} />
 
           <div style={{ position: 'relative', zIndex: 2 }}>
-
-            {/* Rank + label */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            {/* Rank chip */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{
                 fontSize: '10px', color: '#000', background: NEON,
                 padding: '4px 10px', borderRadius: '6px',
                 fontWeight: '900', letterSpacing: '1px',
-                boxShadow: `0 0 12px ${NEON}55`,
+                boxShadow: `0 0 10px ${NEON}44`,
               }}>
-                RANK: {rank.name}
+                {rank.name}
               </div>
-              <div style={{ fontSize: '10px', color: '#555', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <div style={{ fontSize: '10px', color: '#333', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Lifetime Earnings
               </div>
             </div>
 
             {/* Balance */}
             <div style={{
-              fontSize: 'clamp(40px, 8vw, 56px)', fontWeight: '900', color: '#fff',
-              letterSpacing: '-2px', lineHeight: 1, margin: '8px 0 20px',
-              textShadow: `0 0 40px ${NEON}22`,
+              fontSize: 'clamp(38px, 8vw, 52px)', fontWeight: '900', color: '#fff',
+              letterSpacing: '-2px', lineHeight: 1, margin: '0 0 20px',
+              textShadow: `0 0 40px ${NEON}18`,
             }}>
               ₹{totalBalance.toLocaleString('en-IN')}
             </div>
@@ -124,30 +158,30 @@ export default async function DashboardPage() {
               <div style={{ marginBottom: '22px' }}>
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',
-                  fontSize: '9px', color: '#444', fontWeight: '800',
+                  fontSize: '9px', color: '#333', fontWeight: '800',
                   textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px',
                 }}>
                   <span>Progress to next rank</span>
                   <span style={{ color: NEON }}>{Math.round(rank.progress)}%</span>
                 </div>
-                <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{
                     width: `${rank.progress}%`, height: '100%',
-                    background: NEON, boxShadow: `0 0 8px ${NEON}`,
+                    background: NEON, boxShadow: `0 0 6px ${NEON}`,
                     transition: 'width 0.6s ease',
                   }} />
                 </div>
               </div>
             )}
 
-            {/* Actions */}
+            {/* CTA buttons */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <Link
                 href="/dashboard/wallet"
                 className="db-withdraw"
                 style={{
                   background: '#fff', color: '#000',
-                  padding: '13px', borderRadius: '12px',
+                  padding: '12px', borderRadius: '11px',
                   textAlign: 'center', fontWeight: '900',
                   fontSize: '12px', textDecoration: 'none',
                   textTransform: 'uppercase', letterSpacing: '0.8px',
@@ -161,11 +195,11 @@ export default async function DashboardPage() {
                 href="/dashboard/leads"
                 className="db-history"
                 style={{
-                  background: 'transparent', color: '#fff',
-                  padding: '13px', borderRadius: '12px',
+                  background: 'transparent', color: '#888',
+                  padding: '12px', borderRadius: '11px',
                   textAlign: 'center', fontWeight: '700',
                   fontSize: '12px', textDecoration: 'none',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.1)',
                   textTransform: 'uppercase', letterSpacing: '0.8px',
                   transition: 'background 0.2s',
                 }}
@@ -176,40 +210,40 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* ── 3. PERFORMANCE HUD ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          <div style={{ ...glass, padding: '20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '34px', fontWeight: '900', color: '#fff', lineHeight: 1, marginBottom: '8px' }}>
+        {/* ── PERFORMANCE HUD ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ ...glass, padding: '18px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', fontWeight: '900', color: '#fff', lineHeight: 1, marginBottom: '8px' }}>
               {leadCount}
             </div>
-            <div style={{ fontSize: '9px', color: '#555', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
               Total Leads
             </div>
           </div>
 
-          <div style={{ ...glass, padding: '20px', textAlign: 'center' }}>
+          <div style={{ ...glass, padding: '18px', textAlign: 'center' }}>
             <div style={{
-              fontSize: '34px', fontWeight: '900', color: NEON,
+              fontSize: '32px', fontWeight: '900', color: NEON,
               lineHeight: 1, marginBottom: '8px',
-              textShadow: `0 0 20px ${NEON}44`,
+              textShadow: `0 0 16px ${NEON}44`,
             }}>
               +₹{earnedToday.toLocaleString('en-IN')}
             </div>
-            <div style={{ fontSize: '9px', color: '#555', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ fontSize: '9px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
               Earned Today
             </div>
           </div>
         </div>
 
-        {/* ── 4. NOTICE BOARD ── */}
+        {/* ── NOTICE BOARD ── */}
         {config.notice_board && (
           <div style={{
-            padding: '14px 16px', marginBottom: '20px', borderRadius: '14px',
-            background: 'rgba(251,191,36,0.05)',
-            border: '1px solid rgba(251,191,36,0.15)',
+            padding: '14px 16px', marginBottom: '16px', borderRadius: '14px',
+            background: 'rgba(251,191,36,0.04)',
+            border: '1px solid rgba(251,191,36,0.12)',
             display: 'flex', gap: '12px', alignItems: 'flex-start',
           }}>
-            <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
+            <span style={{ fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
             <div>
               <div style={{
                 fontSize: '9px', color: '#fbbf24', fontWeight: '800',
@@ -217,22 +251,22 @@ export default async function DashboardPage() {
               }}>
                 Announcement
               </div>
-              <div style={{ fontSize: '13px', color: '#bbb', lineHeight: '1.55' }}>
+              <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.55' }}>
                 {config.notice_board}
               </div>
             </div>
           </div>
         )}
 
-        {/* ── 5. QUICK ACTIONS ── */}
+        {/* ── QUICK ACTIONS ── */}
         <div>
-          <h3 style={{
-            fontSize: '10px', color: '#444', fontWeight: '800',
+          <div style={{
+            fontSize: '9px', color: '#2e2e2e', fontWeight: '800',
             textTransform: 'uppercase', letterSpacing: '2px',
-            margin: '0 0 12px 4px',
+            margin: '0 0 10px 2px',
           }}>
             Quick Actions
-          </h3>
+          </div>
           <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
             <QuickAction icon="🔥" label="Start Earning" link="/dashboard/campaigns" />
             <QuickAction icon="👑" label="My Empire"     link="/dashboard/team" />
@@ -246,24 +280,23 @@ export default async function DashboardPage() {
   );
 }
 
-// ── QUICK ACTION CARD ──
 function QuickAction({ icon, label, link }) {
   return (
     <Link
       href={link}
       className="db-quick"
       style={{
-        minWidth: '96px', flexShrink: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px',
-        padding: '16px 12px', borderRadius: '18px',
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        minWidth: '90px', flexShrink: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+        padding: '14px 10px', borderRadius: '14px',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.06)',
         textDecoration: 'none',
-        transition: 'border-color 0.2s, background 0.2s',
+        transition: 'border-color 0.18s, background 0.18s',
       }}
     >
-      <div style={{ fontSize: '24px' }}>{icon}</div>
-      <span style={{ fontSize: '10px', color: '#888', fontWeight: '700', textAlign: 'center', lineHeight: 1.3 }}>
+      <div style={{ fontSize: '22px' }}>{icon}</div>
+      <span style={{ fontSize: '10px', color: '#555', fontWeight: '700', textAlign: 'center', lineHeight: 1.3 }}>
         {label}
       </span>
     </Link>

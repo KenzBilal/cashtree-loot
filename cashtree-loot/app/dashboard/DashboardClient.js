@@ -28,6 +28,7 @@ export default function DashboardClient({ account, referralLink }) {
           50%       { opacity: 0.3; }
         }
         .db-blink { animation: blink 2s infinite; }
+        .db-avatar { transition: transform 0.2s; }
         .db-avatar:hover { transform: scale(1.06); }
       `}</style>
 
@@ -36,49 +37,48 @@ export default function DashboardClient({ account, referralLink }) {
         alignItems: 'center', marginBottom: '28px', paddingTop: '8px',
       }}>
         <div>
-          {/* Greeting row */}
           <div style={{
-            fontSize: '11px', color: '#00ff88', letterSpacing: '2px',
+            fontSize: '10px', color: '#00ff88', letterSpacing: '2px',
             fontWeight: '800', textTransform: 'uppercase', marginBottom: '6px',
             display: 'flex', alignItems: 'center', gap: '7px',
           }}>
-            <span
-              className="db-blink"
-              style={{
-                width: '6px', height: '6px',
-                background: '#00ff88', borderRadius: '50%',
-                boxShadow: '0 0 8px #00ff88', flexShrink: 0,
-              }}
-            />
+            <span className="db-blink" style={{
+              width: '6px', height: '6px',
+              background: '#00ff88', borderRadius: '50%',
+              boxShadow: '0 0 8px #00ff88', flexShrink: 0,
+            }} />
             {greeting}
           </div>
 
-          {/* Username */}
           <div style={{
-            fontSize: '28px', fontWeight: '900', color: '#fff',
+            fontSize: 'clamp(22px,4vw,30px)', fontWeight: '900', color: '#fff',
             letterSpacing: '-1px', lineHeight: 1,
           }}>
             {account.username}
           </div>
+
+          <div style={{
+            fontSize: '10px', color: '#333', fontWeight: '700',
+            textTransform: 'uppercase', letterSpacing: '1px', marginTop: '5px',
+          }}>
+            Network Promoter
+          </div>
         </div>
 
-        {/* Avatar → profile */}
         <Link
           href="/dashboard/profile"
           className="db-avatar"
           style={{
-            width: '52px', height: '52px', borderRadius: '50%',
-            background: '#fff',
+            width: '48px', height: '48px', borderRadius: '13px',
+            background: '#00ff88',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '22px', fontWeight: '900', color: '#000',
+            fontSize: '20px', fontWeight: '900', color: '#000',
             textDecoration: 'none',
-            border: '2px solid #00ff88',
-            boxShadow: '0 0 22px rgba(0,255,136,0.5)',
+            boxShadow: '0 0 20px rgba(0,255,136,0.28)',
             flexShrink: 0,
-            transition: 'transform 0.2s',
           }}
         >
-          {account.username?.[0]?.toUpperCase() || 'U'}
+          {account.username?.[0]?.toUpperCase() || 'P'}
         </Link>
       </div>
     </div>
