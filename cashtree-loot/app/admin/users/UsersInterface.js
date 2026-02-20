@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Search, Users, DollarSign, ShieldAlert, UserCheck, TrendingUp } from 'lucide-react';
-import UserRow from './UserRow';
+import UserRow from './user-row';
 
 const NEON = '#00ff88';
 
