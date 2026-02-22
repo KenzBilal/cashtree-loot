@@ -10,70 +10,96 @@ const supabaseAdmin = createClient(
 );
 
 export default async function FinancePage() {
-  // 1. FETCH PROMOTER WITHDRAWALS (Pending)
+
+  // 1. FETCH PENDING PROMOTER WITHDRAWALS
   const { data: withdrawals } = await supabaseAdmin
     .from('withdrawals')
-    .select(`*, accounts ( id, username, phone )`)
+    .select('id, created_at, amount, upi_id, status, account_id, accounts(id, username, phone)')
     .eq('status', 'pending')
     .order('created_at', { ascending: true });
 
-  // 2. FETCH APPROVED LEADS (Users - Direct Payout)
+  // 2. FETCH APPROVED LEADS AWAITING PAYMENT
+  // FIX: was 'Approved' (capital A) — DB constraint requires lowercase 'approved'
   const { data: payableLeads } = await supabaseAdmin
     .from('leads')
-    .select(`*, campaigns(title)`)
-    .eq('status', 'Approved') // Matches your DB Capitalization
+    .select('id, created_at, approved_at, status, payout, user_name, customer_data, campaigns(title)')
+    .eq('status', 'approved')
     .order('approved_at', { ascending: true });
 
-  // 3. NORMALIZE & MERGE DATA
+  // 3. FETCH BALANCES for all withdrawal accounts to flag insufficient funds
+  const withdrawalAccountIds = [...new Set((withdrawals || []).map(w => w.account_id))];
+  let balanceMap = {};
+
+  if (withdrawalAccountIds.length > 0) {
+    const { data: balances } = await supabaseAdmin
+      .from('account_balances')
+      .select('account_id, available_balance')
+      .in('account_id', withdrawalAccountIds);
+
+    if (balances) {
+      balanceMap = Object.fromEntries(balances.map(b => [b.account_id, Number(b.available_balance)]));
+    }
+  }
+
+  // 4. NORMALIZE & MERGE
   const combinedQueue = [
-    // A. Promoter Requests
-    ...(withdrawals || []).map(w => ({
-      id: w.id,
-      type: 'PROMOTER',
-      name: w.accounts?.username || 'Unknown',
-      amount: w.amount,
-      method: 'Withdrawal Request',
-      details: w.accounts?.phone || 'N/A',
-      upi_id: w.upi_id, // Keep specific field for Copy function
-      date: w.created_at,
-      status: 'pending',
-      accountId: w.accounts?.id // Needed for refunds
-    })),
-    // B. User Leads
+    ...(withdrawals || []).map(w => {
+      const available = balanceMap[w.account_id] ?? 0;
+      return {
+        id:              w.id,
+        type:            'PROMOTER',
+        name:            w.accounts?.username || 'Unknown',
+        amount:          Number(w.amount),
+        method:          'Withdrawal Request',
+        details:         w.accounts?.phone || 'N/A',
+        upi_id:          w.upi_id,
+        date:            w.created_at,
+        status:          'pending',
+        accountId:       w.account_id,
+        // FIX: flag when promoter's balance is less than withdrawal amount
+        insufficientFunds: available < Number(w.amount),
+        availableBalance:  available,
+      };
+    }),
+
     ...(payableLeads || []).map(l => ({
-      id: l.id,
-      type: 'USER',
-      name: l.user_name || 'Anonymous User',
-      amount: parseFloat(l.payout),
-      method: 'Direct Payout',
-      details: l.customer_data?.phone || 'N/A',
-      upi_id: l.customer_data?.upi || 'N/A',
-      date: l.approved_at || l.created_at,
-      status: 'Approved', // Treated as pending for payment
-      accountId: null
-    }))
+      id:              l.id,
+      type:            'USER',
+      name:            l.user_name || 'Anonymous User',
+      amount:          parseFloat(l.payout) || 0,
+      method:          l.campaigns?.title || 'Direct Payout',
+      details:         l.customer_data?.phone || 'N/A',
+      upi_id:          l.customer_data?.upi || l.customer_data?.upi_id || 'N/A',
+      date:            l.approved_at || l.created_at,
+      status:          'approved',
+      accountId:       null,
+      insufficientFunds: false,
+      availableBalance:  null,
+    })),
   ];
 
-  // 4. CALCULATE STATS
-  const totalLiability = combinedQueue.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const promoterCount = combinedQueue.filter(i => i.type === 'PROMOTER').length;
-  const userCount = combinedQueue.filter(i => i.type === 'USER').length;
+  // 5. STATS
+  const totalLiability  = combinedQueue.reduce((sum, i) => sum + (i.amount || 0), 0);
+  const promoterCount   = combinedQueue.filter(i => i.type === 'PROMOTER').length;
+  const userCount       = combinedQueue.filter(i => i.type === 'USER').length;
+  const flaggedCount    = combinedQueue.filter(i => i.insufficientFunds).length;
 
   const stats = {
     count: combinedQueue.length,
     liability: totalLiability,
     promoterCount,
-    userCount
+    userCount,
+    flaggedCount,
   };
 
-  const containerStyle = { animation: 'fadeIn 0.6s ease-out' };
-
   return (
-    <div style={containerStyle}>
-      <FinanceInterface 
-        queue={combinedQueue} 
-        stats={stats} 
-        actions={{ markLeadAsPaid, processWithdrawal }}
+    <div style={{ animation: 'fadeIn 0.6s ease-out' }}>
+      <FinanceInterface
+        queue={combinedQueue}
+        stats={stats}
+        // FIX: pass as individual props — not bundled in object
+        markLeadAsPaid={markLeadAsPaid}
+        processWithdrawal={processWithdrawal}
       />
     </div>
   );
