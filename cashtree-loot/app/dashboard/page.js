@@ -19,38 +19,58 @@ export default async function DashboardPage() {
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  // FIX: handle auth error instead of crashing
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect('/login');
 
-  // 2. DATA
-  const [accountRes, configRes, leadsRes] = await Promise.all([
-    supabase.from('accounts').select('username, ledger(amount, created_at)').eq('id', user.id).single(),
+  // 2. DATA — FIX: separate ledger queries to avoid pulling entire history
+  const [accountRes, configRes, leadsRes, balanceRes, todayEarningsRes] = await Promise.all([
+    supabase.from('accounts').select('username').eq('id', user.id).single(),
     supabase.from('system_config').select('notice_board').eq('id', 1).single(),
-    supabase.from('leads').select('payout, status', { count: 'exact' }).eq('referred_by', user.id),
+    supabase.from('leads').select('status', { count: 'exact' }).eq('referred_by', user.id),
+    // FIX: get total balance from account_balances view (net balance)
+    supabase.from('account_balances').select('available_balance').eq('account_id', user.id).single(),
+    // FIX: gross earnings = only positive ledger entries ever
+    supabase.from('ledger')
+      .select('amount')
+      .eq('account_id', user.id)
+      .gt('amount', 0),
   ]);
 
-  const account   = accountRes.data || { username: 'Promoter', ledger: [] };
-  const config    = configRes.data  || {};
-  const leads     = leadsRes.data   || [];
-  const leadCount = leadsRes.count  || 0;
+  const account    = accountRes.data  || { username: 'Promoter' };
+  const config     = configRes.data   || {};
+  const leads      = leadsRes.data    || [];
+  const leadCount  = leadsRes.count   || 0;
 
-  // 3. LOGIC
-  const totalBalance = account.ledger?.reduce((sum, l) => sum + l.amount, 0) || 0;
-  const today        = new Date().toISOString().split('T')[0];
-  const earnedToday  = account.ledger
-    ?.filter(l => l.created_at.startsWith(today) && l.amount > 0)
-    .reduce((sum, l) => sum + l.amount, 0) || 0;
+  // FIX: available balance for display (net — what they can withdraw)
+  const availableBalance = Number(balanceRes.data?.available_balance ?? 0);
 
-  const liveLeads = leads.filter(l => l.status === 'Approved' || l.status === 'Pending').length;
+  // FIX: gross lifetime earnings for rank (never goes down on withdrawal)
+  const allEarnings = todayEarningsRes.data || [];
+  const lifetimeEarnings = allEarnings.reduce((sum, l) => sum + Number(l.amount), 0);
 
-  // Rank gamification
+  // FIX: today's earnings using IST offset (UTC+5:30)
+  const nowIST    = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const todayIST  = nowIST.toISOString().split('T')[0]; // YYYY-MM-DD in IST
+  // Re-query just today's positive ledger entries for IST accuracy
+  const { data: todayLedger } = await supabase
+    .from('ledger')
+    .select('amount, created_at')
+    .eq('account_id', user.id)
+    .gt('amount', 0)
+    .gte('created_at', `${todayIST}T00:00:00+05:30`);
+
+  const earnedToday = (todayLedger || []).reduce((sum, l) => sum + Number(l.amount), 0);
+
+  // FIX: use lowercase status
+  const liveLeads = leads.filter(l => l.status === 'approved' || l.status === 'pending').length;
+
+  // FIX: rank based on lifetimeEarnings (gross), not net balance
   let rank = { name: 'INITIATE', next: 1000, progress: 0 };
-  if      (totalBalance > 10000) rank = { name: 'KINGPIN',   next: 0,     progress: 100 };
-  else if (totalBalance > 5000)  rank = { name: 'SYNDICATE', next: 10000, progress: (totalBalance / 10000) * 100 };
-  else if (totalBalance > 1000)  rank = { name: 'OPERATOR',  next: 5000,  progress: (totalBalance / 5000)  * 100 };
-  else                           rank.progress = (totalBalance / 1000) * 100;
-
-  const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/promoter?ref=${account.username}`;
+  if      (lifetimeEarnings > 10000) rank = { name: 'KINGPIN',   next: 0,     progress: 100 };
+  else if (lifetimeEarnings > 5000)  rank = { name: 'SYNDICATE', next: 10000, progress: (lifetimeEarnings / 10000) * 100 };
+  else if (lifetimeEarnings > 1000)  rank = { name: 'OPERATOR',  next: 5000,  progress: (lifetimeEarnings / 5000)  * 100 };
+  else                               rank.progress = (lifetimeEarnings / 1000) * 100;
 
   const NEON = '#00ff88';
 
@@ -77,16 +97,17 @@ export default async function DashboardPage() {
       <div className="db-page">
 
         {/* ── HEADER ── */}
-        <DashboardClient account={account} referralLink={referralLink} />
+        <DashboardClient account={account} />
 
-        {/* ── STAT CHIPS — like screenshot top bar ── */}
+        {/* ── STAT CHIPS — FIX: show meaningful different values ── */}
         <div style={{
           display: 'flex', gap: '10px', marginBottom: '24px',
           overflowX: 'auto', paddingBottom: '4px',
         }}>
           {[
-            { icon: '📊', value: leadCount,  label: 'Total', color: '#fff' },
-            { icon: '👥', value: leadCount,  label: 'Leads', color: '#3b82f6' },
+            { icon: '◈', value: leadCount,  label: 'Total Leads', color: '#fff' },
+            { icon: '◉', value: liveLeads,  label: 'Active',      color: '#00ff88' },
+            { icon: '◎', value: `+₹${earnedToday.toLocaleString('en-IN')}`, label: 'Today', color: '#facc15' },
           ].map((chip, i) => (
             <div
               key={i}
@@ -99,7 +120,7 @@ export default async function DashboardPage() {
                 transition: 'border-color 0.18s',
               }}
             >
-              <span style={{ fontSize: '13px' }}>{chip.icon}</span>
+              <span style={{ fontSize: '11px', color: chip.color, fontWeight: '900' }}>{chip.icon}</span>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: '900', color: chip.color, lineHeight: 1 }}>
                   {chip.value}
@@ -118,7 +139,6 @@ export default async function DashboardPage() {
           background: 'linear-gradient(160deg, #0c0c0c 0%, #050505 100%)',
           marginBottom: '12px',
         }}>
-          {/* Corner glow */}
           <div style={{
             position: 'absolute', top: '-40%', right: '-20%',
             width: '260px', height: '260px',
@@ -137,21 +157,27 @@ export default async function DashboardPage() {
               }}>
                 {rank.name}
               </div>
+              {/* FIX: label is now "Available Balance" — accurate */}
               <div style={{ fontSize: '10px', color: '#333', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                Lifetime Earnings
+                Available Balance
               </div>
             </div>
 
-            {/* Balance */}
+            {/* FIX: show availableBalance (withdrawable), not net ledger sum */}
             <div style={{
               fontSize: 'clamp(38px, 8vw, 52px)', fontWeight: '900', color: '#fff',
-              letterSpacing: '-2px', lineHeight: 1, margin: '0 0 20px',
+              letterSpacing: '-2px', lineHeight: 1, margin: '0 0 8px',
               textShadow: `0 0 40px ${NEON}18`,
             }}>
-              ₹{totalBalance.toLocaleString('en-IN')}
+              ₹{availableBalance.toLocaleString('en-IN')}
             </div>
 
-            {/* Progress bar */}
+            {/* FIX: show lifetime earnings as secondary line */}
+            <div style={{ fontSize: '11px', color: '#333', fontWeight: '700', marginBottom: '18px' }}>
+              Lifetime: ₹{lifetimeEarnings.toLocaleString('en-IN')}
+            </div>
+
+            {/* Progress bar — FIX: based on lifetimeEarnings */}
             {rank.next > 0 && (
               <div style={{ marginBottom: '22px' }}>
                 <div style={{
@@ -241,7 +267,15 @@ export default async function DashboardPage() {
             border: '1px solid rgba(251,191,36,0.12)',
             display: 'flex', gap: '12px', alignItems: 'flex-start',
           }}>
-            <span style={{ fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
+            <div style={{
+              width: '16px', height: '16px', borderRadius: '4px',
+              background: 'rgba(251,191,36,0.15)',
+              border: '1px solid rgba(251,191,36,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, marginTop: '1px',
+            }}>
+              <span style={{ fontSize: '9px', color: '#fbbf24', fontWeight: '900' }}>!</span>
+            </div>
             <div>
               <div style={{
                 fontSize: '9px', color: '#fbbf24', fontWeight: '800',
@@ -256,7 +290,7 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* ── QUICK ACTIONS ── */}
+        {/* ── QUICK ACTIONS — FIX: no emojis, use icon style matching sidebar ── */}
         <div>
           <div style={{
             fontSize: '9px', color: '#2e2e2e', fontWeight: '800',
@@ -266,10 +300,10 @@ export default async function DashboardPage() {
             Quick Actions
           </div>
           <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
-            <QuickAction icon="🔥" label="Start Earning" link="/dashboard/campaigns" />
-            <QuickAction icon="👑" label="My Empire"     link="/dashboard/team" />
-            <QuickAction icon="💳" label="Wallet"        link="/dashboard/wallet" />
-            <QuickAction icon="⚙️" label="Settings"      link="/dashboard/profile" />
+            <QuickAction label="Start Earning" sub="Campaigns"  link="/dashboard/campaigns" />
+            <QuickAction label="My Network"    sub="Team"       link="/dashboard/team" />
+            <QuickAction label="Wallet"        sub="Withdraw"   link="/dashboard/wallet" />
+            <QuickAction label="Settings"      sub="Profile"    link="/dashboard/profile" />
           </div>
         </div>
 
@@ -278,14 +312,15 @@ export default async function DashboardPage() {
   );
 }
 
-function QuickAction({ icon, label, link }) {
+function QuickAction({ label, sub, link }) {
+  const NEON = '#00ff88';
   return (
     <Link
       href={link}
       className="db-quick"
       style={{
         minWidth: '90px', flexShrink: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
         padding: '14px 10px', borderRadius: '14px',
         background: 'rgba(255,255,255,0.02)',
         border: '1px solid rgba(255,255,255,0.06)',
@@ -293,9 +328,24 @@ function QuickAction({ icon, label, link }) {
         transition: 'border-color 0.18s, background 0.18s',
       }}
     >
-      <div style={{ fontSize: '22px' }}>{icon}</div>
-      <span style={{ fontSize: '10px', color: '#555', fontWeight: '700', textAlign: 'center', lineHeight: 1.3 }}>
+      {/* Dot indicator instead of emoji */}
+      <div style={{
+        width: '28px', height: '28px', borderRadius: '8px',
+        background: 'rgba(0,255,136,0.06)',
+        border: '1px solid rgba(0,255,136,0.1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          width: '6px', height: '6px', borderRadius: '50%',
+          background: NEON, opacity: 0.7,
+          boxShadow: `0 0 6px ${NEON}`,
+        }} />
+      </div>
+      <span style={{ fontSize: '10px', color: '#aaa', fontWeight: '700', textAlign: 'center', lineHeight: 1.2 }}>
         {label}
+      </span>
+      <span style={{ fontSize: '9px', color: '#333', fontWeight: '600', textAlign: 'center' }}>
+        {sub}
       </span>
     </Link>
   );

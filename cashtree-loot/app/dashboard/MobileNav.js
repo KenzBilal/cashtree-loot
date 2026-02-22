@@ -2,102 +2,106 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Megaphone,
+  Network,
+  Wallet,
+  UserCircle,
+} from 'lucide-react';
 
 const NAV_ITEMS = [
-  { name: 'Home',    path: '/dashboard',           icon: '🏠' },
-  { name: 'Cash',    path: '/dashboard/campaigns', icon: '💼' },
-  { name: 'Network', path: '/dashboard/team',      icon: '👥' },
-  { name: 'Wallet',  path: '/dashboard/wallet',    icon: '💰' },
-  { name: 'Profile', path: '/dashboard/profile',   icon: '👤' },
+  { name: 'Home',    path: '/dashboard',           Icon: LayoutDashboard },
+  { name: 'Earn',    path: '/dashboard/campaigns', Icon: Megaphone },
+  { name: 'Network', path: '/dashboard/team',      Icon: Network },
+  { name: 'Wallet',  path: '/dashboard/wallet',    Icon: Wallet },
+  { name: 'Profile', path: '/dashboard/profile',   Icon: UserCircle },
 ];
-
-const handleTap = () => {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(15);
-  }
-};
 
 export default function MobileNav() {
   const pathname = usePathname();
+
+  const handleTap = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(15);
+    }
+  };
 
   return (
     <nav style={{
       position: 'fixed',
       bottom: 0, left: 0, width: '100%',
-      height: '80px',
-      background: 'rgba(5,5,5,0.92)',
+      height: '68px',
+      background: 'rgba(5,5,5,0.96)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      borderTop: '1px solid rgba(255,255,255,0.07)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
       display: 'flex',
       justifyContent: 'space-around',
-      alignItems: 'flex-start',
-      paddingTop: '14px',
-      paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+      alignItems: 'center',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       zIndex: 9999,
-      boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
     }}>
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.path;
+      <style>{`
+        .mob-link { -webkit-tap-highlight-color: transparent; }
+        .mob-link:active { opacity: 0.7; }
+      `}</style>
+
+      {NAV_ITEMS.map(({ name, path, Icon }) => {
+        const isActive = pathname === path;
         return (
           <Link
-            key={item.path}
-            href={item.path}
+            key={path}
+            href={path}
             onClick={handleTap}
+            className="mob-link"
             style={{
-              flex: 1,                          /* ← fixes 25%×5 overflow */
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '5px',
               textDecoration: 'none',
               position: 'relative',
-              WebkitTapHighlightColor: 'transparent',
+              height: '100%',
             }}
           >
-            {/* Top glow beam */}
             {isActive && (
               <div style={{
-                position: 'absolute', top: '-14px',
-                width: '36px', height: '3px',
+                position: 'absolute', top: 0, left: '50%',
+                transform: 'translateX(-50%)',
+                width: '28px', height: '2px',
                 background: '#00ff88',
-                boxShadow: '0 0 12px #00ff88',
-                borderRadius: '0 0 4px 4px',
+                boxShadow: '0 0 8px #00ff88',
+                borderRadius: '0 0 3px 3px',
               }} />
             )}
 
-            {/* Radial bg */}
-            {isActive && (
-              <div style={{
-                position: 'absolute', top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '48px', height: '48px',
-                background: 'radial-gradient(circle, rgba(0,255,136,0.14) 0%, transparent 70%)',
-                borderRadius: '50%', pointerEvents: 'none',
-              }} />
-            )}
-
-            {/* Icon */}
             <div style={{
-              fontSize: '22px', marginBottom: '5px',
-              filter: isActive ? 'drop-shadow(0 0 7px rgba(0,255,136,0.6))' : 'none',
-              transform: isActive ? 'translateY(-3px) scale(1.14)' : 'translateY(0) scale(1)',
-              transition: 'all 0.35s cubic-bezier(0.175,0.885,0.32,1.275)',
+              width: '34px', height: '34px', borderRadius: '9px',
+              background: isActive ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${isActive ? 'rgba(0,255,136,0.22)' : 'rgba(255,255,255,0.06)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.18s',
             }}>
-              {item.icon}
+              <Icon
+                size={15}
+                color={isActive ? '#00ff88' : '#444'}
+                strokeWidth={isActive ? 2.2 : 1.8}
+              />
             </div>
 
-            {/* Label */}
-            <div style={{
+            <span style={{
               fontSize: '9px',
               fontWeight: isActive ? '800' : '500',
-              color: isActive ? '#fff' : '#555',
+              color: isActive ? '#fff' : '#444',
               letterSpacing: isActive ? '0.5px' : '0',
               textTransform: 'uppercase',
-              transition: 'all 0.25s',
+              transition: 'all 0.18s',
             }}>
-              {item.name}
-            </div>
+              {name}
+            </span>
           </Link>
         );
       })}

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function DashboardClient({ account, referralLink }) {
+// FIX: removed unused referralLink prop
+export default function DashboardClient({ account }) {
   const [greeting, setGreeting] = useState('Welcome');
 
   useEffect(() => {
@@ -58,20 +59,17 @@ export default function DashboardClient({ account, referralLink }) {
           </div>
         </div>
 
-        {/* Avatar — matches Image 1: white circle + green ring + green dot */}
         <Link
           href="/dashboard/profile"
           className="db-avatar"
           style={{ textDecoration: 'none', flexShrink: 0, position: 'relative' }}
         >
-          {/* Outer dark-green ring */}
           <div style={{
             width: '52px', height: '52px', borderRadius: '50%',
             border: '2.5px solid #1c4a30',
             padding: '3px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            {/* White circle with initial */}
             <div style={{
               width: '100%', height: '100%', borderRadius: '50%',
               background: '#fff',
@@ -81,7 +79,6 @@ export default function DashboardClient({ account, referralLink }) {
               {account.username?.[0]?.toUpperCase() || 'P'}
             </div>
           </div>
-          {/* Green online dot */}
           <div style={{
             position: 'absolute', bottom: '2px', right: '2px',
             width: '12px', height: '12px', borderRadius: '50%',
