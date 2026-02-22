@@ -12,9 +12,9 @@ import {
   resetUserPassword,
 } from './actions';
 
-const NEON    = '#00ff88';
-const RED     = '#ef4444';
-const YELLOW  = '#fbbf24';
+const NEON   = '#00ff88';
+const RED    = '#ef4444';
+const YELLOW = '#fbbf24';
 
 // ── HELPERS ──
 function Avatar({ username, role, frozen }) {
@@ -124,13 +124,15 @@ function Result({ result }) {
 // WALLET MODAL
 // ══════════════════════════════════════════
 function WalletModal({ user, onClose }) {
-  const [tab, setTab]       = useState('credit'); // credit | deduct | history
-  const [amount, setAmount] = useState('');
-  const [reason, setReason] = useState('');
+  const [tab, setTab]         = useState('credit'); // credit | deduct | history
+  const [amount, setAmount]   = useState('');
+  const [reason, setReason]   = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState(null);
 
-  const balance = user.balance || 0;
+  // FIX: track balance locally so it updates after credit/deduct without page reload
+  const [localBalance, setLocalBalance] = useState(user.balance || 0);
+  const [localLedger, setLocalLedger]   = useState(user.ledger || []);
 
   const handle = async () => {
     setLoading(true); setResult(null);
@@ -138,10 +140,20 @@ function WalletModal({ user, onClose }) {
     const r  = await fn(user.id, amount, reason);
     setResult(r);
     setLoading(false);
-    if (r.success) { setAmount(''); setReason(''); }
+    if (r.success) {
+      const delta = parseFloat(amount) * (tab === 'credit' ? 1 : -1);
+      setLocalBalance(b => b + delta);
+      // Append a synthetic ledger entry so history tab reflects it immediately
+      setLocalLedger(prev => [{
+        amount: delta,
+        created_at: new Date().toISOString(),
+        type: tab === 'credit' ? 'manual_credit' : 'manual_deduction',
+        description: reason?.trim() || (tab === 'credit' ? 'Manual credit by admin' : 'Manual deduction by admin'),
+      }, ...prev]);
+      setAmount('');
+      setReason('');
+    }
   };
-
-  const ledger = user.ledger || [];
 
   return (
     <Modal title="Wallet Control" subtitle={user.username} onClose={onClose}>
@@ -152,11 +164,11 @@ function WalletModal({ user, onClose }) {
           <div>
             <div style={{ fontSize: '10px', color: '#444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Current Balance</div>
             <div style={{ fontSize: '28px', fontWeight: '900', color: NEON, letterSpacing: '-1px', textShadow: `0 0 20px ${NEON}44` }}>
-              ₹{balance.toLocaleString('en-IN')}
+              ₹{localBalance.toLocaleString('en-IN')}
             </div>
           </div>
           <div style={{ fontSize: '10px', color: '#333', fontWeight: '700', textAlign: 'right' }}>
-            <div>{ledger.length} transactions</div>
+            <div>{localLedger.length} transactions</div>
           </div>
         </div>
 
@@ -188,9 +200,9 @@ function WalletModal({ user, onClose }) {
         {/* History */}
         {tab === 'history' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
-            {ledger.length === 0 ? (
+            {localLedger.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px', color: '#333', fontSize: '13px', fontWeight: '700' }}>No transactions yet.</div>
-            ) : [...ledger].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((tx, i) => {
+            ) : [...localLedger].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((tx, i) => {
               const positive = tx.amount >= 0;
               const date = new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
               return (
@@ -223,11 +235,23 @@ function AccountModal({ user, onClose }) {
   const [loadingKey, setLoadingKey] = useState(null);
   const [results, setResults]   = useState({});
 
+  // FIX: local state for fields that change after server actions, so UI updates immediately
+  const [isFrozen, setIsFrozen] = useState(user.is_frozen);
+  const [role, setRole]         = useState(user.role);
+
   const run = async (key, fn) => {
     setLoadingKey(key);
     const r = await fn();
     setResults(p => ({ ...p, [key]: r }));
     setLoadingKey(null);
+
+    // Update local state on success so button labels/colors reflect reality
+    if (r?.success) {
+      if (key === 'freeze') setIsFrozen(f => !f);
+      if (key === 'role-admin') setRole('admin');
+      if (key === 'role-user')  setRole('user');
+    }
+    return r;
   };
 
   const joinDate = new Date(user.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -243,7 +267,7 @@ function AccountModal({ user, onClose }) {
               ['Username',  user.username],
               ['Full Name', user.full_name || '—'],
               ['Phone',     user.phone     || '—'],
-              ['Role',      user.role],
+              ['Role',      role],
               ['Joined',    joinDate],
               ['Leads',     user.leads?.length || 0],
             ].map(([k, v]) => (
@@ -260,23 +284,31 @@ function AccountModal({ user, onClose }) {
           <div style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Account Status</div>
           <Result result={results.freeze} />
           <ActionBtn
-            onClick={() => run('freeze', () => toggleUserStatus(user.id, user.is_frozen))}
+            onClick={() => run('freeze', () => toggleUserStatus(user.id, isFrozen))}
             disabled={loadingKey === 'freeze'}
-            color={user.is_frozen ? NEON : RED}
+            color={isFrozen ? NEON : RED}
           >
-            {loadingKey === 'freeze' ? 'Processing…' : user.is_frozen ? '✓ Unfreeze Account' : '🧊 Freeze Account'}
+            {loadingKey === 'freeze' ? 'Processing…' : isFrozen ? '✓ Unfreeze Account' : '🧊 Freeze Account'}
           </ActionBtn>
         </div>
 
         {/* Role */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Role</div>
-          <Result result={results.role} />
+          <Result result={results['role-admin'] || results['role-user']} />
           <div style={{ display: 'flex', gap: '8px' }}>
-            <ActionBtn onClick={() => run('role', () => updateUserRole(user.id, 'admin'))} disabled={loadingKey === 'role' || user.role === 'admin'} color={YELLOW}>
+            <ActionBtn
+              onClick={() => run('role-admin', () => updateUserRole(user.id, 'admin'))}
+              disabled={loadingKey === 'role-admin' || loadingKey === 'role-user' || role === 'admin'}
+              color={YELLOW}
+            >
               Make Admin
             </ActionBtn>
-            <ActionBtn onClick={() => run('role', () => updateUserRole(user.id, 'user'))} disabled={loadingKey === 'role' || user.role === 'user'} color="#888">
+            <ActionBtn
+              onClick={() => run('role-user', () => updateUserRole(user.id, 'user'))}
+              disabled={loadingKey === 'role-admin' || loadingKey === 'role-user' || role === 'user'}
+              color="#888"
+            >
               Demote User
             </ActionBtn>
           </div>
@@ -352,12 +384,38 @@ function AccountModal({ user, onClose }) {
 }
 
 // ══════════════════════════════════════════
+// SHARED ROW STYLES — rendered once at module level via a singleton
+// FIX: moved out of UserRow to avoid injecting duplicate <style> per row
+// ══════════════════════════════════════════
+const ROW_STYLES = `
+  @keyframes fadeIn  { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.96);     } to { opacity:1; transform:scale(1);     } }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-8px);} to { opacity:1; transform:translateY(0); } }
+  .usr-row:hover td { background: rgba(255,255,255,0.01) !important; }
+  .usr-3dot:hover   { background: rgba(255,255,255,0.08) !important; color: #fff !important; }
+  .usr-menu-item:hover        { background: rgba(255,255,255,0.04) !important; }
+  .usr-menu-item.danger:hover { background: rgba(239,68,68,0.08)   !important; }
+`;
+
+let stylesInjected = false;
+function ensureStyles() {
+  if (stylesInjected || typeof document === 'undefined') return;
+  stylesInjected = true;
+  const el = document.createElement('style');
+  el.textContent = ROW_STYLES;
+  document.head.appendChild(el);
+}
+
+// ══════════════════════════════════════════
 // MAIN USER ROW
 // ══════════════════════════════════════════
 export default function UserRow({ user, index }) {
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [modal, setModal]         = useState(null); // null | 'wallet' | 'account'
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [modal, setModal]       = useState(null); // null | 'wallet' | 'account'
   const menuRef = useRef(null);
+
+  // FIX: inject shared styles once instead of per-row
+  useEffect(() => { ensureStyles(); }, []);
 
   // Close menu on outside click
   useEffect(() => {
@@ -388,23 +446,14 @@ export default function UserRow({ user, index }) {
   );
 
   const MENU_ITEMS = [
-    { icon: <Wallet size={14}/>,  label: 'Manage Wallet',    action: () => { setModal('wallet');  setMenuOpen(false); }, color: NEON },
-    { icon: <Shield size={14}/>,  label: 'Account Controls', action: () => { setModal('account'); setMenuOpen(false); }, color: YELLOW },
+    { icon: <Wallet size={14}/>, label: 'Manage Wallet',    action: () => { setModal('wallet');  setMenuOpen(false); }, color: NEON   },
+    { icon: <Shield size={14}/>, label: 'Account Controls', action: () => { setModal('account'); setMenuOpen(false); }, color: YELLOW },
     null, // divider
-    { icon: <Trash2 size={14}/>,  label: 'Delete Account',   action: () => { setModal('account'); setMenuOpen(false); }, color: RED, danger: true },
+    { icon: <Trash2 size={14}/>, label: 'Delete Account',   action: () => { setModal('account'); setMenuOpen(false); }, color: RED, danger: true },
   ];
 
   return (
     <>
-      <style>{`
-        @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes modalIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
-        .usr-row:hover td { background: rgba(255,255,255,0.01) !important; }
-        .usr-3dot:hover { background: rgba(255,255,255,0.08) !important; color: #fff !important; }
-        .usr-menu-item:hover { background: rgba(255,255,255,0.04) !important; }
-        .usr-menu-item.danger:hover { background: rgba(239,68,68,0.08) !important; }
-      `}</style>
-
       <tr className="usr-row">
         {/* User */}
         <TD>
