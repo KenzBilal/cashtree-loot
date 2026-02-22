@@ -25,7 +25,7 @@ export async function updateLeadStatus(leadId, newStatus) {
     if (fetchError || !lead) throw new Error('Lead not found.');
 
     // 2. COMMISSION LOGIC
-    if (newStatus === 'Approved' && lead.status !== 'Approved' && lead.referred_by) {
+    if (newStatus === 'approved' && lead.status !== 'approved' && lead.referred_by) {
 
       const commission = parseFloat(lead.payout) || 0;
 
@@ -66,7 +66,7 @@ export async function updateLeadStatus(leadId, newStatus) {
 
     // 3. UPDATE LEAD STATUS
     const updates = { status: newStatus };
-    if (newStatus === 'Approved') {
+    if (newStatus === 'approved') {
       updates.approved_at = new Date().toISOString();
     }
 

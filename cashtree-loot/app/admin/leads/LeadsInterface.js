@@ -34,7 +34,7 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
   };
 
   const filteredData = leads.filter(item => {
-    const isPending = item.status === 'Pending';
+    const isPending = item.status === 'pending';
     if (activeTab === 'PENDING' && !isPending) return false;
     if (activeTab === 'HISTORY' && isPending)  return false;
     if (searchTerm) {
@@ -48,7 +48,7 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
     return true;
   });
 
-  const isApproving = confirmModal?.status === 'Approved';
+  const isApproving = confirmModal?.status === 'approved';
 
   return (
     <div style={{ paddingBottom: '100px' }}>
@@ -283,7 +283,7 @@ export default function LeadsInterface({ initialData, stats, updateStatusAction 
 
 // ── LEAD CARD ──
 function LeadCard({ lead, onAction, delay }) {
-  const isPending = lead.status === 'Pending';
+  const isPending = lead.status === 'pending';
 
   const statusMeta = {
     Pending:  { color: '#facc15', bg: 'rgba(250,204,21,0.08)',  border: 'rgba(250,204,21,0.2)'  },
@@ -385,7 +385,7 @@ function LeadCard({ lead, onAction, delay }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             className="action-btn-reject"
-            onClick={() => onAction(lead.id, 'Rejected')}
+            onClick={() => onAction(lead.id, 'rejected')}
             style={{
               flex: 1,
               padding: '11px',
@@ -402,7 +402,7 @@ function LeadCard({ lead, onAction, delay }) {
           </button>
           <button
             className="action-btn-approve"
-            onClick={() => onAction(lead.id, 'Approved')}
+            onClick={() => onAction(lead.id, 'approved')}
             style={{
               flex: 2,
               padding: '11px',

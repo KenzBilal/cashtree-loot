@@ -21,11 +21,11 @@ export default async function LeadsPage() {
   }
 
   const stats = {
-    pendingCount: leads.filter(l => l.status === 'Pending').length,
-    approvedCount: leads.filter(l => l.status === 'Approved').length,
-    rejectedCount: leads.filter(l => l.status === 'Rejected').length,
+    pendingCount: leads.filter(l => l.status === 'pending').length,
+    approvedCount: leads.filter(l => l.status === 'approved').length,
+    rejectedCount: leads.filter(l => l.status === 'rejected').length,
     pendingValue: leads
-      .filter(l => l.status === 'Pending')
+      .filter(l => l.status === 'pending')
       .reduce((sum, l) => sum + (parseFloat(l.payout) || 0), 0)
   };
 
