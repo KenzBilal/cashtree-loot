@@ -10,101 +10,128 @@ import {
   UserCircle,
 } from 'lucide-react';
 
+const NEON = '#00ff88';
+
 const NAV_ITEMS = [
   { name: 'Home',    path: '/dashboard',           Icon: LayoutDashboard },
-  { name: 'Earn',    path: '/dashboard/campaigns', Icon: Megaphone },
-  { name: 'Network', path: '/dashboard/team',      Icon: Network },
-  { name: 'Wallet',  path: '/dashboard/wallet',    Icon: Wallet },
-  { name: 'Profile', path: '/dashboard/profile',   Icon: UserCircle },
+  { name: 'Earn',    path: '/dashboard/campaigns', Icon: Megaphone       },
+  { name: 'Network', path: '/dashboard/team',      Icon: Network         },
+  { name: 'Wallet',  path: '/dashboard/wallet',    Icon: Wallet          },
+  { name: 'Profile', path: '/dashboard/profile',   Icon: UserCircle      },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
 
   const handleTap = () => {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(15);
-    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
   };
 
   return (
-    <nav style={{
-      position: 'fixed',
-      bottom: 0, left: 0, width: '100%',
-      height: '68px',
-      background: 'rgba(5,5,5,0.96)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-      zIndex: 9999,
-    }}>
+    <>
       <style>{`
-        .mob-link { -webkit-tap-highlight-color: transparent; }
-        .mob-link:active { opacity: 0.7; }
+        @keyframes navItemIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .mob-item {
+          -webkit-tap-highlight-color: transparent;
+          transition: opacity 0.12s;
+        }
+        .mob-item:active { opacity: 0.65; }
       `}</style>
 
-      {NAV_ITEMS.map(({ name, path, Icon }) => {
-        const isActive = pathname === path;
-        return (
-          <Link
-            key={path}
-            href={path}
-            onClick={handleTap}
-            className="mob-link"
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '5px',
-              textDecoration: 'none',
-              position: 'relative',
-              height: '100%',
-            }}
-          >
-            {isActive && (
+      <nav style={{
+        position: 'fixed',
+        bottom: 0, left: 0, width: '100%',
+        background: 'rgba(4,4,6,0.97)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'stretch',
+        zIndex: 9999,
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        boxShadow: '0 -1px 0 rgba(255,255,255,0.04), 0 -20px 40px rgba(0,0,0,0.6)',
+      }}>
+        {NAV_ITEMS.map(({ name, path, Icon }, i) => {
+          const isActive = pathname === path;
+          return (
+            <Link
+              key={path}
+              href={path}
+              onClick={handleTap}
+              className="mob-item"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                padding: '12px 4px 14px',
+                textDecoration: 'none',
+                position: 'relative',
+                minHeight: '64px',
+                animation: `navItemIn 0.3s ease-out ${i * 40}ms both`,
+              }}
+            >
+              {/* Active indicator — top line */}
               <div style={{
-                position: 'absolute', top: 0, left: '50%',
+                position: 'absolute',
+                top: 0, left: '50%',
                 transform: 'translateX(-50%)',
-                width: '28px', height: '2px',
-                background: '#00ff88',
-                boxShadow: '0 0 8px #00ff88',
-                borderRadius: '0 0 3px 3px',
+                width: isActive ? '28px' : '0px',
+                height: '2px',
+                background: NEON,
+                boxShadow: isActive ? `0 0 10px ${NEON}` : 'none',
+                borderRadius: '0 0 4px 4px',
+                transition: 'width 0.25s cubic-bezier(0.34,1.56,0.64,1)',
               }} />
-            )}
 
-            <div style={{
-              width: '34px', height: '34px', borderRadius: '9px',
-              background: isActive ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${isActive ? 'rgba(0,255,136,0.22)' : 'rgba(255,255,255,0.06)'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.18s',
-            }}>
-              <Icon
-                size={15}
-                color={isActive ? '#00ff88' : '#444'}
-                strokeWidth={isActive ? 2.2 : 1.8}
-              />
-            </div>
+              {/* Icon container */}
+              <div style={{
+                width: '40px', height: '40px', borderRadius: '12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isActive ? `${NEON}12` : 'transparent',
+                border: `1px solid ${isActive ? `${NEON}22` : 'transparent'}`,
+                transition: 'all 0.2s ease',
+                position: 'relative',
+              }}>
+                {/* Active radial glow behind icon */}
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    borderRadius: '12px',
+                    background: `radial-gradient(circle at 50% 50%, ${NEON}18 0%, transparent 70%)`,
+                    pointerEvents: 'none',
+                  }} />
+                )}
+                <Icon
+                  size={18}
+                  color={isActive ? NEON : '#3a3a3a'}
+                  strokeWidth={isActive ? 2 : 1.6}
+                  style={{ transition: 'color 0.2s, stroke-width 0.2s' }}
+                />
+              </div>
 
-            <span style={{
-              fontSize: '9px',
-              fontWeight: isActive ? '800' : '500',
-              color: isActive ? '#fff' : '#444',
-              letterSpacing: isActive ? '0.5px' : '0',
-              textTransform: 'uppercase',
-              transition: 'all 0.18s',
-            }}>
-              {name}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+              {/* Label */}
+              <span style={{
+                fontSize: '9px',
+                fontWeight: isActive ? '800' : '500',
+                color: isActive ? '#fff' : '#2e2e2e',
+                letterSpacing: isActive ? '0.8px' : '0.3px',
+                textTransform: 'uppercase',
+                transition: 'all 0.2s',
+                lineHeight: 1,
+              }}>
+                {name}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }
