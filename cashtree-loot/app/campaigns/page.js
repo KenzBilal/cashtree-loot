@@ -63,8 +63,6 @@ export default function CampaignsPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#030305', color: '#fff' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&display=swap');
-
         * { box-sizing: border-box; }
 
         @keyframes fadeUp {
@@ -241,7 +239,7 @@ export default function CampaignsPage() {
         padding: '0 24px', height: '58px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <Link href="/" style={{ textDecoration: 'none', fontWeight: '900', fontSize: '18px', letterSpacing: '-0.5px', color: '#fff', fontFamily: "'Syne', sans-serif" }}>
+        <Link href="/" style={{ textDecoration: 'none', fontWeight: '900', fontSize: '18px', letterSpacing: '-0.5px', color: '#fff', }}>
           Cash<span style={{ color: '#00ff88' }}>Tree</span>
         </Link>
         <Link href="/" style={{
@@ -273,10 +271,9 @@ export default function CampaignsPage() {
           </div>
 
           <h1 style={{
-            fontFamily: "'Syne', sans-serif",
-            fontSize: 'clamp(32px, 6vw, 56px)',
+            fontSize: 'clamp(26px, 4vw, 38px)',
             fontWeight: '900', color: '#fff',
-            margin: '0 0 12px', letterSpacing: '-2px', lineHeight: 1.05,
+            margin: '0 0 12px', letterSpacing: '-1px', lineHeight: 1.1,
           }}>
             Earn Cash From<br />
             <span style={{ color: '#00ff88' }}>Every Click.</span>
@@ -394,7 +391,7 @@ export default function CampaignsPage() {
                     border: `1px solid ${c.color}33`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '18px', fontWeight: '900', color: c.color,
-                    flexShrink: 0, fontFamily: "'Syne', sans-serif",
+                    flexShrink: 0, 
                   }}>
                     {c.name[0]}
                   </div>
@@ -425,9 +422,9 @@ export default function CampaignsPage() {
                 {/* ── Name ── */}
                 <div>
                   <h3 style={{
-                    fontSize: '16px', fontWeight: '800', color: '#fff',
-                    margin: '0 0 4px', letterSpacing: '-0.3px',
-                    fontFamily: "'Syne', sans-serif",
+                    fontSize: '14px', fontWeight: '800', color: '#fff',
+                    margin: '0 0 4px', letterSpacing: '-0.2px',
+                    
                   }}>
                     {c.name}
                   </h3>
