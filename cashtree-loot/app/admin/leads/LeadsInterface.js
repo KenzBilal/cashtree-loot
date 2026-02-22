@@ -289,6 +289,7 @@ function LeadCard({ lead, onAction, delay }) {
     Pending:  { color: '#facc15', bg: 'rgba(250,204,21,0.08)',  border: 'rgba(250,204,21,0.2)'  },
     Approved: { color: '#00ff88', bg: 'rgba(0,255,136,0.08)',   border: 'rgba(0,255,136,0.2)'   },
     Rejected: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)'   },
+    'expired': { color: '#888', bg: 'rgba(136,136,136,0.08)', border: 'rgba(136,136,136,0.2)' },
   }[lead.status] || { color: '#888', bg: '#111', border: '#222' };
 
   const submittedData = lead.customer_data?.phone

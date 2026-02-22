@@ -24,6 +24,7 @@ export default async function LeadsPage() {
     pendingCount: leads.filter(l => l.status === 'pending').length,
     approvedCount: leads.filter(l => l.status === 'approved').length,
     rejectedCount: leads.filter(l => l.status === 'rejected').length,
+    expiredCount: leads.filter(l => l.status === 'expired').length,
     pendingValue: leads
       .filter(l => l.status === 'pending')
       .reduce((sum, l) => sum + (parseFloat(l.payout) || 0), 0)
