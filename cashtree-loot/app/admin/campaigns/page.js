@@ -14,7 +14,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ── Style constants outside component ──
 const headerStyle = {
   display: 'flex',
   flexWrap: 'wrap',
@@ -35,13 +34,10 @@ export default async function CampaignsPage() {
   if (error) {
     return (
       <div style={{
-        margin: '40px',
-        padding: '24px',
+        margin: '40px', padding: '24px',
         background: 'rgba(239,68,68,0.06)',
         border: '1px solid rgba(239,68,68,0.2)',
-        borderRadius: '16px',
-        color: '#ef4444',
-        textAlign: 'center',
+        borderRadius: '16px', color: '#ef4444', textAlign: 'center',
       }}>
         <div style={{ fontWeight: '700', marginBottom: '6px' }}>System Error</div>
         <div style={{ fontSize: '13px', opacity: 0.7 }}>{error.message}</div>
@@ -52,9 +48,9 @@ export default async function CampaignsPage() {
   const total  = campaigns?.length ?? 0;
   const active = campaigns?.filter(c => c.is_active).length ?? 0;
 
-  // Supabase returns leads as [{ count: N }]
+  // ✅ FIX: Supabase returns count as string — parseInt prevents "5"+"3"="53" bug
   const totalLeads = campaigns?.reduce((sum, c) => {
-    return sum + (c.leads?.[0]?.count ?? 0);
+    return sum + parseInt(c.leads?.[0]?.count ?? 0, 10);
   }, 0) ?? 0;
 
   return (
@@ -64,37 +60,27 @@ export default async function CampaignsPage() {
       <div style={headerStyle}>
         <div>
           <h1 style={{
-            fontSize: 'clamp(24px, 4vw, 32px)',
-            fontWeight: '900',
-            color: '#fff',
-            margin: '0 0 16px 0',
-            letterSpacing: '-0.8px',
+            fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: '900',
+            color: '#fff', margin: '0 0 16px 0', letterSpacing: '-0.8px',
           }}>
             Mission <span style={{ color: '#444' }}>Control</span>
           </h1>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            <StatBadge label="Live"   value={active}      color="#00ff88" icon={<Radio size={12} />} />
-            <StatBadge label="Total"  value={total}       color="#aaaaaa" icon={<BarChart3 size={12} />} />
-            <StatBadge label="Leads"  value={totalLeads}  color="#3b82f6" icon={<Users size={12} />} />
+            <StatBadge label="Live"  value={active}     color="#00ff88" icon={<Radio size={12} />} />
+            <StatBadge label="Total" value={total}      color="#aaaaaa" icon={<BarChart3 size={12} />} />
+            <StatBadge label="Leads" value={totalLeads} color="#3b82f6" icon={<Users size={12} />} />
           </div>
         </div>
 
         <Link
           href="/admin/campaigns/create"
           style={{
-            background: '#fff',
-            color: '#000',
-            padding: '14px 22px',
-            borderRadius: '14px',
-            textDecoration: 'none',
-            fontSize: '12px',
-            fontWeight: '900',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            background: '#fff', color: '#000',
+            padding: '14px 22px', borderRadius: '14px',
+            textDecoration: 'none', fontSize: '12px', fontWeight: '900',
+            textTransform: 'uppercase', letterSpacing: '1px',
+            display: 'flex', alignItems: 'center', gap: '8px',
             boxShadow: '0 0 30px rgba(255,255,255,0.1)',
             whiteSpace: 'nowrap',
           }}
@@ -109,16 +95,11 @@ export default async function CampaignsPage() {
   );
 }
 
-// ── Stat badge ──
-// Note: uses rgba() borders instead of hex+alpha shorthand to avoid invalid CSS
 function StatBadge({ label, value, color, icon }) {
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      padding: '8px 14px',
-      borderRadius: '12px',
+      display: 'flex', alignItems: 'center', gap: '10px',
+      padding: '8px 14px', borderRadius: '12px',
       background: 'rgba(255,255,255,0.03)',
       border: '1px solid rgba(255,255,255,0.07)',
     }}>

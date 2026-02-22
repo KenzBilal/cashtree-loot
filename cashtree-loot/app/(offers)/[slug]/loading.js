@@ -10,71 +10,10 @@ export default function Loading() {
       overflow: 'hidden',
       position: 'fixed', inset: 0, zIndex: 9999,
     }}>
-
-      {/* LOGO ANIMATION */}
-      <div style={{ position: 'relative' }}>
-
-        {/* 1. Dimmed base */}
-        <h1 style={{
-          fontSize: '40px', fontWeight: '900', color: '#111',
-          margin: 0, letterSpacing: '4px', position: 'relative', zIndex: 1,
-          fontFamily: 'Inter, system-ui, sans-serif',
-        }}>
-          CASHTREE
-        </h1>
-
-        {/* 2. Outline overlay */}
-        <h1 style={{
-          fontSize: '40px', fontWeight: '900', color: 'transparent',
-          WebkitTextStroke: '1px #252525',
-          margin: 0, letterSpacing: '4px',
-          position: 'absolute', top: 0, left: 0, zIndex: 2,
-          fontFamily: 'Inter, system-ui, sans-serif',
-        }}>
-          CASHTREE
-        </h1>
-
-        {/* 3. Neon liquid fill */}
-        <h1 style={{
-          fontSize: '40px', fontWeight: '900',
-          margin: 0, letterSpacing: '4px',
-          position: 'absolute', top: 0, left: 0, zIndex: 3,
-          overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
-          borderRight: '2px solid #00ff88',
-          animation: 'fillUp 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
-          fontFamily: 'Inter, system-ui, sans-serif',
-        }}>
-          <span style={{ color: '#fff' }}>CASH</span>
-          <span style={{ color: '#00ff88' }}>TREE</span>
-        </h1>
-
-        {/* 4. Glow reflection */}
-        <div style={{
-          position: 'absolute', bottom: '-12px', left: '0', right: '0',
-          height: '20px', background: '#00ff88',
-          filter: 'blur(25px)', opacity: 0.15,
-          animation: 'pulse 2.2s infinite',
-        }} />
-
-      </div>
-
-      {/* PROGRESS BAR */}
-      <div style={{
-        width: '120px', height: '2px',
-        background: '#111', borderRadius: '2px',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          height: '100%',
-          background: 'linear-gradient(90deg, transparent, #00ff88, transparent)',
-          animation: 'progress 1.6s ease-in-out infinite',
-          borderRadius: '2px',
-        }} />
-      </div>
-
-      <style jsx>{`
+      {/* ✅ FIX: plain <style> tag — style jsx is broken in App Router */}
+      <style>{`
         @keyframes fillUp {
-          0%   { width: 0%;    opacity: 0; }
+          0%   { width: 0%;   opacity: 0; }
           10%  { opacity: 1; }
           50%  { width: 100%; opacity: 1; }
           90%  { width: 100%; opacity: 1; }
@@ -89,6 +28,62 @@ export default function Loading() {
           100% { transform: translateX(300%); }
         }
       `}</style>
+
+      <div style={{ position: 'relative', userSelect: 'none' }}>
+
+        {/* 1. Dimmed base */}
+        <h1 style={{
+          fontSize: '40px', fontWeight: '900', color: '#111',
+          margin: 0, letterSpacing: '4px', position: 'relative', zIndex: 1,
+        }}>
+          CASHTREE
+        </h1>
+
+        {/* 2. Outline overlay */}
+        <h1 style={{
+          fontSize: '40px', fontWeight: '900', color: 'transparent',
+          WebkitTextStroke: '1px #252525',
+          margin: 0, letterSpacing: '4px',
+          position: 'absolute', top: 0, left: 0, zIndex: 2,
+        }}>
+          CASHTREE
+        </h1>
+
+        {/* 3. Neon liquid fill */}
+        <h1 style={{
+          fontSize: '40px', fontWeight: '900',
+          margin: 0, letterSpacing: '4px',
+          position: 'absolute', top: 0, left: 0, zIndex: 3,
+          overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
+          borderRight: '2px solid #00ff88',
+          animation: 'fillUp 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        }}>
+          <span style={{ color: '#fff' }}>CASH</span>
+          <span style={{ color: '#00ff88' }}>TREE</span>
+        </h1>
+
+        {/* 4. Glow reflection */}
+        <div style={{
+          position: 'absolute', bottom: '-12px', left: 0, right: 0,
+          height: '20px', background: '#00ff88',
+          filter: 'blur(25px)',
+          animation: 'pulse 2.2s infinite',
+          pointerEvents: 'none',
+        }} />
+      </div>
+
+      {/* Progress bar */}
+      <div style={{
+        width: '120px', height: '2px',
+        background: '#111', borderRadius: '2px', overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent, #00ff88, transparent)',
+          animation: 'progress 1.6s ease-in-out infinite',
+          borderRadius: '2px',
+        }} />
+      </div>
     </div>
   );
 }

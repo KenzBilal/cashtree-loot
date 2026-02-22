@@ -2,7 +2,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/requireAdmin';
 
 const supabaseAdmin = createClient(
@@ -20,9 +19,8 @@ export async function createCampaign(formData) {
   const description    = formData.get('description')?.trim()    || null;
   const category       = formData.get('category')?.trim()       || null;
   const icon_url       = formData.get('icon_url')?.trim()       || null;
-
-  const user_reward   = parseFloat(formData.get('user_reward'))   || 0;
-  const payout_amount = parseFloat(formData.get('payout_amount')) || 0;
+  const user_reward    = parseFloat(formData.get('user_reward'))   || 0;
+  const payout_amount  = parseFloat(formData.get('payout_amount')) || 0;
 
   if (!title || !landing_url) {
     return { success: false, error: 'Title and URL Slug are required.' };
@@ -36,16 +34,11 @@ export async function createCampaign(formData) {
   }
 
   const { error } = await supabaseAdmin.from('campaigns').insert({
-    title,
-    landing_url,
-    affiliate_link,
-    user_reward,
-    payout_amount,
-    description,
-    category,
-    icon_url,
+    title, landing_url, affiliate_link,
+    user_reward, payout_amount,
+    description, category, icon_url,
     is_active: true,
-    created_at: new Date().toISOString(),
+    // ✅ created_at omitted — DB default now() handles it
   });
 
   if (error) {
@@ -56,7 +49,7 @@ export async function createCampaign(formData) {
   }
 
   revalidatePath('/admin/campaigns');
-  redirect('/admin/campaigns');
+  return { success: true };
 }
 
 // ── 2. UPDATE CAMPAIGN ──
@@ -75,27 +68,28 @@ export async function updateCampaign(campaignId, formData) {
     }
 
     const landing_url = formData.get('landing_url')?.trim();
-    if (!landing_url) {
-      return { success: false, error: 'URL Slug is required.' };
-    }
-
-    const updates = {
-      title:          formData.get('title')?.trim(),
-      description:    formData.get('description')?.trim()    || null,
-      user_reward,
-      payout_amount,
-      landing_url,
-      affiliate_link: formData.get('affiliate_link')?.trim() || null,
-      category:       formData.get('category')?.trim()       || null,
-      icon_url:       formData.get('icon_url')?.trim()       || null,
-    };
+    if (!landing_url) return { success: false, error: 'URL Slug is required.' };
 
     const { error } = await supabaseAdmin
       .from('campaigns')
-      .update(updates)
+      .update({
+        title:          formData.get('title')?.trim(),
+        description:    formData.get('description')?.trim() || null,
+        user_reward,
+        payout_amount,
+        landing_url,
+        affiliate_link: formData.get('affiliate_link')?.trim() || null,
+        category:       formData.get('category')?.trim()       || null,
+        icon_url:       formData.get('icon_url')?.trim()       || null,
+      })
       .eq('id', campaignId);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') {
+        return { success: false, error: 'That URL slug is already taken. Choose another.' };
+      }
+      throw error;
+    }
 
     revalidatePath('/admin/campaigns');
     return { success: true };

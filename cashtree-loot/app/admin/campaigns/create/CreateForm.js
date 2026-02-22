@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createCampaign } from './actions';
 import { Save, Search, Zap } from 'lucide-react';
 
 const NEON = '#00ff88';
 
 export default function CreateForm() {
+  const router = useRouter();
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState(null);
   const [brandInput, setBrandInput]     = useState('');
@@ -16,15 +18,10 @@ export default function CreateForm() {
   // Auto-fetch brand logo with 500ms debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!brandInput) {
-        setDetectedIcon('');
-        return;
-      }
+      if (!brandInput) { setDetectedIcon(''); return; }
       const clean = brandInput.toLowerCase().trim();
       if (clean.includes('.')) {
-        setDetectedIcon(
-          `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${clean}&size=256`
-        );
+        setDetectedIcon(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${clean}&size=256`);
         setIsVector(false);
       } else {
         setDetectedIcon(`https://cdn.simpleicons.org/${clean}/white`);
@@ -38,7 +35,6 @@ export default function CreateForm() {
     setLoading(true);
     setError(null);
 
-    // Inject auto-detected icon if no custom one was pasted
     if (!formData.get('icon_url') && detectedIcon) {
       formData.set('icon_url', detectedIcon);
     }
@@ -48,16 +44,19 @@ export default function CreateForm() {
     if (result?.error) {
       setError(result.error);
       setLoading(false);
+      return;
     }
-    // On success, createCampaign calls redirect() — this line never runs
+
+    // ✅ FIX: server action returns { success: true } now (redirect() was broken)
+    // Handle navigation client-side
+    router.push('/admin/campaigns');
+    router.refresh();
   }
 
   return (
     <div style={{ maxWidth: '600px' }}>
-
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Error banner */}
       {error && (
         <div style={{
           padding: '14px 16px',
@@ -86,7 +85,6 @@ export default function CreateForm() {
           boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
         }}
       >
-
         {/* ── 1. BRAND IDENTITY ── */}
         <section style={{ marginBottom: '28px', background: '#0f0f0f', padding: '20px', borderRadius: '18px', border: '1px dashed #2a2a2a' }}>
           <div style={{
@@ -109,27 +107,19 @@ export default function CreateForm() {
             </div>
 
             <div style={{
-              flexShrink: 0,
-              width: '76px',
-              height: '76px',
-              borderRadius: '16px',
-              background: '#000',
-              border: `1px solid ${detectedIcon ? NEON : '#222'}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexShrink: 0, width: '76px', height: '76px', borderRadius: '16px',
+              background: '#000', border: `1px solid ${detectedIcon ? NEON : '#222'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: detectedIcon ? `0 0 18px ${NEON}30` : 'none',
               transition: 'border-color 0.25s, box-shadow 0.25s',
-              marginTop: '22px', // align with input (label height offset)
+              marginTop: '22px',
             }}>
               {detectedIcon ? (
                 <img
                   src={detectedIcon}
                   alt="Logo preview"
                   style={{
-                    width: '40px',
-                    height: '40px',
-                    objectFit: 'contain',
+                    width: '40px', height: '40px', objectFit: 'contain',
                     filter: isVector ? 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' : 'none',
                   }}
                   onError={() => setDetectedIcon('')}
@@ -146,17 +136,13 @@ export default function CreateForm() {
         {/* ── 2. CORE DETAILS ── */}
         <section style={{ marginBottom: '28px' }}>
           <SectionTitle>Core Details</SectionTitle>
-          <FormInput label="Campaign Title"    name="title"         placeholder="e.g. Install ByBit App" required />
+          <FormInput label="Campaign Title" name="title" placeholder="e.g. Install ByBit App" required />
           <FormInput
-            label="URL Slug"
-            name="landing_url"
-            placeholder="motwal"
-            required
+            label="URL Slug" name="landing_url" placeholder="motwal" required
             hint="Creates: cashtree.online/motwal"
           />
           <FormInput
-            label="Affiliate / Target Link"
-            name="affiliate_link"
+            label="Affiliate / Target Link" name="affiliate_link"
             placeholder="https://tracking.com/click?id=..."
             hint="Where the user lands after signup"
           />
@@ -168,19 +154,11 @@ export default function CreateForm() {
           <SectionTitle>Budget &amp; Payouts</SectionTitle>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <FormInput
-              label="Total Limit ₹"
-              name="payout_amount"
-              type="number"
-              placeholder="100"
-              required
+              label="Total Limit ₹" name="payout_amount" type="number" placeholder="100" required
               hint="Max total (user + promoter)"
             />
             <FormInput
-              label="Default Cashback ₹"
-              name="user_reward"
-              type="number"
-              placeholder="20"
-              required
+              label="Default Cashback ₹" name="user_reward" type="number" placeholder="20" required
               hint="What users receive by default"
             />
           </div>
@@ -194,20 +172,13 @@ export default function CreateForm() {
             rows={4}
             placeholder={'1. Download the app\n2. Register with phone\n3. Verify OTP'}
             style={{
-              width: '100%',
-              background: '#000',
-              border: '1px solid #1e1e1e',
-              borderRadius: '12px',
-              padding: '14px 16px',
-              color: '#fff',
-              outline: 'none',
-              fontSize: '13px',
-              lineHeight: 1.6,
-              fontFamily: 'inherit',
-              resize: 'vertical',
+              width: '100%', background: '#000', border: '1px solid #1e1e1e',
+              borderRadius: '12px', padding: '14px 16px', color: '#fff',
+              outline: 'none', fontSize: '13px', lineHeight: 1.6,
+              fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box',
             }}
-            onFocus={(e)  => e.target.style.borderColor = '#333'}
-            onBlur={(e)   => e.target.style.borderColor = '#1e1e1e'}
+            onFocus={(e) => e.target.style.borderColor = '#333'}
+            onBlur={(e)  => e.target.style.borderColor = '#1e1e1e'}
           />
         </section>
 
@@ -216,23 +187,15 @@ export default function CreateForm() {
           type="submit"
           disabled={loading}
           style={{
-            width: '100%',
-            padding: '17px',
-            borderRadius: '14px',
-            border: 'none',
+            width: '100%', padding: '17px', borderRadius: '14px', border: 'none',
             background: loading ? '#111' : NEON,
             color: loading ? '#555' : '#000',
-            fontWeight: '900',
-            fontSize: '13px',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            cursor: loading ? 'wait' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
+            fontWeight: '900', fontSize: '13px', textTransform: 'uppercase',
+            letterSpacing: '1px', cursor: loading ? 'wait' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
             transition: 'background 0.2s, color 0.2s',
             boxShadow: loading ? 'none' : `0 0 20px ${NEON}30`,
+            fontFamily: 'inherit',
           }}
         >
           {loading ? (
@@ -249,23 +212,16 @@ export default function CreateForm() {
             </>
           )}
         </button>
-
       </form>
     </div>
   );
 }
 
-// ── Section title ──
 function SectionTitle({ children }) {
   return (
     <div style={{
-      fontSize: '11px',
-      fontWeight: '800',
-      color: '#444',
-      textTransform: 'uppercase',
-      letterSpacing: '1px',
-      marginBottom: '16px',
-      paddingBottom: '10px',
+      fontSize: '11px', fontWeight: '800', color: '#444', textTransform: 'uppercase',
+      letterSpacing: '1px', marginBottom: '16px', paddingBottom: '10px',
       borderBottom: '1px solid #111',
     }}>
       {children}
@@ -273,42 +229,27 @@ function SectionTitle({ children }) {
   );
 }
 
-// ── Form input helper ──
 function FormInput({ label, name, type = 'text', placeholder, required, hint, value, onChange }) {
   return (
     <div style={{ marginBottom: '16px' }}>
       <label style={{
-        display: 'block',
-        fontSize: '10px',
-        fontWeight: '800',
-        color: '#444',
-        marginBottom: '6px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.8px',
+        display: 'block', fontSize: '10px', fontWeight: '800', color: '#444',
+        marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.8px',
       }}>
         {label}
       </label>
       <input
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        required={required}
-        value={value}
-        onChange={onChange}
+        type={type} name={name} placeholder={placeholder}
+        required={required} value={value} onChange={onChange}
         style={{
-          width: '100%',
-          background: '#000',
-          border: '1px solid #1e1e1e',
-          borderRadius: '10px',
-          padding: '13px 14px',
-          color: '#fff',
-          outline: 'none',
-          fontSize: '13px',
-          fontWeight: '600',
-          transition: 'border-color 0.18s',
+          width: '100%', background: '#000', border: '1px solid #1e1e1e',
+          borderRadius: '10px', padding: '13px 14px', color: '#fff',
+          outline: 'none', fontSize: '13px', fontWeight: '600',
+          transition: 'border-color 0.18s', boxSizing: 'border-box',
+          fontFamily: 'inherit',
         }}
-        onFocus={(e)  => e.target.style.borderColor = '#333'}
-        onBlur={(e)   => e.target.style.borderColor = '#1e1e1e'}
+        onFocus={(e) => e.target.style.borderColor = '#333'}
+        onBlur={(e)  => e.target.style.borderColor = '#1e1e1e'}
       />
       {hint && (
         <div style={{ fontSize: '10px', color: NEON, marginTop: '5px', fontWeight: '600', opacity: 0.75 }}>

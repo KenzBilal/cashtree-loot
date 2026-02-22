@@ -4,35 +4,27 @@ import { useState } from 'react';
 import { submitLead } from './actions';
 import { Loader2, CheckCircle2, ArrowRight, AlertTriangle } from 'lucide-react';
 
-// ✅ UPDATED: Added referrerId and payoutAmount to props
 export default function OfferForm({ campaignId, refCode, redirectUrl, referrerId, payoutAmount }) {
-  const [status, setStatus] = useState('idle'); 
-  const [errorMessage, setErrorMessage] = useState(''); 
+  const [status, setStatus]           = useState('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus('loading');
-    setErrorMessage(''); 
+    setErrorMessage('');
 
     const formData = new FormData(e.target);
-    
-    // Add hidden fields manually
-    formData.append('campaign_id', campaignId);
+    formData.append('campaign_id',   campaignId);
     formData.append('referral_code', refCode || '');
-    formData.append('redirect_url', redirectUrl);
-
-    // 🚀 NEW: Pass the UUID and the Locked Bonus Amount to the server
-    // This ensures we save the EXACT deal the user saw (Snapshot Logic)
-    if (referrerId) formData.append('referrer_id', referrerId);
+    formData.append('redirect_url',  redirectUrl);
+    if (referrerId)   formData.append('referrer_id',   referrerId);
     if (payoutAmount) formData.append('payout_amount', payoutAmount);
 
     const result = await submitLead(formData);
 
     if (result.success) {
       setStatus('success');
-      setTimeout(() => {
-        window.location.href = result.redirectUrl;
-      }, 1500);
+      setTimeout(() => { window.location.href = result.redirectUrl; }, 1500);
     } else {
       setStatus('error');
       setErrorMessage(result.error || 'Submission failed. Please try again.');
@@ -40,112 +32,175 @@ export default function OfferForm({ campaignId, refCode, redirectUrl, referrerId
     }
   }
 
-  // --- SUCCESS STATE ---
+  // ── SUCCESS STATE ──
   if (status === 'success') {
     return (
-      <div className="success-overlay">
-        <div className="success-icon">
-          <CheckCircle2 size={64} className="text-neon" />
-        </div>
-        <h3>Offer Unlocked!</h3>
-        <p>Redirecting you securely...</p>
-        <style jsx>{`
-          .success-overlay {
-            height: 300px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; text-align: center;
-            animation: fadeIn 0.5s ease;
-          }
-          .success-icon {
-            margin-bottom: 20px;
-            filter: drop-shadow(0 0 15px var(--neon));
-            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          }
-          h3 { font-size: 24px; font-weight: 800; margin: 0; color: #fff; }
-          p { color: #888; margin-top: 8px; font-size: 14px; }
-          .text-neon { color: #00ff88; }
-          @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-          @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+      <div style={{
+        height: '280px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+        animation: 'ctFadeIn 0.5s ease',
+      }}>
+        <style>{`
+          @keyframes ctFadeIn  { from { opacity:0; } to { opacity:1; } }
+          @keyframes ctPopIn   { from { transform:scale(0); } to { transform:scale(1); } }
+          @keyframes ctSpin    { to { transform:rotate(360deg); } }
         `}</style>
+        <div style={{
+          marginBottom: '20px',
+          filter: 'drop-shadow(0 0 15px #00ff88)',
+          animation: 'ctPopIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275)',
+          color: '#00ff88',
+        }}>
+          <CheckCircle2 size={64} />
+        </div>
+        <h3 style={{ fontSize: '24px', fontWeight: '800', margin: 0, color: '#fff' }}>
+          Offer Unlocked!
+        </h3>
+        <p style={{ color: '#888', marginTop: '8px', fontSize: '14px' }}>
+          Redirecting you securely...
+        </p>
       </div>
     );
   }
 
-  // --- FORM STATE ---
+  // ── FORM STATE ──
+  const inputStyle = {
+    width: '100%', background: 'rgba(0,0,0,0.4)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    padding: '14px 16px', borderRadius: '12px',
+    color: '#fff', fontSize: '15px', fontWeight: '500',
+    outline: 'none', boxSizing: 'border-box',
+    fontFamily: 'inherit',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    opacity: status === 'loading' ? 0.5 : 1,
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: '11px', fontWeight: '700',
+    color: '#6b7280', textTransform: 'uppercase',
+    marginBottom: '6px', letterSpacing: '0.5px',
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="form-stack">
-      <div className="input-group">
-        <label>Full Name</label>
-        <input name="user_name" type="text" placeholder="e.g. Rahul Kumar" required disabled={status === 'loading'} />
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <style>{`
+        @keyframes ctFadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes ctSpin   { to { transform:rotate(360deg); } }
+        .ct-input:focus {
+          border-color: #00ff88 !important;
+          box-shadow: 0 0 0 4px rgba(0,255,136,0.1) !important;
+          background: rgba(0,0,0,0.6) !important;
+        }
+        .ct-input:disabled { cursor: not-allowed; }
+        .ct-neon-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 40px -10px rgba(0,255,136,0.6) !important;
+        }
+        .ct-neon-btn:disabled {
+          background: #333 !important;
+          color: #666 !important;
+          box-shadow: none !important;
+          cursor: not-allowed;
+        }
+      `}</style>
+
+      {/* Name */}
+      <div>
+        <label style={labelStyle}>Full Name</label>
+        <input
+          className="ct-input"
+          name="user_name" type="text"
+          placeholder="e.g. Rahul Kumar"
+          required disabled={status === 'loading'}
+          style={inputStyle}
+        />
       </div>
 
-      <div className="input-group">
-        <label>Phone Number</label>
-        <input name="phone" type="tel" placeholder="98765 XXXXX" required disabled={status === 'loading'} />
+      {/* Phone */}
+      <div>
+        <label style={labelStyle}>Phone Number</label>
+        <input
+          className="ct-input"
+          name="phone" type="tel"
+          placeholder="98765 XXXXX"
+          required disabled={status === 'loading'}
+          style={inputStyle}
+        />
       </div>
 
-      <div className="input-group">
-        <label>UPI ID (For Payment)</label>
-        <input name="upi_id" type="text" placeholder="username@upi" required disabled={status === 'loading'} />
+      {/* UPI */}
+      <div>
+        <label style={labelStyle}>UPI ID (For Payment)</label>
+        <input
+          className="ct-input"
+          name="upi_id" type="text"
+          placeholder="username@upi"
+          required disabled={status === 'loading'}
+          style={inputStyle}
+        />
       </div>
 
+      {/* Referral badge */}
       {refCode && (
-         <div className="referral-box">
-            <span className="label">Referral Applied</span>
-            <span className="code">{refCode.toUpperCase()}</span>
-         </div>
-      )}
-
-      <button type="submit" className="neon-btn" disabled={status === 'loading'}>
-        {status === 'loading' ? (
-          <span className="flex-center"><Loader2 className="spin" size={18} /> Processing...</span>
-        ) : (
-          <span className="flex-center">Submit & Download <ArrowRight size={18} /></span>
-        )}
-      </button>
-
-      {status === 'error' && (
-        <div className="error-box">
-          <AlertTriangle size={16} />
-          <span>{errorMessage}</span>
+        <div style={{
+          background: 'rgba(0,255,136,0.05)',
+          border: '1px dashed rgba(0,255,136,0.2)',
+          borderRadius: '12px', padding: '12px 16px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <span style={{ fontSize: '11px', color: '#00ff88', fontWeight: '700', textTransform: 'uppercase' }}>
+            Referral Applied
+          </span>
+          <span style={{ fontSize: '13px', color: '#fff', fontWeight: '700', letterSpacing: '1px', fontFamily: 'monospace' }}>
+            {refCode.toUpperCase()}
+          </span>
         </div>
       )}
 
-      <style jsx>{`
-        .form-stack { display: flex; flex-direction: column; gap: 16px; }
-        .input-group label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
-        .input-group input {
-          width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1);
-          padding: 14px 16px; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 500;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .input-group input:focus { outline: none; border-color: #00ff88; box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.1); background: rgba(0,0,0,0.6); }
-        .input-group input:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .referral-box { background: rgba(0, 255, 136, 0.05); border: 1px dashed rgba(0, 255, 136, 0.2); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .referral-box .label { font-size: 11px; color: #00ff88; font-weight: 700; text-transform: uppercase; }
-        .referral-box .code { font-size: 13px; color: #fff; font-weight: 700; letter-spacing: 1px; font-family: monospace; }
+      {/* Submit button */}
+      <button
+        type="submit"
+        className="ct-neon-btn"
+        disabled={status === 'loading'}
+        style={{
+          width: '100%', background: '#00ff88', color: '#000',
+          fontSize: '14px', fontWeight: '800',
+          textTransform: 'uppercase', letterSpacing: '1px',
+          padding: '16px', borderRadius: '14px', border: 'none',
+          cursor: 'pointer', marginTop: '8px',
+          boxShadow: '0 0 20px -5px rgba(0,255,136,0.4)',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          fontFamily: 'inherit',
+        }}
+      >
+        {status === 'loading' ? (
+          <>
+            <Loader2 size={18} style={{ animation: 'ctSpin 1s linear infinite' }} />
+            Processing...
+          </>
+        ) : (
+          <>
+            Submit &amp; Continue <ArrowRight size={18} />
+          </>
+        )}
+      </button>
 
-        .neon-btn {
-          width: 100%; background: #00ff88; color: #000; font-size: 14px; font-weight: 800;
-          text-transform: uppercase; letter-spacing: 1px; padding: 16px; border-radius: 14px;
-          border: none; cursor: pointer; margin-top: 8px; transition: all 0.3s;
-          box-shadow: 0 0 20px -5px rgba(0, 255, 136, 0.4); position: relative; overflow: hidden;
-        }
-        .neon-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 40px -10px rgba(0, 255, 136, 0.6); }
-        .neon-btn:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
-        
-        .flex-center { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .spin { animation: spin 1s linear infinite; }
-        
-        .error-box { 
-          margin-top: 12px; padding: 12px; background: rgba(239, 68, 68, 0.15); 
-          border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; color: #ef4444; 
-          font-size: 12px; font-weight: 600; text-align: center; display: flex; 
-          align-items: center; justify-content: center; gap: 8px; animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+      {/* Error */}
+      {status === 'error' && (
+        <div style={{
+          padding: '12px', borderRadius: '10px',
+          background: 'rgba(239,68,68,0.15)',
+          border: '1px solid rgba(239,68,68,0.3)',
+          color: '#ef4444', fontSize: '12px', fontWeight: '600',
+          textAlign: 'center', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', gap: '8px',
+          animation: 'ctFadeIn 0.3s ease',
+        }}>
+          <AlertTriangle size={16} />
+          {errorMessage}
+        </div>
+      )}
     </form>
   );
 }
