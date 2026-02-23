@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Users, DollarSign, ShieldAlert, UserCheck, TrendingUp } from 'lucide-react';
+import { Search, Users, DollarSign, ShieldAlert, TrendingUp } from 'lucide-react';
 import UserRow from './user-row';
 
 const NEON = '#00ff88';
@@ -12,9 +12,8 @@ function StatCard({ icon, label, value, color = '#fff', sub }) {
       background: '#080808', border: '1px solid #1a1a1a',
       borderRadius: '16px', padding: '18px 20px',
       position: 'relative', overflow: 'hidden',
-      animation: 'fadeIn 0.4s ease-out',
     }}>
-      <div style={{ position: 'absolute', top: '14px', right: '14px', opacity: 0.1, color }}>
+      <div style={{ position: 'absolute', top: '14px', right: '14px', opacity: 0.08, color }}>
         {icon}
       </div>
       <div style={{ fontSize: '9px', fontWeight: '800', color: '#444', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>
@@ -29,9 +28,9 @@ function StatCard({ icon, label, value, color = '#fff', sub }) {
 }
 
 export default function UsersInterface({ initialUsers, stats }) {
-  const [search, setSearch]   = useState('');
-  const [filter, setFilter]   = useState('all'); // all | active | frozen | admin
-  const [sortBy, setSortBy]   = useState('date'); // date | balance | leads
+  const [search,  setSearch]  = useState('');
+  const [filter,  setFilter]  = useState('all');
+  const [sortBy,  setSortBy]  = useState('date');
   const [sortDir, setSortDir] = useState('desc');
 
   const handleSort = (col) => {
@@ -41,8 +40,6 @@ export default function UsersInterface({ initialUsers, stats }) {
 
   const filtered = useMemo(() => {
     let list = [...initialUsers];
-
-    // Search
     if (search.trim()) {
       const s = search.toLowerCase();
       list = list.filter(u =>
@@ -52,33 +49,30 @@ export default function UsersInterface({ initialUsers, stats }) {
         u.full_name?.toLowerCase().includes(s)
       );
     }
+    // FIX: filter using pre-computed accurate counts
+    if (filter === 'active') list = list.filter(u => !u.is_frozen && u.role !== 'admin');
+    if (filter === 'frozen') list = list.filter(u => u.is_frozen);
+    if (filter === 'admin')  list = list.filter(u => u.role === 'admin');
 
-    // Filter
-    if (filter === 'active')  list = list.filter(u => !u.is_frozen && u.role !== 'admin');
-    if (filter === 'frozen')  list = list.filter(u => u.is_frozen);
-    if (filter === 'admin')   list = list.filter(u => u.role === 'admin');
-
-    // Sort
     list.sort((a, b) => {
       let av, bv;
-      if (sortBy === 'balance') { av = a.balance || 0; bv = b.balance || 0; }
-      else if (sortBy === 'leads') { av = a.leads?.length || 0; bv = b.leads?.length || 0; }
-      else { av = new Date(a.created_at); bv = new Date(b.created_at); }
+      if      (sortBy === 'balance') { av = a.balance || 0;          bv = b.balance || 0; }
+      else if (sortBy === 'leads')   { av = a.leads?.length || 0;    bv = b.leads?.length || 0; }
+      else                           { av = new Date(a.created_at);  bv = new Date(b.created_at); }
       return sortDir === 'desc' ? bv - av : av - bv;
     });
-
     return list;
   }, [initialUsers, search, filter, sortBy, sortDir]);
 
   const SortArrow = ({ col }) => (
-    <span style={{ marginLeft: '4px', opacity: sortBy === col ? 1 : 0.2, fontSize: '10px' }}>
+    <span style={{ marginLeft: '4px', opacity: sortBy === col ? 1 : 0.25, fontSize: '10px' }}>
       {sortBy === col ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
     </span>
   );
 
   const FILTERS = [
     { key: 'all',    label: `All (${stats.totalUsers})` },
-    { key: 'active', label: `Active (${stats.totalUsers - stats.frozenCount - stats.adminCount})` },
+    { key: 'active', label: `Active (${stats.activeCount})` },
     { key: 'frozen', label: `Frozen (${stats.frozenCount})` },
     { key: 'admin',  label: `Admins (${stats.adminCount})` },
   ];
@@ -86,21 +80,20 @@ export default function UsersInterface({ initialUsers, stats }) {
   return (
     <div style={{ paddingBottom: '80px' }}>
       <style>{`
-        @keyframes fadeIn  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
 
-        .usr-search { width:100%; background:#000; border:1px solid #1e1e1e; border-radius:11px; padding:11px 14px 11px 38px; color:#fff; font-size:13px; font-weight:600; outline:none; box-sizing:border-box; transition:border-color 0.18s; font-family:inherit; }
+        .usr-search { width:100%; background:#000; border:1px solid #1e1e1e; border-radius:11px; padding:11px 14px 11px 40px; color:#fff; font-size:13px; font-weight:600; outline:none; box-sizing:border-box; transition:border-color 0.18s; font-family:inherit; }
         .usr-search::placeholder { color:#333; }
         .usr-search:focus { border-color:#2e2e2e; }
 
         .usr-filter { padding:8px 14px; border-radius:20px; border:1px solid #1a1a1a; background:transparent; color:#555; font-size:11px; font-weight:800; cursor:pointer; transition:all 0.18s; text-transform:uppercase; letter-spacing:0.6px; font-family:inherit; white-space:nowrap; }
-        .usr-filter.active { background:rgba(0,255,136,0.08); border-color:rgba(0,255,136,0.25); color:${NEON}; }
-        .usr-filter:hover:not(.active) { color:#fff; border-color:#333; }
+        .usr-filter.on { background:rgba(0,255,136,0.08); border-color:rgba(0,255,136,0.25); color:${NEON}; }
+        .usr-filter:hover:not(.on) { color:#fff; border-color:#333; }
 
         .usr-th { padding:12px 16px; background:#050505; color:#444; font-weight:800; font-size:10px; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #111; white-space:nowrap; }
-        .usr-th.sortable { cursor:pointer; user-select:none; }
-        .usr-th.sortable:hover { color:#888; }
-
+        .usr-th.sort { cursor:pointer; user-select:none; }
+        .usr-th.sort:hover { color:#888; }
+        .usr-row:hover td { background:rgba(255,255,255,0.01) !important; }
         .usr-empty { padding:60px 20px; text-align:center; color:#333; font-size:13px; font-weight:700; }
       `}</style>
 
@@ -133,16 +126,16 @@ export default function UsersInterface({ initialUsers, stats }) {
 
       {/* ── STATS ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: '10px', marginBottom: '24px' }}>
-        <StatCard icon={<Users size={16}/>}       label="Total Users"   value={stats.totalUsers}                              color="#fff" />
-        <StatCard icon={<DollarSign size={16}/>}  label="Liability"     value={`₹${stats.totalLiability.toLocaleString('en-IN')}`} color={NEON} sub="Total owed" />
-        <StatCard icon={<ShieldAlert size={16}/>} label="Frozen"        value={stats.frozenCount}                             color="#ef4444" sub="Accounts" />
-        <StatCard icon={<UserCheck size={16}/>}   label="Admins"        value={stats.adminCount}                              color="#fbbf24" sub="Super users" />
+        <StatCard icon={<Users size={18}/>}       label="Total"     value={stats.totalUsers}  color="#fff" />
+        <StatCard icon={<DollarSign size={18}/>}  label="Liability" value={`₹${stats.totalLiability.toLocaleString('en-IN')}`} color={NEON} sub="Total owed" />
+        <StatCard icon={<ShieldAlert size={18}/>} label="Frozen"    value={stats.frozenCount} color="#ef4444" sub="Accounts" />
+        <StatCard icon={<TrendingUp size={18}/>}  label="Active"    value={stats.activeCount} color="#3b82f6" sub="Promoters" />
       </div>
 
       {/* ── SEARCH + FILTERS ── */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-          <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#444', pointerEvents: 'none' }} />
+          <Search size={14} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#444', pointerEvents: 'none' }} />
           <input
             type="text"
             placeholder="Search username, phone, UPI…"
@@ -153,11 +146,7 @@ export default function UsersInterface({ initialUsers, stats }) {
         </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {FILTERS.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`usr-filter ${filter === f.key ? 'active' : ''}`}
-            >
+            <button key={f.key} onClick={() => setFilter(f.key)} className={`usr-filter ${filter === f.key ? 'on' : ''}`}>
               {f.label}
             </button>
           ))}
@@ -165,41 +154,25 @@ export default function UsersInterface({ initialUsers, stats }) {
       </div>
 
       {/* ── TABLE ── */}
-      <div style={{
-        background: '#080808', border: '1px solid #111',
-        borderRadius: '18px', overflow: 'hidden',
-      }}>
-        {/* Desktop table */}
+      <div style={{ background: '#080808', border: '1px solid #111', borderRadius: '18px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr>
                 <th className="usr-th" style={{ textAlign: 'left', paddingLeft: '20px' }}>User</th>
                 <th className="usr-th" style={{ textAlign: 'left' }}>Contact</th>
-                <th className="usr-th sortable" style={{ textAlign: 'right' }} onClick={() => handleSort('balance')}>
-                  Balance <SortArrow col="balance" />
-                </th>
-                <th className="usr-th sortable" style={{ textAlign: 'center' }} onClick={() => handleSort('leads')}>
-                  Leads <SortArrow col="leads" />
-                </th>
+                <th className="usr-th sort" style={{ textAlign: 'right' }} onClick={() => handleSort('balance')}>Balance <SortArrow col="balance" /></th>
+                <th className="usr-th sort" style={{ textAlign: 'center' }} onClick={() => handleSort('leads')}>Leads <SortArrow col="leads" /></th>
                 <th className="usr-th" style={{ textAlign: 'center' }}>Status</th>
-                <th className="usr-th sortable" style={{ textAlign: 'center' }} onClick={() => handleSort('date')}>
-                  Joined <SortArrow col="date" />
-                </th>
+                <th className="usr-th sort" style={{ textAlign: 'center' }} onClick={() => handleSort('date')}>Joined <SortArrow col="date" /></th>
                 <th className="usr-th" style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length > 0 ? (
-                filtered.map((user, i) => (
-                  <UserRow key={user.id} user={user} index={i} />
-                ))
+                filtered.map((user, i) => <UserRow key={user.id} user={user} index={i} />)
               ) : (
-                <tr>
-                  <td colSpan="7" className="usr-empty">
-                    No users match your search.
-                  </td>
-                </tr>
+                <tr><td colSpan="7" className="usr-empty">No users match your search.</td></tr>
               )}
             </tbody>
           </table>

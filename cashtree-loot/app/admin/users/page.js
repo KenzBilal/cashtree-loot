@@ -9,13 +9,12 @@ const supabaseAdmin = createClient(
 );
 
 export default async function UsersPage() {
-  // 1. Removed 'balance' from this query
   const { data: users, error } = await supabaseAdmin
     .from('accounts')
     .select(`
       id, username, full_name, phone, upi_id, is_frozen,
       created_at, role,
-      ledger ( amount, created_at, type, description ),
+      account_balances ( available_balance ),
       leads!leads_referred_by_fkey ( id )
     `)
     .order('created_at', { ascending: false });
@@ -28,26 +27,23 @@ export default async function UsersPage() {
     );
   }
 
-  // 2. Calculate balance dynamically from their ledger records
   const formattedUsers = users?.map(u => ({
     ...u,
-    balance: u.ledger?.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0) || 0
+    balance: Number(u.account_balances?.available_balance ?? 0),
   })) || [];
 
-  // Stats
-  const totalUsers     = formattedUsers.length;
-  const frozenCount    = formattedUsers.filter(u => u.is_frozen).length;
-  const adminCount     = formattedUsers.filter(u => u.role === 'admin').length;
+  const totalUsers  = formattedUsers.length;
+  const frozenCount = formattedUsers.filter(u => u.is_frozen).length;
+  const adminCount  = formattedUsers.filter(u => u.role === 'admin').length;
+  const activeCount = formattedUsers.filter(u => !u.is_frozen && u.role !== 'admin').length;
   const totalLiability = formattedUsers.reduce((sum, u) => sum + u.balance, 0);
-  const today          = new Date().toISOString().split('T')[0];
-  const newToday       = formattedUsers.filter(u => u.created_at?.startsWith(today)).length;
 
-  const stats = { totalUsers, frozenCount, adminCount, totalLiability, newToday };
+  // FIX: IST-aware today check
+  const nowIST   = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const todayIST = nowIST.toISOString().split('T')[0];
+  const newToday = formattedUsers.filter(u => u.created_at?.startsWith(todayIST)).length;
 
-  return (
-    <UsersInterface
-      initialUsers={formattedUsers}
-      stats={stats}
-    />
-  );
+  const stats = { totalUsers, frozenCount, adminCount, activeCount, totalLiability, newToday };
+
+  return <UsersInterface initialUsers={formattedUsers} stats={stats} />;
 }

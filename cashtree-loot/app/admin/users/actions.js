@@ -9,123 +9,36 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ── 1. FREEZE / UNFREEZE ACCOUNT ──
+// ── 1. FREEZE / UNFREEZE ──
 export async function toggleUserStatus(userId, currentStatus) {
   await requireAdmin();
-
-  const newStatus = !currentStatus;
-
   const { error } = await supabaseAdmin
     .from('accounts')
-    .update({ is_frozen: newStatus })
+    .update({ is_frozen: !currentStatus })
     .eq('id', userId);
-
   if (error) throw new Error(error.message);
-
   revalidatePath('/admin/users');
-  return { success: true, frozen: newStatus };
+  return { success: true, frozen: !currentStatus };
 }
 
-// ── 2. RESET USER BALANCE ──
+// ── 2. RESET USER BALANCE TO ZERO (DB-side, no race condition) ──
 export async function resetUserBalance(userId) {
   await requireAdmin();
-
   try {
-    // To reset, we find the current balance and add a negative ledger entry
-    const { data: ledgerRows } = await supabaseAdmin
-      .from('ledger')
-      .select('amount')
-      .eq('account_id', userId);
-      
-    const currentBalance = ledgerRows?.reduce((sum, row) => sum + Number(row.amount), 0) || 0;
+    // Single DB call: sum all ledger entries, insert exact negative to zero it out
+    const { data, error: sumError } = await supabaseAdmin
+      .rpc('get_account_balance', { p_account_id: userId });
+    if (sumError) throw sumError;
 
-    if (currentBalance !== 0) {
-      const { error } = await supabaseAdmin
-        .from('ledger')
-        .insert({
-          account_id: userId,
-          type: 'admin_reset',
-          amount: -currentBalance,
-          description: 'Admin balance reset'
-        });
-      if (error) throw error;
-    }
+    const currentBalance = Number(data ?? 0);
+    if (currentBalance === 0) return { success: true };
 
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-}
-
-// ── 3. MANUALLY CREDIT USER WALLET ──
-export async function creditUserWallet(userId, amount, reason) {
-  await requireAdmin();
-
-  try {
-    const credit = parseFloat(amount);
-    if (!credit || credit <= 0) return { success: false, error: 'Invalid amount.' };
-
-    // Simply insert a positive ledger entry. The view calculates the rest.
-    const { error: ledgerError } = await supabaseAdmin
-      .from('ledger')
-      .insert({
-        account_id:  userId,
-        type:        'manual_credit',
-        amount:      credit,
-        description: reason?.trim() || 'Manual credit by admin',
-      });
-
-    if (ledgerError) throw ledgerError;
-
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-}
-
-// ── 4. DEDUCT FROM USER WALLET ──
-export async function deductUserWallet(userId, amount, reason) {
-  await requireAdmin();
-
-  try {
-    const deduct = parseFloat(amount);
-    if (!deduct || deduct <= 0) return { success: false, error: 'Invalid amount.' };
-
-    // Simply insert a negative ledger entry.
-    const { error: ledgerError } = await supabaseAdmin
-      .from('ledger')
-      .insert({
-        account_id:  userId,
-        type:        'manual_deduction',
-        amount:      -deduct,
-        description: reason?.trim() || 'Manual deduction by admin',
-      });
-
-    if (ledgerError) throw ledgerError;
-
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-}
-
-// ── 5. UPDATE USER ROLE ──
-export async function updateUserRole(userId, newRole) {
-  await requireAdmin();
-
-  try {
-    if (!['user', 'admin'].includes(newRole)) {
-      return { success: false, error: 'Invalid role.' };
-    }
-
-    const { error } = await supabaseAdmin
-      .from('accounts')
-      .update({ role: newRole })
-      .eq('id', userId);
-
+    const { error } = await supabaseAdmin.from('ledger').insert({
+      account_id:  userId,
+      type:        'admin_reset',
+      amount:      -currentBalance,
+      description: 'Admin balance reset to zero',
+    });
     if (error) throw error;
 
     revalidatePath('/admin/users');
@@ -135,22 +48,56 @@ export async function updateUserRole(userId, newRole) {
   }
 }
 
-// ── 6. UPDATE USER UPI ID ──
+// ── 3. CREDIT WALLET ──
+export async function creditUserWallet(userId, amount, reason) {
+  await requireAdmin();
+  try {
+    const credit = parseFloat(amount);
+    if (!credit || credit <= 0) return { success: false, error: 'Invalid amount.' };
+    const { error } = await supabaseAdmin.from('ledger').insert({
+      account_id:  userId,
+      type:        'manual_credit',
+      amount:      credit,
+      description: reason?.trim() || 'Manual credit by admin',
+    });
+    if (error) throw error;
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ── 4. DEDUCT WALLET ──
+export async function deductUserWallet(userId, amount, reason) {
+  await requireAdmin();
+  try {
+    const deduct = parseFloat(amount);
+    if (!deduct || deduct <= 0) return { success: false, error: 'Invalid amount.' };
+    const { error } = await supabaseAdmin.from('ledger').insert({
+      account_id:  userId,
+      type:        'manual_deduction',
+      amount:      -deduct,
+      description: reason?.trim() || 'Manual deduction by admin',
+    });
+    if (error) throw error;
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ── 5. UPDATE UPI ID ──
 export async function updateUserUpi(userId, upiId) {
   await requireAdmin();
-
   try {
-    if (!upiId?.includes('@')) {
-      return { success: false, error: 'Invalid UPI ID format.' };
-    }
-
+    if (!upiId?.includes('@')) return { success: false, error: 'Invalid UPI ID format.' };
     const { error } = await supabaseAdmin
       .from('accounts')
       .update({ upi_id: upiId.trim() })
       .eq('id', userId);
-
     if (error) throw error;
-
     revalidatePath('/admin/users');
     return { success: true };
   } catch (e) {
@@ -158,22 +105,15 @@ export async function updateUserUpi(userId, upiId) {
   }
 }
 
-// ── 7. DELETE USER ACCOUNT ──
-// Permanently deletes from auth + accounts table
+// ── 6. DELETE ACCOUNT (accounts first, then auth — cascade handles the rest) ──
 export async function deleteUserAccount(userId) {
   await requireAdmin();
-
   try {
-    // A. Delete from Supabase Auth
+    // Delete accounts row first (cascade removes ledger, leads etc.)
+    await supabaseAdmin.from('accounts').delete().eq('id', userId);
+    // Then remove from auth
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (authError) throw authError;
-
-    // B. accounts row cascades via FK — but delete manually if no cascade set
-    await supabaseAdmin
-      .from('accounts')
-      .delete()
-      .eq('id', userId);
-
     revalidatePath('/admin/users');
     return { success: true };
   } catch (e) {
@@ -181,21 +121,16 @@ export async function deleteUserAccount(userId) {
   }
 }
 
-// ── 8. RESET USER PASSWORD ──
+// ── 7. RESET PASSWORD ──
 export async function resetUserPassword(userId, newPassword) {
   await requireAdmin();
-
   try {
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 6)
       return { success: false, error: 'Password must be at least 6 characters.' };
-    }
-
     const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       password: newPassword,
     });
-
     if (error) throw error;
-
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
