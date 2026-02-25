@@ -12,69 +12,71 @@ const supabase = createClient(
 );
 
 export default function LoginPage() {
-  const router  = useRouter();
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState(null);
-  const [showModal, setShowModal]         = useState(false);
-  const [form, setForm]                   = useState({ username: '', password: '' });
+  const router = useRouter();
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [form,      setForm]      = useState({ username: '', password: '' });
+
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(null); };
 
-// ── Clean ONLY the Supabase auth key, nothing else ──
-useEffect(() => {
-  try {
-    const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL
-      .split('//')[1].split('.')[0];
-    localStorage.removeItem(`sb-${projectId}-auth-token`);
-  } catch {}
-  
-  // Clear via API so HttpOnly cookie gets wiped server-side
-  fetch('/api/auth/session', { method: 'DELETE' });
-}, []);
+  useEffect(() => {
+    try {
+      const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL
+        .split('//')[1].split('.')[0];
+      localStorage.removeItem(`sb-${projectId}-auth-token`);
+    } catch {}
+    fetch('/api/auth/session', { method: 'DELETE' });
+  }, []);
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  let email = form.username.trim();
-  if (!email.includes('@')) {
-    email = `${email.toUpperCase()}@cashttree.internal`;
-  }
-
-  try {
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password: form.password,
-    });
-    if (authError) throw new Error('Invalid credentials. Please try again.');
-
-    const { data: account, error: roleError } = await supabase
-      .from('accounts')
-      .select('role, is_frozen')
-      .eq('id', data.user.id)
-      .single();
-
-    if (roleError || !account) throw new Error('Account setup missing. Contact support.');
-
-    if (account.is_frozen) {
-      await supabase.auth.signOut();
-      throw new Error('Access Denied: Account is frozen.');
+    let email = form.username.trim();
+    if (!email.includes('@')) {
+      email = `${email.toUpperCase()}@cashttree.internal`;
     }
 
-    // ← HttpOnly cookie set server-side, JS cannot read or steal it
-    await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: data.session.access_token }),
-    });
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: form.password,
+      });
+      if (authError) throw new Error('Invalid credentials. Please try again.');
 
-    router.push(account.role === 'admin' ? '/admin' : '/dashboard');
+      const { data: account, error: roleError } = await supabase
+        .from('accounts')
+        .select('role, is_frozen')
+        .eq('id', data.user.id)
+        .single();
 
-  } catch (err) {
-    setError(err.message);
-    setLoading(false);
-  }
-};
+      if (roleError || !account) throw new Error('Account setup missing. Contact support.');
+
+      if (account.is_frozen) {
+        await supabase.auth.signOut();
+        throw new Error('Access Denied: Account is frozen.');
+      }
+
+      // FIX: send BOTH tokens so the session can be refreshed server-side
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token:  data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }),
+      });
+
+      router.push(account.role === 'admin' ? '/admin' : '/dashboard');
+
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   const handleContactAdmin = () => {
     const adminHandle = process.env.NEXT_PUBLIC_ADMIN_TELEGRAM || 'CashtTree_bot';
     const text = `Hello Admin, I forgot my CashTree password. My username is: ${form.username || '[enter username]'}`;
@@ -108,7 +110,6 @@ const handleLogin = async (e) => {
           from { opacity: 0; transform: scale(0.95); }
           to   { opacity: 1; transform: scale(1); }
         }
-
         .lg-input {
           width: 100%; padding: 13px 14px; box-sizing: border-box;
           background: #000; border: 1px solid #1e1e1e; color: #fff;
@@ -150,64 +151,24 @@ const handleLogin = async (e) => {
       {/* ── FORGOT PASSWORD MODAL ── */}
       {showModal && (
         <div
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: '20px',
-          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}
           onClick={() => setShowModal(false)}
         >
           <div
-            style={{
-              background: '#0a0a0a', border: '1px solid #222',
-              borderRadius: '22px', padding: '36px 28px',
-              maxWidth: '320px', width: '100%', textAlign: 'center',
-              boxShadow: '0 0 60px rgba(239,68,68,0.12)',
-              animation: 'modalIn 0.28s cubic-bezier(0.16,1,0.3,1)',
-            }}
+            style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '22px', padding: '36px 28px', maxWidth: '320px', width: '100%', textAlign: 'center', boxShadow: '0 0 60px rgba(239,68,68,0.12)', animation: 'modalIn 0.28s cubic-bezier(0.16,1,0.3,1)' }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{
-              width: '60px', height: '60px', borderRadius: '18px', margin: '0 auto 20px',
-              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '18px', margin: '0 auto 20px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <AlertTriangle size={26} color="#ef4444" />
             </div>
-
-            <h3 style={{ color: '#fff', margin: '0 0 8px', fontSize: '17px', fontWeight: '900', letterSpacing: '-0.03em' }}>
-              Recovery Mode
-            </h3>
+            <h3 style={{ color: '#fff', margin: '0 0 8px', fontSize: '17px', fontWeight: '900', letterSpacing: '-0.03em' }}>Recovery Mode</h3>
             <p style={{ color: '#666', fontSize: '13px', lineHeight: '1.65', margin: '0 0 24px' }}>
               Passwords are reset manually by the administrator for security. Tap below to message admin directly.
             </p>
-
-            <button
-              className="lg-modal-btn"
-              onClick={handleContactAdmin}
-              style={{
-                width: '100%', padding: '13px',
-                background: '#ef4444', color: '#fff', border: 'none',
-                borderRadius: '12px', fontWeight: '800', fontSize: '13px',
-                cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                textTransform: 'uppercase', letterSpacing: '0.8px',
-                transition: 'opacity 0.18s',
-              }}
-            >
+            <button className="lg-modal-btn" onClick={handleContactAdmin} style={{ width: '100%', padding: '13px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.8px', transition: 'opacity 0.18s' }}>
               <Send size={14} /> Contact Admin
             </button>
-
-            <button
-              onClick={() => setShowModal(false)}
-              style={{
-                background: 'none', border: 'none', color: '#444',
-                fontSize: '12px', marginTop: '16px', cursor: 'pointer',
-                fontFamily: 'inherit', fontWeight: '700',
-                textTransform: 'uppercase', letterSpacing: '0.8px',
-              }}
-            >
+            <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#444', fontSize: '12px', marginTop: '16px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
               Cancel
             </button>
           </div>
@@ -215,158 +176,54 @@ const handleLogin = async (e) => {
       )}
 
       {/* ── LOGIN CARD ── */}
-      <div style={{
-        width: '100%', maxWidth: '390px', position: 'relative', zIndex: 1,
-        animation: 'fadeUp 0.5s cubic-bezier(0.16,1,0.3,1)',
-      }}>
-        <div style={{
-          background: '#08080c',
-          border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: '24px', padding: '38px 30px',
-          boxShadow: '0 24px 60px -12px rgba(0,0,0,0.8)',
-        }}>
+      <div style={{ width: '100%', maxWidth: '390px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
+        <div style={{ background: '#08080c', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '24px', padding: '38px 30px', boxShadow: '0 24px 60px -12px rgba(0,0,0,0.8)' }}>
 
-          {/* ── LOGO ── */}
+          {/* Logo */}
           <div style={{ textAlign: 'center', marginBottom: '36px' }}>
             <div style={{ position: 'relative', display: 'inline-block', height: '44px' }}>
-
-              {/* Ghost base */}
-              <h1 style={{
-                fontSize: '34px', fontWeight: '900', color: '#111',
-                margin: 0, letterSpacing: '5px', userSelect: 'none',
-              }}>
-                CASHTREE
-              </h1>
-
-              {/* Outline */}
-              <h1 style={{
-                fontSize: '34px', fontWeight: '900', color: 'transparent',
-                WebkitTextStroke: '1px #252525',
-                margin: 0, letterSpacing: '5px',
-                position: 'absolute', top: 0, left: 0,
-                userSelect: 'none',
-              }}>
-                CASHTREE
-              </h1>
-
-              {/* Neon fill — runs once, stays lit */}
-              <h1 style={{
-                fontSize: '34px', fontWeight: '900',
-                margin: 0, letterSpacing: '5px',
-                position: 'absolute', top: 0, left: 0,
-                overflow: 'hidden', width: '0%', whiteSpace: 'nowrap',
-                borderRight: '2px solid #00ff88',
-                animation: 'fillUp 1.4s cubic-bezier(0.4,0,0.2,1) forwards',
-                userSelect: 'none',
-              }}>
+              <h1 style={{ fontSize: '34px', fontWeight: '900', color: '#111', margin: 0, letterSpacing: '5px', userSelect: 'none' }}>CASHTREE</h1>
+              <h1 style={{ fontSize: '34px', fontWeight: '900', color: 'transparent', WebkitTextStroke: '1px #252525', margin: 0, letterSpacing: '5px', position: 'absolute', top: 0, left: 0, userSelect: 'none' }}>CASHTREE</h1>
+              <h1 style={{ fontSize: '34px', fontWeight: '900', margin: 0, letterSpacing: '5px', position: 'absolute', top: 0, left: 0, overflow: 'hidden', width: '0%', whiteSpace: 'nowrap', borderRight: '2px solid #00ff88', animation: 'fillUp 1.4s cubic-bezier(0.4,0,0.2,1) forwards', userSelect: 'none' }}>
                 <span style={{ color: '#fff' }}>CASH</span>
                 <span style={{ color: NEON }}>TREE</span>
               </h1>
-
-              {/* Glow reflection */}
-              <div style={{
-                position: 'absolute', bottom: '-8px', left: 0, right: 0,
-                height: '14px', background: NEON,
-                filter: 'blur(22px)', opacity: 0.14,
-                animation: 'glowPulse 2s infinite',
-                pointerEvents: 'none',
-              }} />
+              <div style={{ position: 'absolute', bottom: '-8px', left: 0, right: 0, height: '14px', background: NEON, filter: 'blur(22px)', opacity: 0.14, animation: 'glowPulse 2s infinite', pointerEvents: 'none' }} />
             </div>
-
-            <p style={{
-              color: '#444', fontSize: '11px', fontWeight: '700',
-              textTransform: 'uppercase', letterSpacing: '1.5px', marginTop: '14px',
-            }}>
+            <p style={{ color: '#444', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1.5px', marginTop: '14px' }}>
               Secure Partner Portal
             </p>
           </div>
 
-          {/* ── ERROR ── */}
+          {/* Error */}
           {error && (
-            <div style={{
-              background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
-              color: '#f87171', padding: '12px 14px', borderRadius: '11px',
-              fontSize: '12px', fontWeight: '700', textAlign: 'center',
-              marginBottom: '20px', lineHeight: '1.5',
-            }}>
+            <div style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', padding: '12px 14px', borderRadius: '11px', fontSize: '12px', fontWeight: '700', textAlign: 'center', marginBottom: '20px', lineHeight: '1.5' }}>
               {error}
             </div>
           )}
 
-          {/* ── FORM ── */}
+          {/* Form */}
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              <label style={{
-                fontSize: '10px', fontWeight: '800', color: '#555',
-                textTransform: 'uppercase', letterSpacing: '0.8px',
-              }}>
-                Username
-              </label>
-              <input
-                type="text"
-                required
-                className="lg-input"
-                placeholder="Enter username"
-                value={form.username}
-                autoCapitalize="none"
-                autoCorrect="off"
-                autoComplete="username"
-                onChange={e => set('username', e.target.value)}
-              />
+              <label style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Username</label>
+              <input type="text" required className="lg-input" placeholder="Enter username" value={form.username} autoCapitalize="none" autoCorrect="off" autoComplete="username" onChange={e => set('username', e.target.value)} />
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              <label style={{
-                fontSize: '10px', fontWeight: '800', color: '#555',
-                textTransform: 'uppercase', letterSpacing: '0.8px',
-              }}>
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                className="lg-input"
-                placeholder="••••••••"
-                value={form.password}
-                autoComplete="current-password"
-                onChange={e => set('password', e.target.value)}
-              />
+              <label style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Password</label>
+              <input type="password" required className="lg-input" placeholder="••••••••" value={form.password} autoComplete="current-password" onChange={e => set('password', e.target.value)} />
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="lg-btn"
-              style={{ marginTop: '6px' }}
-            >
+            <button type="submit" disabled={loading} className="lg-btn" style={{ marginTop: '6px' }}>
               {loading ? 'Authenticating…' : 'Enter Dashboard'}
             </button>
-
           </form>
 
-          {/* ── FORGOT ── */}
-          <button
-            onClick={() => setShowModal(true)}
-            className="lg-forgot"
-            style={{
-              display: 'block', width: '100%', textAlign: 'center',
-              fontSize: '11px', fontWeight: '800', color: '#ef4444',
-              textTransform: 'uppercase', letterSpacing: '1px',
-              marginTop: '18px', background: 'none', border: 'none',
-              cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'color 0.18s',
-            }}
-          >
+          {/* Forgot */}
+          <button onClick={() => setShowModal(true)} className="lg-forgot" style={{ display: 'block', width: '100%', textAlign: 'center', fontSize: '11px', fontWeight: '800', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '18px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'color 0.18s' }}>
             Forgot Password?
           </button>
 
-          {/* ── FOOTER ── */}
-          <div style={{
-            marginTop: '24px', paddingTop: '20px',
-            borderTop: '1px solid rgba(255,255,255,0.05)',
-            textAlign: 'center', fontSize: '13px', color: '#444',
-          }}>
+          {/* Footer */}
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', fontSize: '13px', color: '#444' }}>
             New Partner?{' '}
             <Link href="/promoter" style={{ color: NEON, fontWeight: '800', textDecoration: 'none' }}>
               Create Account

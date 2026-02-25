@@ -7,23 +7,76 @@ import Sidebar from './Sidebar';
 
 export default async function DashboardLayout({ children }) {
 
-  // 1. GET TOKEN
   const cookieStore = await cookies();
-  const token = cookieStore.get('ct_session')?.value;
-  if (!token) redirect('/login');
+  const token       = cookieStore.get('ct_session')?.value;
+  const refreshTok  = cookieStore.get('ct_refresh')?.value;
 
-  // 2. AUTHENTICATED CLIENT
-  const supabase = createClient(
+  if (!token && !refreshTok) redirect('/login');
+
+  let supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
-  // 3. VERIFY USER
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  let { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  // ── TOKEN EXPIRED — try to refresh silently ──
+  if ((userError || !user) && refreshTok) {
+    try {
+      const adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+
+      const { data: refreshed, error: refreshError } = await adminClient.auth.refreshSession({
+        refresh_token: refreshTok,
+      });
+
+      if (refreshError || !refreshed?.session) redirect('/login');
+
+      // Rebuild supabase client with the new access token
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        { global: { headers: { Authorization: `Bearer ${refreshed.session.access_token}` } } }
+      );
+
+      const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+      if (!refreshedUser) redirect('/login');
+
+      user = refreshedUser;
+
+      // We can't set cookies directly in a Server Component layout,
+      // so we embed a small client component that hits the refresh endpoint
+      // to update the cookies, then continues rendering the page normally.
+      // The next request will have the fresh cookie automatically.
+      const { data: account } = await supabase
+        .from('accounts')
+        .select('role, is_frozen, username')
+        .eq('id', user.id)
+        .single();
+
+      if (!account || account.is_frozen) redirect('/login?error=Account_Suspended');
+
+      return (
+        <TokenRefresher
+          newAccessToken={refreshed.session.access_token}
+          newRefreshToken={refreshed.session.refresh_token}
+        >
+          <LayoutShell account={account} supabase={supabase} userId={user.id}>
+            {children}
+          </LayoutShell>
+        </TokenRefresher>
+      );
+
+    } catch {
+      redirect('/login');
+    }
+  }
+
   if (userError || !user) redirect('/login');
 
-  // 4. FETCH ACCOUNT — username added for Sidebar avatar
   const { data: account, error: accountError } = await supabase
     .from('accounts')
     .select('role, is_frozen, username')
@@ -31,8 +84,6 @@ export default async function DashboardLayout({ children }) {
     .single();
 
   if (accountError || !account) redirect('/login');
-
-  // 5. SECURITY GATES
   if (account.is_frozen) redirect('/login?error=Account_Suspended');
 
   if (account.role !== 'admin') {
@@ -49,7 +100,11 @@ export default async function DashboardLayout({ children }) {
     if (config?.maintenance_mode) return <MaintenanceScreen />;
   }
 
-  // 6. RENDER
+  return <LayoutShell account={account}>{children}</LayoutShell>;
+}
+
+// ── SHELL ──
+function LayoutShell({ account, children }) {
   return (
     <div style={{ minHeight: '100vh', background: '#030305', color: '#fff' }}>
       <style>{`
@@ -62,7 +117,6 @@ export default async function DashboardLayout({ children }) {
           position: sticky; top: 0; z-index: 40;
         }
         .main-content { padding: 20px 20px 100px; min-height: 100vh; }
-
         @media (min-width: 768px) {
           .sb-wrapper   { display: block; }
           .mob-nav-wrap { display: none; }
@@ -71,26 +125,22 @@ export default async function DashboardLayout({ children }) {
         }
       `}</style>
 
-      {/* Desktop sidebar — username passed for avatar initial */}
       <div className="sb-wrapper">
         <Sidebar username={account.username} />
       </div>
 
-      {/* Mobile top bar */}
       <div className="mob-header">
         <div style={{ fontWeight: '900', fontSize: '18px', letterSpacing: '-1px', color: '#fff' }}>
           Cash<span style={{ color: '#00ff88' }}>Tree</span>
         </div>
       </div>
 
-      {/* Page content */}
       <div className="main-content">
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {children}
         </div>
       </div>
 
-      {/* Mobile bottom nav */}
       <div className="mob-nav-wrap">
         <MobileNav />
       </div>
@@ -98,72 +148,41 @@ export default async function DashboardLayout({ children }) {
   );
 }
 
+// ── CLIENT COMPONENT — updates cookies silently after token refresh ──
+// This is a tiny client island that fires once, updates the HttpOnly cookies
+// via the API route, then renders children normally.
+import TokenRefresherClient from './TokenRefresher';
+function TokenRefresher({ newAccessToken, newRefreshToken, children }) {
+  return (
+    <TokenRefresherClient
+      newAccessToken={newAccessToken}
+      newRefreshToken={newRefreshToken}
+    >
+      {children}
+    </TokenRefresherClient>
+  );
+}
+
 // ── MAINTENANCE SCREEN ──
 function MaintenanceScreen() {
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: '#050505', color: '#fff',
-      padding: '20px', position: 'relative', overflow: 'hidden',
-    }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#050505', color: '#fff', padding: '20px', position: 'relative', overflow: 'hidden' }}>
       <style>{`
-        @keyframes maintPulse {
-          0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-          70%  { box-shadow: 0 0 0 20px rgba(239,68,68,0); }
-          100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-        }
+        @keyframes maintPulse { 0%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 70%{box-shadow:0 0 0 20px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
         .maint-icon-wrap { animation: maintPulse 2s infinite; }
       `}</style>
-
-      <div style={{
-        position: 'absolute', width: '600px', height: '600px',
-        background: 'radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%)',
-        top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-        zIndex: 0, pointerEvents: 'none',
-      }} />
-
-      <div style={{
-        position: 'relative', zIndex: 10,
-        background: 'rgba(10,10,15,0.7)', backdropFilter: 'blur(24px)',
-        border: '1px solid rgba(239,68,68,0.25)', borderRadius: '24px',
-        padding: '56px 40px', maxWidth: '460px', width: '100%', textAlign: 'center',
-        boxShadow: '0 24px 60px -12px rgba(0,0,0,0.8)',
-      }}>
-        <div className="maint-icon-wrap" style={{
-          width: '76px', height: '76px', margin: '0 auto 28px',
-          background: 'rgba(239,68,68,0.08)', borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: '1px solid rgba(239,68,68,0.25)',
-        }}>
+      <div style={{ position: 'absolute', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 10, background: 'rgba(10,10,15,0.7)', backdropFilter: 'blur(24px)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '24px', padding: '56px 40px', maxWidth: '460px', width: '100%', textAlign: 'center', boxShadow: '0 24px 60px -12px rgba(0,0,0,0.8)' }}>
+        <div className="maint-icon-wrap" style={{ width: '76px', height: '76px', margin: '0 auto 28px', background: 'rgba(239,68,68,0.08)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239,68,68,0.25)' }}>
           <ShieldAlert size={38} color="#ef4444" />
         </div>
-
-        <h1 style={{ fontSize: 'clamp(1.4rem,4vw,2rem)', fontWeight: '900', margin: '0 0 12px', letterSpacing: '-0.03em' }}>
-          System Under Maintenance
-        </h1>
-        <p style={{ color: '#777', fontSize: '14px', lineHeight: '1.7', margin: '0 0 28px' }}>
-          Our engineers are pushing a critical security update.
-          Access is temporarily restricted to ensure data integrity.
-        </p>
-
-        <div style={{
-          background: '#000', border: '1px solid #1a1a1a', borderRadius: '12px',
-          padding: '14px 20px', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', gap: '10px', marginBottom: '28px',
-        }}>
+        <h1 style={{ fontSize: 'clamp(1.4rem,4vw,2rem)', fontWeight: '900', margin: '0 0 12px', letterSpacing: '-0.03em' }}>System Under Maintenance</h1>
+        <p style={{ color: '#777', fontSize: '14px', lineHeight: '1.7', margin: '0 0 28px' }}>Our engineers are pushing a critical security update. Access is temporarily restricted to ensure data integrity.</p>
+        <div style={{ background: '#000', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '28px' }}>
           <Clock size={15} color="#ef4444" />
-          <span style={{ fontSize: '13px', color: '#ccc', fontWeight: '600' }}>
-            Estimated Downtime:&nbsp;<span style={{ color: '#fff', fontWeight: '800' }}>~30 mins</span>
-          </span>
+          <span style={{ fontSize: '13px', color: '#ccc', fontWeight: '600' }}>Estimated Downtime: <span style={{ color: '#fff', fontWeight: '800' }}>~30 mins</span></span>
         </div>
-
-        <a href="/dashboard" style={{
-          display: 'inline-flex', alignItems: 'center', gap: '8px',
-          background: '#fff', color: '#000', padding: '13px 28px',
-          borderRadius: '12px', fontSize: '13px', fontWeight: '900',
-          textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.8px',
-        }}>
+        <a href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff', color: '#000', padding: '13px 28px', borderRadius: '12px', fontSize: '13px', fontWeight: '900', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
           <RefreshCw size={15} /> Check Status
         </a>
       </div>
