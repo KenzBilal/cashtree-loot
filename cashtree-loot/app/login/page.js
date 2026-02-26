@@ -39,19 +39,12 @@ export default function LoginPage() {
       let email = form.username.trim();
 
       if (!email.includes('@')) {
-        // Username login — look up email from the secure login view (anon-safe)
-        const { data: row, error: lookupError } = await supabase
-          .from('account_login_lookup')
-          .select('email')
-          .eq('username', email.toUpperCase())
-          .single();
-
-        if (lookupError) {
-          throw new Error('Invalid credentials. Please check your username and password.');
-        }
+        // Username login — call secure function to get email (bypasses RLS)
+        const { data: recoveryEmail, error: lookupError } = await supabase
+          .rpc('get_email_for_username', { p_username: email });
 
         // If real email exists use it, otherwise fall back to legacy fake domain
-        email = row?.email || `${email.toUpperCase()}@cashttree.internal`;
+        email = recoveryEmail || `${email.toUpperCase()}@cashttree.internal`;
       }
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
