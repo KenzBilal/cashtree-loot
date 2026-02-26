@@ -107,7 +107,7 @@ export default function ProfileForm({ account }) {
   });
 
   useEffect(() => {
-    if (!account.email) {
+    if (!account.email && account.role !== 'admin') {
       const dismissed = sessionStorage.getItem('email_popup_dismissed');
       if (!dismissed) {
         const t = setTimeout(() => setShowEmailPopup(true), 800);
@@ -121,13 +121,15 @@ export default function ProfileForm({ account }) {
     setShowEmailPopup(false);
   };
 
-  // Saves email ONLY to accounts table — never calls supabase.auth.updateUser with email
-  const saveEmailToAccountsOnly = async (email) => {
-    const { error } = await supabase
-      .from('accounts')
-      .update({ email })
-      .eq('id', account.id);
-    if (error) throw error;
+  // Saves email to BOTH accounts table AND Supabase auth via secure API route
+  const saveEmail = async (email) => {
+    const res = await fetch('/api/auth/update-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save email');
     setFormData(prev => ({ ...prev, email }));
     sessionStorage.setItem('email_popup_dismissed', '1');
     setShowEmailPopup(false);
@@ -147,13 +149,23 @@ export default function ProfileForm({ account }) {
         if (formData.new_password.length < 6) throw new Error('Password must be at least 6 characters.');
       }
 
-      // IMPORTANT: Only update accounts table for email — never touch Supabase auth email
+      // Update accounts + auth email via secure API route if email changed
+      if (formData.email && formData.email !== account.email) {
+        const res = await fetch('/api/auth/update-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email }),
+        });
+        const emailData = await res.json();
+        if (!res.ok) throw new Error(emailData.error || 'Failed to update email');
+      }
+
       const { error: dbError } = await supabase
         .from('accounts')
         .update({
           full_name: formData.full_name,
           upi_id: formData.upi_id,
-          email: formData.email || null,
+          ...(account.role !== 'admin' && { email: formData.email || null }),
         })
         .eq('id', account.id);
 
@@ -206,7 +218,7 @@ export default function ProfileForm({ account }) {
     <div style={{ marginTop: '20px' }}>
 
       {showEmailPopup && (
-        <EmailPopup onSave={saveEmailToAccountsOnly} onDismiss={dismissPopup} />
+        <EmailPopup onSave={saveEmail} onDismiss={dismissPopup} />
       )}
 
       {message && (
@@ -240,16 +252,20 @@ export default function ProfileForm({ account }) {
             placeholder="example@oksbi" style={getInputStyle('upi_id')}
           />
 
-          <label style={labelStyle}><Mail size={12} /> Recovery Email</label>
-          <input
-            type="email" value={formData.email}
-            onChange={e => setFormData({ ...formData, email: e.target.value })}
-            onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)}
-            placeholder="your@email.com" style={getInputStyle('email')}
-          />
-          <div style={{ fontSize: '11px', color: '#555', marginTop: '-18px', marginBottom: '20px', paddingLeft: '4px' }}>
-            For password recovery only — not used for login
-          </div>
+          {account.role !== 'admin' && (
+            <>
+              <label style={labelStyle}><Mail size={12} /> Recovery Email</label>
+              <input
+                type="email" value={formData.email}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)}
+                placeholder="your@email.com" style={getInputStyle('email')}
+              />
+              <div style={{ fontSize: '11px', color: '#555', marginTop: '-18px', marginBottom: '20px', paddingLeft: '4px' }}>
+                For password recovery only — not used for login
+              </div>
+            </>
+          )}
         </div>
 
         <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '20px', marginTop: '10px' }}>
