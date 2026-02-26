@@ -13,10 +13,11 @@ const supabase = createClient(
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [form,      setForm]      = useState({ username: '', password: '' });
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState(null);
+  const [showModal,    setShowModal]    = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [form,         setForm]         = useState({ username: '', password: '' });
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(null); };
 
@@ -44,7 +45,7 @@ export default function LoginPage() {
         email,
         password: form.password,
       });
-      if (authError) throw new Error('Invalid credentials. Please try again.');
+      if (authError) throw new Error('Invalid credentials. Please check your username and password.');
 
       const { data: account, error: roleError } = await supabase
         .from('accounts')
@@ -52,7 +53,8 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single();
 
-      if (roleError || !account) throw new Error('Account setup missing. Contact support.');
+      if (roleError) throw new Error(`Account error: ${roleError.message}`);
+      if (!account) throw new Error('Account not found. Contact admin.');
 
       if (account.is_frozen) {
         await supabase.auth.signOut();
@@ -210,7 +212,12 @@ export default function LoginPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
               <label style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Password</label>
-              <input type="password" required className="lg-input" placeholder="••••••••" value={form.password} autoComplete="current-password" onChange={e => set('password', e.target.value)} />
+              <div style={{ position: 'relative' }}>
+                <input type={showPassword ? 'text' : 'password'} required className="lg-input" placeholder="••••••••" value={form.password} autoComplete="current-password" autoCapitalize="none" autoCorrect="off" style={{ paddingRight: '44px' }} onChange={e => set('password', e.target.value)} />
+                <button type="button" onClick={() => setShowPassword(p => !p)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: 'inherit', padding: '4px' }}>
+                  {showPassword ? 'HIDE' : 'SHOW'}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={loading} className="lg-btn" style={{ marginTop: '6px' }}>
               {loading ? 'Authenticating…' : 'Enter Dashboard'}
