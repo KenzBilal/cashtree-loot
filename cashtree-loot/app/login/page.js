@@ -39,9 +39,9 @@ export default function LoginPage() {
       let email = form.username.trim();
 
       if (!email.includes('@')) {
-        // Username login — look up their real email from accounts table
-        const { data: account, error: lookupError } = await supabase
-          .from('accounts')
+        // Username login — look up email from the secure login view (anon-safe)
+        const { data: row, error: lookupError } = await supabase
+          .from('account_login_lookup')
           .select('email')
           .eq('username', email.toUpperCase())
           .single();
@@ -51,7 +51,7 @@ export default function LoginPage() {
         }
 
         // If real email exists use it, otherwise fall back to legacy fake domain
-        email = account?.email || `${email.toUpperCase()}@cashttree.internal`;
+        email = row?.email || `${email.toUpperCase()}@cashttree.internal`;
       }
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
