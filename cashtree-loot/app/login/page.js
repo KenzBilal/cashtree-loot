@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -13,22 +13,13 @@ const supabase = createClient(
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState(null);
-  const [showModal,    setShowModal]    = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [form,         setForm]         = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(null); };
-
-  useEffect(() => {
-    try {
-      const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL
-        .split('//')[1].split('.')[0];
-      localStorage.removeItem(`sb-${projectId}-auth-token`);
-    } catch {}
-    fetch('/api/auth/session', { method: 'DELETE' });
-  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,11 +30,11 @@ export default function LoginPage() {
       let email = form.username.trim();
 
       if (!email.includes('@')) {
-        // Username login — call secure function to get email (bypasses RLS)
-        const { data: recoveryEmail, error: lookupError } = await supabase
+        // Look up real email via secure RPC (SECURITY DEFINER bypasses RLS)
+        const { data: recoveryEmail } = await supabase
           .rpc('get_email_for_username', { p_username: email });
 
-        // If real email exists use it, otherwise fall back to legacy fake domain
+        // Use real email if set, otherwise fall back to legacy fake domain
         email = recoveryEmail || `${email.toUpperCase()}@cashttree.internal`;
       }
 
@@ -51,6 +42,7 @@ export default function LoginPage() {
         email,
         password: form.password,
       });
+
       if (authError) throw new Error('Invalid credentials. Please check your username and password.');
 
       const { data: account, error: roleError } = await supabase
@@ -59,9 +51,7 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single();
 
-      if (roleError) throw new Error(`Account error: ${roleError.message}`);
-      if (!account) throw new Error('Account not found. Contact admin.');
-
+      if (roleError || !account) throw new Error('Account not found. Contact admin.');
       if (account.is_frozen) {
         await supabase.auth.signOut();
         throw new Error('Access Denied: Account is frozen.');
@@ -71,7 +61,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          access_token:  data.session.access_token,
+          access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         }),
       });
@@ -95,8 +85,7 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: '#030305', padding: '20px', position: 'relative', overflow: 'hidden',
     }}>
       <style>{`
@@ -107,7 +96,7 @@ export default function LoginPage() {
         .lg-input { width: 100%; padding: 13px 14px; box-sizing: border-box; background: #000; border: 1px solid #1e1e1e; color: #fff; border-radius: 12px; font-size: 15px; outline: none; font-family: inherit; font-weight: 600; transition: border-color 0.18s, box-shadow 0.18s; }
         .lg-input::placeholder { color: #333; }
         .lg-input:focus { border-color: rgba(0,255,136,0.4); box-shadow: 0 0 0 3px rgba(0,255,136,0.06); }
-        .lg-btn { width: 100%; padding: 15px; border: none; border-radius: 13px; background: ${NEON}; color: #000; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 24px rgba(0,255,136,0.22); transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s; font-family: inherit; }
+        .lg-btn { width: 100%; padding: 15px; border: none; border-radius: 13px; background: #00ff88; color: #000; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 24px rgba(0,255,136,0.22); transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s; font-family: inherit; }
         .lg-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,255,136,0.34); }
         .lg-btn:disabled { opacity: 0.6; cursor: wait; }
         .lg-forgot:hover { color: #fff !important; }
@@ -123,7 +112,7 @@ export default function LoginPage() {
               <AlertTriangle size={26} color="#ef4444" />
             </div>
             <h3 style={{ color: '#fff', margin: '0 0 8px', fontSize: '17px', fontWeight: '900', letterSpacing: '-0.03em' }}>Recovery Mode</h3>
-            <p style={{ color: '#666', fontSize: '13px', lineHeight: '1.65', margin: '0 0 24px' }}>Passwords are reset manually by the administrator for security. Tap below to message admin directly.</p>
+            <p style={{ color: '#666', fontSize: '13px', lineHeight: '1.65', margin: '0 0 24px' }}>Passwords are reset manually by the administrator. Tap below to message admin directly.</p>
             <button className="lg-modal-btn" onClick={handleContactAdmin} style={{ width: '100%', padding: '13px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.8px', transition: 'opacity 0.18s' }}>
               <Send size={14} /> Contact Admin
             </button>
