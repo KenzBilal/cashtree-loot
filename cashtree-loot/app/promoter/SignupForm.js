@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, Check, AlertTriangle, Loader2, User, AtSign, Phone, CreditCard, Lock, Tag } from 'lucide-react';
+import { ArrowRight, Check, AlertTriangle, Loader2, User, AtSign, Phone, CreditCard, Lock, Tag, Mail } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -20,7 +20,7 @@ export default function SignupForm() {
   const [refCode, setRefCode] = useState('');
   const [ready, setReady]     = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '', username: '', phone: '',
+    fullName: '', username: '', email: '', phone: '',
     password: '', upiId: ''
   });
 
@@ -36,12 +36,13 @@ export default function SignupForm() {
     setLoading(true);
     setError(null);
 
-    const cleanUsername    = formData.username.trim().toUpperCase();
-    const generatedEmail   = `${cleanUsername}@cashttree.internal`;
+    const cleanUsername = formData.username.trim().toUpperCase();
+    const cleanEmail    = formData.email.trim().toLowerCase();
 
     try {
       if (cleanUsername.includes(' ')) throw new Error("Username cannot contain spaces.");
       if (formData.password.length < 6) throw new Error("Password must be at least 6 characters.");
+      if (!cleanEmail.includes('@')) throw new Error("Please enter a valid email address.");
 
       let referrerId = null;
       if (refCode && refCode.trim()) {
@@ -51,7 +52,7 @@ export default function SignupForm() {
       }
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: generatedEmail,
+        email: cleanEmail,
         password: formData.password,
       });
       if (authError) throw authError;
@@ -61,6 +62,7 @@ export default function SignupForm() {
         role: 'promoter',
         username: cleanUsername,
         full_name: formData.fullName,
+        email: cleanEmail,
         phone: formData.phone,
         upi_id: formData.upiId || null,
         referred_by: referrerId,
@@ -74,7 +76,7 @@ export default function SignupForm() {
 
     } catch (err) {
       setError(err.message.includes("already registered")
-        ? "Username is taken. Please choose another."
+        ? "Email is already registered. Please use another."
         : err.message);
     } finally {
       setLoading(false);
@@ -111,12 +113,10 @@ export default function SignupForm() {
           font-family: 'Inter', system-ui, sans-serif;
         }
 
-        /* Ambient glows */
         .sp-glow-1 { position: fixed; top: -20%; left: -10%; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,255,136,0.055) 0%, transparent 65%); pointer-events: none; z-index: 0; }
         .sp-glow-2 { position: fixed; bottom: -20%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.045) 0%, transparent 65%); pointer-events: none; z-index: 0; }
         .sp-grid   { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 52px 52px; mask-image: radial-gradient(circle at center, black 30%, transparent 78%); }
 
-        /* Card */
         .sp-card {
           width: 100%; max-width: 520px;
           background: rgba(10,10,15,0.72);
@@ -132,7 +132,6 @@ export default function SignupForm() {
         }
         .sp-card.in { opacity: 1; transform: translateY(0); }
 
-        /* Header */
         .sp-brand { font-size: 18px; font-weight: 900; letter-spacing: -0.04em; text-decoration: none; display: block; text-align: center; margin-bottom: 32px; color: #fff; }
         .sp-brand span { color: var(--neon); text-shadow: 0 0 18px var(--neon-glow); }
 
@@ -145,10 +144,8 @@ export default function SignupForm() {
         .sp-title span { color: var(--neon); }
         .sp-sub   { font-size: 13px; color: var(--muted); margin-bottom: 34px; line-height: 1.5; }
 
-        /* Divider */
         .sp-divider { height: 1px; background: var(--border-l); margin: 28px 0; }
 
-        /* Field */
         .sp-field { margin-bottom: 18px; }
         .sp-label { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
         .sp-label svg { opacity: 0.6; }
@@ -169,19 +166,15 @@ export default function SignupForm() {
 
         .sp-input-tick { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--neon); display: flex; }
 
-        /* Two col grid */
         .sp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-        /* Referral box */
         .sp-ref-applied { background: rgba(0,255,136,0.04); border: 1px dashed rgba(0,255,136,0.2); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
         .sp-ref-label   { font-size: 10px; color: var(--neon); font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; }
         .sp-ref-code    { font-size: 12px; color: #fff; font-weight: 700; font-family: monospace; }
 
-        /* Error */
         .sp-error { display: flex; align-items: center; gap: 10px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #f87171; padding: 13px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; margin-bottom: 22px; animation: shake 0.3s ease; }
         @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
 
-        /* Button */
         .sp-btn {
           width: 100%; padding: 16px; margin-top: 8px;
           background: var(--neon); color: #000;
@@ -197,12 +190,10 @@ export default function SignupForm() {
         .sp-spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Footer */
         .sp-footer { text-align: center; margin-top: 22px; font-size: 13px; color: #444; }
         .sp-footer a { color: #888; font-weight: 700; text-decoration: none; transition: color 0.2s; }
         .sp-footer a:hover { color: #fff; }
 
-        /* Stats row */
         .sp-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border-l); border: 1px solid var(--border-l); border-radius: 16px; overflow: hidden; margin-bottom: 32px; }
         .sp-stat  { background: rgba(0,0,0,0.5); padding: 14px 10px; text-align: center; }
         .sp-stat-v { font-size: 17px; font-weight: 900; color: #fff; font-family: 'SF Mono','Menlo',monospace; letter-spacing: -0.04em; }
@@ -221,12 +212,10 @@ export default function SignupForm() {
 
         <div className={`sp-card ${ready ? 'in' : ''}`}>
 
-          {/* Brand */}
           <Link href="/" className="sp-brand">
             Cash<span>Tree</span>
           </Link>
 
-          {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div className="sp-badge" style={{ margin: '0 auto 14px' }}>
               <span className="sp-dot" />
@@ -238,7 +227,6 @@ export default function SignupForm() {
             <p className="sp-sub">Create your promoter account and start earning instantly.</p>
           </div>
 
-          {/* Trust stats */}
           <div className="sp-stats">
             <div className="sp-stat">
               <div className="sp-stat-v">5K+</div>
@@ -254,7 +242,6 @@ export default function SignupForm() {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="sp-error">
               <AlertTriangle size={15} strokeWidth={2.5} />
@@ -262,7 +249,6 @@ export default function SignupForm() {
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSignup}>
 
             <div className="sp-field">
@@ -275,6 +261,12 @@ export default function SignupForm() {
               <label className="sp-label"><AtSign size={11} /> Username <span style={{ color: '#333', marginLeft: 4 }}>— your unique login ID</span></label>
               <input className="sp-input mono" type="text" required placeholder="UNIQUE_ID"
                 value={formData.username} onChange={set('username')} />
+            </div>
+
+            <div className="sp-field">
+              <label className="sp-label"><Mail size={11} /> Email Address</label>
+              <input className="sp-input" type="email" required placeholder="you@example.com"
+                value={formData.email} onChange={set('email')} autoComplete="email" />
             </div>
 
             <div className="sp-grid-2">

@@ -35,12 +35,23 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    let email = form.username.trim();
-    if (!email.includes('@')) {
-      email = `${email.toUpperCase()}@cashttree.internal`;
-    }
-
     try {
+      let email = form.username.trim();
+
+      if (!email.includes('@')) {
+        // Username login — look up their real email from accounts table
+        const { data: account, error: lookupError } = await supabase
+          .from('accounts')
+          .select('email')
+          .eq('username', email.toUpperCase())
+          .single();
+
+        if (lookupError || !account?.email) {
+          throw new Error('Invalid credentials. Please check your username and password.');
+        }
+        email = account.email;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password: form.password,
@@ -61,7 +72,6 @@ export default function LoginPage() {
         throw new Error('Access Denied: Account is frozen.');
       }
 
-      // FIX: send BOTH tokens so the session can be refreshed server-side
       await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -207,8 +217,8 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Username</label>
-              <input type="text" required className="lg-input" placeholder="Enter username" value={form.username} autoCapitalize="none" autoCorrect="off" autoComplete="username" onChange={e => set('username', e.target.value)} />
+              <label style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Username or Email</label>
+              <input type="text" required className="lg-input" placeholder="Enter username or email" value={form.username} autoCapitalize="none" autoCorrect="off" autoComplete="username" onChange={e => set('username', e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
               <label style={{ fontSize: '10px', fontWeight: '800', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Password</label>
