@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Check, AlertTriangle, Loader2, User, AtSign, Phone, CreditCard, Lock, Tag, Mail } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
 export default function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Use proxy so mobile ISPs blocking supabase.co still work
+  const supabase = useMemo(() => createClient(
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/api/supabase`
+      : process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ), []);
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
