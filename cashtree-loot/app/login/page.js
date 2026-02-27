@@ -61,8 +61,8 @@ export default function LoginPage() {
         throw new Error('Access Denied: Account is frozen.');
       }
 
-      // Fire session cookie set — don't await, redirect immediately
-      fetch('/api/auth/session', {
+      // Wait for cookie to be set before redirecting
+      await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
