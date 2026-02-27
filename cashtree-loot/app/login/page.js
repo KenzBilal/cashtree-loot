@@ -30,12 +30,16 @@ export default function LoginPage() {
       let email = form.username.trim();
 
       if (!email.includes('@')) {
-        // Look up real email via secure RPC (SECURITY DEFINER bypasses RLS)
-        const { data: recoveryEmail } = await supabase
-          .rpc('get_email_for_username', { p_username: email });
-
-        // Use real email if set, otherwise fall back to legacy fake domain
-        email = recoveryEmail || `${email.toUpperCase()}@cashttree.internal`;
+        // Look up real email via secure RPC with timeout
+        try {
+          const rpcPromise = supabase.rpc('get_email_for_username', { p_username: email });
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+          const { data: recoveryEmail } = await Promise.race([rpcPromise, timeoutPromise]);
+          email = recoveryEmail || `${email.toUpperCase()}@cashttree.internal`;
+        } catch {
+          // On timeout or error, fall back to legacy
+          email = `${email.toUpperCase()}@cashttree.internal`;
+        }
       }
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
