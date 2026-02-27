@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
+// Use proxy URL so mobile ISPs blocking supabase.co still work
+const supabaseUrl = typeof window !== 'undefined'
+  ? `${window.location.origin}/api/supabase`
+  : process.env.NEXT_PUBLIC_SUPABASE_URL;
+
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseUrl,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
@@ -24,7 +29,7 @@ export default function LoginDebug() {
     setLoading(true);
 
     try {
-      log(`NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'UNDEFINED ❌'}`, process.env.NEXT_PUBLIC_SUPABASE_URL ? '#00ff88' : '#ff4444');
+      log(`Supabase URL being used: ${supabaseUrl}`, process.env.NEXT_PUBLIC_SUPABASE_URL ? '#00ff88' : '#ff4444');
       log(`NEXT_PUBLIC_SUPABASE_ANON_KEY: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(0, 20) + '...' : 'UNDEFINED ❌'}`, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '#00ff88' : '#ff4444');
 
       let email = username.trim();
