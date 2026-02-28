@@ -1,14 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { Lock, User, CreditCard, Mail, X } from 'lucide-react';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
 
 function EmailPopup({ onSave, onDismiss }) {
   const [email, setEmail] = useState('');
@@ -93,6 +88,15 @@ function EmailPopup({ onSave, onDismiss }) {
 
 export default function ProfileForm({ account }) {
   const router = useRouter();
+
+  // Use proxy so mobile ISPs blocking supabase.co still work
+  const supabase = useMemo(() => createClient(
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/api/supabase`
+      : process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ), []);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
@@ -262,7 +266,7 @@ export default function ProfileForm({ account }) {
                 placeholder="your@email.com" style={getInputStyle('email')}
               />
               <div style={{ fontSize: '11px', color: '#555', marginTop: '-18px', marginBottom: '20px', paddingLeft: '4px' }}>
-                For password recovery only — not used for login
+                Required for mobile login & password recovery
               </div>
             </>
           )}
