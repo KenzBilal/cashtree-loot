@@ -179,6 +179,15 @@ export default function LoginPage() {
             New Partner?{' '}
             <Link href="/promoter" style={{ color: NEON, fontWeight: '800', textDecoration: 'none' }}>Create Account</Link>
           </div>
+
+          <div style={{ textAlign: 'center', marginTop: '14px' }}>
+            <Link href="/" style={{ fontSize: '11px', color: '#333', fontWeight: '700', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.18s' }}
+              onMouseEnter={e => e.target.style.color = '#666'}
+              onMouseLeave={e => e.target.style.color = '#333'}
+            >
+              ← Back to Homepage
+            </Link>
+          </div>
         </div>
       </div>
     </div>
